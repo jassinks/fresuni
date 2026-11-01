@@ -155,3 +155,16 @@
 .workspace-bottom-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end}
 .diagnose-result{font-size:12px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;color:#4d3158}
 @media(max-width:730px){.workspace-bottom{align-items:flex-start}.workspace-bottom-actions{justify-content:flex-start}}
+/* FRESUNI: controles avançados de grade e animação */
+#fresuni-layout-advanced,#fs-motion-advanced{margin-top:17px;padding:15px 12px;border-radius:12px;border:1px solid #e5d7ef;background:linear-gradient(165deg,#fff 5%,#fbf7ff 100%)}
+#fresuni-layout-advanced h4,#fs-motion-advanced h4{font-size:13px;line-height:1.5;margin:0 0 9px;color:#63238d}
+#fresuni-layout-advanced .fields-2,#fs-motion-advanced .fields-2{column-gap:9px;row-gap:3px}
+#fresuni-layout-advanced .fields-2 label,#fs-motion-advanced .fields-2 label{font-size:11px;margin:9px 0 5px}
+#fresuni-layout-advanced input,#fresuni-layout-advanced select,#fs-motion-advanced input,#fs-motion-advanced select{font-size:12px;min-width:0}
+#fs-motion-advanced .fs-counter-editor{border-top:1px solid #e2d1ef;margin:15px 0 8px;padding-top:13px}
+.fs-effect-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+.fs-effect-actions .btn{flex:1 1 110px;min-height:38px;border:1px solid #d5bde7;border-radius:8px;background:#fff;color:#67218d;font-size:12px;font-weight:600}
+.fs-effect-actions .btn:hover{background:#f3e9fe}
+#fs-layout-reset{margin-top:10px;min-height:39px;background:#fbf9fe;border:1px solid #d8c6e8;color:#643487}
+#fs-grid-hint{border-left:3px solid #9e5bd6;padding-left:8px;margin-top:10px}
+#fs-grid-span:disabled{opacity:.55;cursor:not-allowed}
