@@ -188,6 +188,7 @@ function selectElement(el){if(state.selected===el)return;clearSelection();state.
  $('#element-height').value=parseInt(el.style.minHeight)||0;$('#corner-radius').value=parseInt(el.style.borderRadius)||0;$('#border-size').value=parseInt(el.style.borderWidth)||0;
  $('#border-color').value=toHex(cs.borderTopColor,'#8300ea');$('#block-motion').value=el.dataset.fresuniMotion||'none';$('#motion-time').value=parseInt(el.style.getPropertyValue('--fresuni-motion-duration'))||650;
  $('#shape-kind').value=el.dataset.fresuniShape||'box';
+ fsSyncControls(el);
  positionResizeGrip();positionFloatingToolbar();
 }
 let resizeGrip=null,resizeLabel=null,resizing=false,resizeRaf=0;
@@ -781,6 +782,146 @@ $('#structure-header-text-add').addEventListener('click',()=>{
 $('#structure-footer-text-add').addEventListener('click',()=>{
  const el=sharedEl('footer')?.querySelector('.footer-inner');if(!el)return;snapshot();const p=siteDoc().createElement('p');p.textContent='Novo parágrafo no rodapé. Clique para editar.';
  el.append(p);dirty();setEditable(true);selectElement(p);notify('Texto inserido no rodapé.');
+});
+
+// ----- FRESUNI · controle de grade, dimensões, movimento e contador -----
+// Os ajustes são feitos no fluxo normal do documento; nunca em position:absolute.
+const fsPropMap={
+ 'fs-max-width':['maxWidth',0,1800],
+ 'fs-margin-top':['marginTop',0,250],
+ 'fs-margin-bottom':['marginBottom',0,250],
+ 'fs-padding':['padding',0,120],
+ 'fs-letter-spacing':['letterSpacing',-2,12]
+};
+function fsGridParent(el){return !!el?.parentElement?.matches('.card-grid,.directory-links,[data-fresuni-grid]');}
+function fsNumber(v,min,max){return Math.min(max,Math.max(min,Number.isFinite(Number(v))?Number(v):0));}
+function fsSyncControls(el){
+ if(!el)return;
+ for(const [id,[prop]] of Object.entries(fsPropMap)){
+  const v=parseFloat(el.style[prop]);
+  $('#'+id).value=Number.isFinite(v)?v:0;
+ }
+ $('#fs-h-align').value=el.dataset.fresuniHAlign||'auto';
+ $('#fs-v-align').value=el.style.alignSelf||'auto';
+ const grid=fsGridParent(el);
+ $('#fs-grid-span').disabled=!grid;
+ $('#fs-grid-span').value=grid?(el.dataset.fresuniGridSpan||'auto'):'auto';
+ $('#fs-grid-hint').textContent=grid
+   ?'Aqui, aumentar a quantidade de colunas reorganiza os outros itens dentro da grade. No celular o bloco volta a ocupar uma coluna.'
+   :'Para ocupar mais colunas, selecione diretamente um cartão ou link dentro de uma grade.';
+ $('#fs-line-height').value=['1','1.25','1.5','1.75','2'].includes(el.style.lineHeight)?el.style.lineHeight:'auto';
+ $('#fs-text-align').value=['left','center','right','justify'].includes(el.style.textAlign)?el.style.textAlign:'auto';
+ $('#fs-text-transform').value=['uppercase','lowercase','capitalize'].includes(el.style.textTransform)?el.style.textTransform:'none';
+ $('#fs-hover').value=el.dataset.fresuniHover||'none';
+ $('#fs-click').value=el.dataset.fresuniClick||'none';
+ $('#fs-counter-target').value=el.dataset.fresuniCounter||75;
+ $('#fs-counter-suffix').value=el.dataset.fresuniCounterSuffix??'%';
+}
+function fsSelected(){const el=state.selected;if(!el||!el.isConnected){notify('Selecione um elemento na prévia para continuar.');return null;}return el;}
+function fsChange(id,fn){
+ const input=$('#'+id);if(!input)return;
+ input.addEventListener('change',()=>{
+  const el=fsSelected();if(!el)return;
+  snapshot();
+  const result=fn(el,input.value);
+  if(result===false){fsSyncControls(el);return;}
+  dirty();positionResizeGrip();
+ });
+}
+for(const [id,[prop,min,max]] of Object.entries(fsPropMap)){
+ fsChange(id,(el,val)=>{
+  const n=fsNumber(val,min,max);
+  if(id==='fs-max-width'){if(n===0)el.style.removeProperty('max-width');else{el.style.maxWidth=n+'px';el.style.boxSizing='border-box';}}
+  else if(id==='fs-letter-spacing'){if(n===0)el.style.removeProperty('letter-spacing');else el.style.letterSpacing=n+'px';}
+  else if(id==='fs-padding'){if(n===0)el.style.removeProperty('padding');else{el.style.padding=n+'px';el.style.boxSizing='border-box';}}
+  else if(n===0)el.style[prop]='0px';
+  else el.style[prop]=n+'px';
+ });
+}
+fsChange('fs-h-align',(el,v)=>{
+ el.dataset.fresuniHAlign=v;
+ for(const p of ['margin-left','margin-right','justify-self'])el.style.removeProperty(p);
+ if(v==='center'){el.style.marginLeft='auto';el.style.marginRight='auto';if(fsGridParent(el))el.style.justifySelf='center';}
+ if(v==='start'){el.style.marginLeft='0';el.style.marginRight='auto';if(fsGridParent(el))el.style.justifySelf='start';}
+ if(v==='end'){el.style.marginLeft='auto';el.style.marginRight='0';if(fsGridParent(el))el.style.justifySelf='end';}
+ if(v!=='auto'&&!el.matches('img,iframe')&&['inline','inline-flex'].includes(frame.contentWindow.getComputedStyle(el).display))el.style.display='inline-block';
+});
+fsChange('fs-v-align',(el,v)=>{if(v==='auto')el.style.removeProperty('align-self');else el.style.alignSelf=v;});
+fsChange('fs-grid-span',(el,v)=>{
+ if(!fsGridParent(el)){notify('Este elemento não está diretamente dentro de uma grade.');return false;}
+ if(v==='auto'){el.style.removeProperty('grid-column');delete el.dataset.fresuniGridSpan;}
+ else{el.style.gridColumn=v==='full'?'1 / -1':'span '+v;el.dataset.fresuniGridSpan=v;}
+});
+fsChange('fs-line-height',(el,v)=>{if(v==='auto')el.style.removeProperty('line-height');else el.style.lineHeight=v;});
+fsChange('fs-text-align',(el,v)=>{if(v==='auto')el.style.removeProperty('text-align');else el.style.textAlign=v;});
+fsChange('fs-text-transform',(el,v)=>{el.style.textTransform=v==='none'?'none':v;});
+fsChange('fs-hover',(el,v)=>{if(v==='none')delete el.dataset.fresuniHover;else el.dataset.fresuniHover=v;});
+fsChange('fs-click',(el,v)=>{
+ if(v!=='none'&&!el.matches('a,button,[role="button"]')){notify('O efeito de clique funciona em links e botões. Selecione um desses elementos.');return false;}
+ if(v==='none')delete el.dataset.fresuniClick;else el.dataset.fresuniClick=v;
+});
+$('#fs-layout-reset').addEventListener('click',()=>{
+ const el=fsSelected();if(!el)return;
+ snapshot();
+ for(const p of ['max-width','margin-top','margin-bottom','margin-left','margin-right','justify-self','align-self','grid-column','padding','letter-spacing','line-height','text-align','text-transform'])el.style.removeProperty(p);
+ for(const p of ['fresuniHAlign','fresuniGridSpan'])delete el.dataset[p];
+ fsSyncControls(el);dirty();positionResizeGrip();notify('Grade, alinhamentos e espaçamentos restaurados.');
+});
+const fsCounterFormat=n=>new Intl.NumberFormat('pt-BR',{maximumFractionDigits:0}).format(n);
+$('#fs-counter-apply').addEventListener('click',()=>{
+ const el=fsSelected();if(!el)return;
+ if(!el.matches('p,h1,h2,h3,h4,h5,h6,span,strong,b,li,blockquote')||el.querySelector('a,button,img,svg,iframe,strong,em,span')){
+  notify('Selecione um bloco de texto simples, sem links ou imagens internos, para criar um contador.');return;
+ }
+ const value=Math.round(fsNumber($('#fs-counter-target').value,0,1000000));
+ const suffix=$('#fs-counter-suffix').value.slice(0,12);
+ if(!el.dataset.fresuniCounter && !/^\s*[\d.,\s]+[%+°]?\s*$/.test(el.textContent) &&
+    !confirm('Transformar este texto em um contador numérico? O texto anterior será substituído.'))return;
+ snapshot();el.dataset.fresuniCounter=String(value);el.dataset.fresuniCounterSuffix=suffix;
+ el.textContent=fsCounterFormat(value)+suffix;
+ if(!el.hasAttribute('aria-label')){el.setAttribute('aria-label',el.textContent);el.dataset.fresuniCounterAriaSet='';}
+ el.style.fontVariantNumeric='tabular-nums';
+ dirty();notify('Contador configurado. O número crescerá de 0 até '+value+suffix+' quando aparecer ao visitante.');
+});
+$('#fs-counter-remove').addEventListener('click',()=>{
+ const el=fsSelected();if(!el||!el.hasAttribute('data-fresuni-counter'))return;
+ snapshot();
+ for(const attr of ['data-fresuni-counter','data-fresuni-counter-suffix'])el.removeAttribute(attr);
+ if(el.hasAttribute('data-fresuni-counter-aria-set')){el.removeAttribute('aria-label');el.removeAttribute('data-fresuni-counter-aria-set');}
+ el.style.removeProperty('font-variant-numeric');dirty();notify('Contador removido; valor final preservado.');
+});
+$('#fs-motion-reset').addEventListener('click',()=>{
+ const el=fsSelected();if(!el)return;snapshot();
+ for(const a of ['data-fresuni-motion','data-fresuni-hover','data-fresuni-click'])el.removeAttribute(a);
+ el.style.removeProperty('--fresuni-motion-duration');
+ el.removeAttribute('data-reveal');$('#block-motion').value='none';$('#motion-time').value='650';
+ fsSyncControls(el);dirty();notify('Efeitos deste elemento removidos.');
+});
+$('#fs-motion-preview').addEventListener('click',()=>{
+ const el=fsSelected();if(!el)return;
+ const kind=el.dataset.fresuniMotion||'slide';
+ const duration=fsNumber(parseInt(el.style.getPropertyValue('--fresuni-motion-duration'))||850,100,2400);
+ const poses={
+ fade:[{opacity:0},{opacity:1}],
+ slide:[{opacity:0,transform:'translateY(30px)'},{opacity:1,transform:'none'}],
+ zoom:[{opacity:0,transform:'scale(.9)'},{opacity:1,transform:'none'}],
+ left:[{opacity:0,transform:'translateX(-38px)'},{opacity:1,transform:'none'}],
+ right:[{opacity:0,transform:'translateX(38px)'},{opacity:1,transform:'none'}],
+ blur:[{opacity:0,filter:'blur(7px)'},{opacity:1,filter:'blur(0px)'}],
+ pop:[{opacity:0,transform:'scale(.8)'},{opacity:1,transform:'none'}]
+ };
+ if(kind==='none'&&!el.hasAttribute('data-fresuni-counter')){notify('Escolha uma animação ou configure um contador.');return;}
+ if(kind!=='none'&&el.animate){el.animate(poses[kind]||poses.slide,{duration,easing:'cubic-bezier(.19,.75,.25,1)'});}
+ if(el.hasAttribute('data-fresuni-counter')){
+  const target=Number(el.dataset.fresuniCounter)||0,suffix=el.dataset.fresuniCounterSuffix||'';
+  const start=performance.now();function step(now){
+   if(!el.isConnected)return;
+   const t=Math.min(1,(now-start)/Math.max(650,duration));el.textContent=fsCounterFormat(Math.round(target*(1-Math.pow(1-t,3))))+suffix;
+   if(t<1)frame.contentWindow.requestAnimationFrame(step);
+   else el.textContent=fsCounterFormat(target)+suffix;
+  }
+  frame.contentWindow.requestAnimationFrame(step);
+ }
 });
 
 // Tema: usa variáveis CSS do site sem remover as regras existentes.
