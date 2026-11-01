@@ -189,6 +189,8 @@ function selectElement(el){if(state.selected===el)return;clearSelection();state.
  $('#border-color').value=toHex(cs.borderTopColor,'#8300ea');$('#block-motion').value=el.dataset.fresuniMotion||'none';$('#motion-time').value=parseInt(el.style.getPropertyValue('--fresuni-motion-duration'))||650;
  $('#shape-kind').value=el.dataset.fresuniShape||'box';
  fsSyncControls(el);
+ const gridItem=fsWholeGridItem(el);
+ if(gridItem&&state.editable){gridItem.draggable=true;gridItem.dataset.fresuniDrag='';}
  positionResizeGrip();positionFloatingToolbar();
 }
 let resizeGrip=null,resizeLabel=null,resizing=false,resizeRaf=0;
@@ -236,7 +238,7 @@ function toHex(color,fallback){const m=color.match(/\d+/g);if(!m||m.length<3)ret
 function stripTransient(root){root.classList.remove('dark-mode','high-contrast','simple-mode','reduce-motion');
  $$('link[data-fresuni-async-font],link[data-fresuni-font-catalog]',root).forEach(link=>{link.removeAttribute('data-fresuni-async-font');link.removeAttribute('media');});$$('#fresuni-editor-overlay',root).forEach(x=>x.remove());$$('[data-fresuni-selected]',root).forEach(x=>x.removeAttribute('data-fresuni-selected'));
  $$('[data-fresuni-editable]',root).forEach(x=>{x.removeAttribute('data-fresuni-editable');x.removeAttribute('contenteditable');x.removeAttribute('spellcheck');x.removeAttribute('draggable')});
- $$('[data-fresuni-drag]',root).forEach(x=>x.removeAttribute('data-fresuni-drag'));
+ $('[data-fresuni-drag]',root).forEach(x=>{x.removeAttribute('data-fresuni-drag');x.removeAttribute('draggable');});
  $$('main > .site-page',root).forEach(p=>{p.hidden=p.dataset.route!=='/';});
  root.querySelector('body')?.classList.add('homepage');
  const d=root.querySelector('title');if(d)d.textContent='Início | FRESUNI';
@@ -493,10 +495,31 @@ for(const [id,apply] of [
  ['block-motion',(el,v)=>{el.dataset.fresuniMotion=v;if(v!=='none')el.setAttribute('data-reveal','');else el.removeAttribute('data-reveal');}],
  ['shape-kind',(el,v)=>{el.dataset.fresuniShape=v;el.style.borderRadius=({box:'0',rounded:'20px',pill:'100px',circle:'50%'})[v]||'0';if(v==='circle'){el.style.aspectRatio='1';el.style.width='min(100%,280px)';el.style.display='flex';el.style.flexDirection='column';el.style.justifyContent='center';el.style.alignItems='center';}else{el.style.aspectRatio='auto';if(el.dataset.fresuniBlock==='shape')el.style.display='block';}}]
 ]){$('#'+id).addEventListener('change',e=>{const el=useSelected(id==='shape-kind');if(!el)return;snapshot();apply(el,e.target.value);dirty();positionResizeGrip();});}
-function bindDrag(d){d.addEventListener('dragstart',e=>{if(!e.altKey||!state.editable)return;const el=e.target.closest('[data-fresuni-block]');if(!el||!el.closest('.site-page'))return;dragged=el;e.dataTransfer.effectAllowed='move';});
- d.addEventListener('dragover',e=>{if(dragged&&e.target.closest('[data-fresuni-block]'))e.preventDefault();});
- d.addEventListener('drop',e=>{const target=e.target.closest('[data-fresuni-block]');if(!dragged||!target||target===dragged||dragged.contains(target)||dragged.parentElement!==target.parentElement)return; e.preventDefault();snapshot();const r=target.getBoundingClientRect();target.parentElement.insertBefore(dragged,e.clientY<r.top+r.height/2?target:target.nextSibling);selectElement(dragged);dirty();dragged=null;});
- d.addEventListener('dragend',()=>{dragged=null;});}
+function bindDrag(d){
+ d.addEventListener('dragstart',e=>{
+  if(!e.altKey||!state.editable)return;
+  const el=fsWholeGridItem(e.target)||e.target.closest('[data-fresuni-block]');
+  if(!el||!el.closest('.site-page'))return;
+  dragged=el;e.dataTransfer.effectAllowed='move';
+ });
+ d.addEventListener('dragover',e=>{
+  const target=fsWholeGridItem(e.target)||e.target.closest('[data-fresuni-block]');
+  if(dragged&&target&&dragged.parentElement===target.parentElement&&!dragged.contains(target))e.preventDefault();
+ });
+ d.addEventListener('drop',e=>{
+  const target=fsWholeGridItem(e.target)||e.target.closest('[data-fresuni-block]');
+  if(!dragged||!target||target===dragged||dragged.contains(target)||dragged.parentElement!==target.parentElement)return;
+  e.preventDefault();snapshot();
+  const r=target.getBoundingClientRect();
+  const grid=fsGridParent(target);
+  const dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);
+  const before=grid&&Math.abs(dy)<r.height*.42?dx<0:dy<0;
+  target.parentElement.insertBefore(dragged,before?target:target.nextSibling);
+  const moved=dragged;dragged=null;
+  state.selected=null;selectElement(moved);dirty();
+ });
+ d.addEventListener('dragend',()=>{dragged=null;});
+}
 function blockElement(){const el=state.selected;if(!el)return;return el.closest('[data-fresuni-block]')||el;}
 function isCoreShared(el){return !!el?.closest('.header-actions,.main-nav,.brand,.footer-logo')||el?.matches('.site-header,.site-footer,.header-inner,.footer-inner,.main-nav,.header-actions');}
 function blockMove(direction){const el=blockElement();if(!el||isCoreShared(el))return;
@@ -802,6 +825,14 @@ const fsPropMap={
  'fs-letter-spacing':['letterSpacing',-2,12]
 };
 function fsGridParent(el){return !!el?.parentElement?.matches('.card-grid,.directory-links,[data-fresuni-grid]');}
+function fsWholeGridItem(el){
+ if(!el?.closest)return null;
+ const holder=el.closest('.card-grid,.directory-links,[data-fresuni-grid]');
+ if(!holder||el===holder)return null;
+ let item=el;
+ while(item.parentElement&&item.parentElement!==holder)item=item.parentElement;
+ return item.parentElement===holder?item:null;
+}
 function fsNumber(v,min,max){return Math.min(max,Math.max(min,Number.isFinite(Number(v))?Number(v):0));}
 function fsSyncControls(el){
  if(!el)return;
@@ -867,6 +898,12 @@ fsChange('fs-hover',(el,v)=>{if(v==='none')delete el.dataset.fresuniHover;else e
 fsChange('fs-click',(el,v)=>{
  if(v!=='none'&&!el.matches('a,button,[role="button"]')){notify('O efeito de clique funciona em links e botões. Selecione um desses elementos.');return false;}
  if(v==='none')delete el.dataset.fresuniClick;else el.dataset.fresuniClick=v;
+});
+$('#fs-select-grid-item').addEventListener('click',()=>{
+ const item=fsWholeGridItem(state.selected);
+ if(!item){notify('Selecione primeiro um texto dentro de um cartão ou de uma grade.');return;}
+ state.selected=null;selectElement(item);
+ notify('Caixa completa selecionada. Agora ajuste a largura, o encaixe ou a posição na grade.');
 });
 $('#fs-layout-reset').addEventListener('click',()=>{
  const el=fsSelected();if(!el)return;
