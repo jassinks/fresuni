@@ -89,3 +89,33 @@
 @media(max-width:850px){.login-shell{width:min(600px,100%);grid-template-columns:1fr}.login-art{min-height:0;padding:28px 34px;gap:10px}.login-art h1{font-size:25px}.login-art p{font-size:13px}.login-art-bottom{width:118px;margin-top:10px}.login-card{padding:27px 34px 34px}.editor-layout{grid-template-columns:190px minmax(0,1fr)}}
 @media(max-width:730px){.editor-layout{display:flex;flex-direction:column}.workspace-bottom{align-items:flex-start;flex-wrap:wrap}.login-screen{padding:14px}.login-art{display:flex}.login-shell{border-radius:18px}.login-card{padding:22px 24px 30px}}
 @media(prefers-reduced-motion:reduce){.page-tree-row,.page-item,.login-shell{transition:none!important}}
+
+/* FRESUNI Editor v4 — barra contextual inspirada no fluxo do Google Sites */
+.format-toolbar{gap:7px;align-items:center;position:relative;z-index:2}
+.format-toolbar #font-weight{min-width:128px;max-width:160px}
+.format-toolbar label[title="Marca-texto"] input[type=color]{width:34px}
+.format-toolbar #make-link{min-width:66px;color:#7100c5;font-weight:700;background:#f6edff}
+.format-toolbar #remove-link{color:#735b80}
+.link-editor-card{border:1px solid #ede0f6;background:#fcfaff;border-radius:11px;padding:12px;margin-bottom:10px}
+.link-editor-card h4{margin:0 0 7px;font-size:13px;color:#5b277e}
+.link-editor-card .btn{margin:7px 0;min-height:36px}
+.link-editor-card input[readonly]{background:#f6f2f9;color:#6f6375}
+.link-dialog{max-width:560px;width:min(560px,calc(100% - 26px))}
+.link-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:18px 0}
+.link-tabs button{padding:10px;border:1px solid #ded1e8;background:white;border-radius:8px;font-weight:600;color:#65446e}
+.link-tabs button.active{border:2px solid #8300ea;background:#f7ecff;color:#6b00bc}
+.link-dialog input:not([type=checkbox]),.link-dialog select{display:block;width:100%;min-height:42px;box-sizing:border-box;padding:8px 12px;border:1px solid #bdb0c9;border-radius:8px;font:14px Prompt,Arial,sans-serif}
+.link-dialog .check-label{display:flex;align-items:center;gap:9px}
+.link-dialog .error{font-size:12px;color:#a41138;min-height:1.1em}
+.featured-controls{background:#fcf8ff;border:1px solid #e5d3f5;border-radius:12px;padding:12px;margin:15px 0}
+.featured-controls .btn{margin:7px 0}
+.featured-controls .btn:disabled{opacity:.5;cursor:not-allowed}
+.fresuni-float-toolbar{display:flex;align-items:center;gap:4px;padding:6px 8px;min-width:min(590px,90vw);max-width:calc(100vw - 16px);box-sizing:border-box;overflow-x:auto;white-space:nowrap;background:#fff;border:1px solid #e6d9ee;border-radius:10px;box-shadow:0 12px 35px #30104633;z-index:999999;position:fixed;font:12px Prompt,Arial,sans-serif;color:#33213c}
+.fresuni-float-toolbar[hidden]{display:none!important}
+.fresuni-float-toolbar select{width:100px;min-width:80px;max-width:130px;padding:5px;background:white;border:1px solid #ebe2ee;border-radius:5px;font:12px Prompt,Arial}
+.fresuni-float-toolbar [data-float=weight]{width:110px}
+.fresuni-float-toolbar [data-float=size]{width:46px;min-width:46px;padding:5px;border:1px solid #e0d8e5;border-radius:5px}
+.fresuni-float-toolbar input[type=color]{padding:1px;border:0;background:transparent;width:28px;min-width:28px;height:28px}
+.fresuni-float-toolbar button{min-width:28px;min-height:28px;border:0;border-radius:5px;background:transparent;color:#4a3550;font:600 13px Prompt,Arial}
+.fresuni-float-toolbar button:hover,.fresuni-float-toolbar button:focus-visible{background:#eee0ff;color:#6f00b9;outline:2px solid transparent}
+@media(max-width:900px){.format-toolbar{overflow-x:auto;flex-wrap:nowrap}.format-toolbar label{flex:none}.format-toolbar button{flex-shrink:0}}
