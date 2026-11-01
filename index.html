@@ -184,6 +184,14 @@ html.reduce-motion [data-reveal].fresuni-enter,html.simple-mode [data-reveal].fr
 @media(prefers-reduced-motion:reduce){
  [data-fresuni-hover],[data-fresuni-click]{animation:none!important;transition:none!important;transform:none!important}
 }
+html.reduce-motion [data-fresuni-hover]:hover,
+html.reduce-motion [data-fresuni-hover]:focus-visible,
+html.simple-mode [data-fresuni-hover]:hover,
+html.simple-mode [data-fresuni-hover]:focus-visible,
+html.reduce-motion [data-fresuni-click],
+html.simple-mode [data-fresuni-click]{
+ transform:none!important;animation:none!important;box-shadow:none!important;filter:none!important
+}
 </style></head>
 <body class="inner-page homepage">
 <a class="skip-link" href="#conteudo">Pular para o conteúdo principal</a>
