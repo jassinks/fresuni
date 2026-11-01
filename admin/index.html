@@ -6,7 +6,7 @@
 <title>Editor de conteúdo — FRESUNI Social</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&amp;family=Merriweather:ital,wght@0,300..900;1,300..900&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./editor.css">
+<link rel="stylesheet" href="./editor.css?v=20261101r4">
 </head>
 <body>
 <div id="login-screen" class="login-screen">
@@ -34,7 +34,7 @@
  <header class="topbar">
   <div class="topbrand"><img class="topbar-logo" src="./logo.png" alt=""><div><b>FRESUNI <span>Editor</span></b><small>Gerenciador do site</small></div></div>
   <div class="top-actions">
-   <span id="save-state" role="status" aria-live="polite">Pronto</span>
+   <span id="save-state" role="status" aria-live="polite">Pronto</span><span id="autosave-state" class="autosave-status" role="status" aria-live="polite">◌ Rascunho automático preparado</span>
    <button class="btn" id="undo" title="Desfazer última alteração (Ctrl+Z)">↶ Desfazer</button>
    <button class="btn" id="redo" title="Refazer alteração (Ctrl+Y)">↷ Refazer</button>
    <button class="btn" id="draft-save" title="Salvar rascunho neste navegador">◉ Salvar rascunho</button>
@@ -64,7 +64,7 @@
   <aside class="toolbox" aria-label="Ferramentas de edição">
     <div class="tabbar" role="tablist" aria-label="Seções do editor"><button class="active" role="tab" aria-selected="true" data-tab="insert">Inserir</button><button role="tab" aria-selected="false" data-tab="pages">Páginas</button><button role="tab" aria-selected="false" data-tab="theme">Temas</button><button role="tab" aria-selected="false" data-tab="structure">Cabeçalho e rodapé</button></div>
     <div class="toolbox-scroll">
-      <div data-panel="insert" class="tab-panel">
+      <div data-panel="insert" class="tab-panel"><div id="editor-release" class="editor-release"><strong>Editor FRESUNI · edição livre v2026.11</strong><small>Formulários Google, efeitos animados, ajuste de caixas e salvamento automático</small><div class="editor-quick-actions"><button id="quick-google-form" type="button">▦ Google Formulários</button><button id="quick-effects" type="button">✦ Animações e efeitos</button><button id="quick-save-draft" type="button">◉ Salvar agora</button></div></div>
         <p class="pane-intro">Clique em qualquer título, parágrafo ou link — inclusive na página inicial, cabeçalho e rodapé. Edite direto na prévia ou no campo “Editar texto selecionado” abaixo. Para remover, use “Apagar texto” ou “Excluir elemento”.</p>
         <div class="insert-grid"><button data-insert="text"><span>▤</span>Caixa de texto</button><button data-insert="heading"><span>𝐓</span>Título</button><button data-insert="image"><span>▧</span>Imagem</button><button data-insert="button"><span>⊞</span>Botão</button><button data-insert="accordion"><span>▾</span>Grupo recolhível</button><button data-insert="more"><span>⋯</span>Leia mais</button><button data-insert="box"><span>▢</span>Quadro</button><button data-insert="circle"><span>◯</span>Círculo</button><button data-insert="pill"><span>▱</span>Etiqueta</button><button data-insert="divider"><span>─</span>Divisor</button><button data-insert="quote"><span>❞</span>Citação</button><button data-insert="embed"><span>⌘</span>Incorporar</button><button data-insert="google-forms" type="button" class="google-forms-tool" title="Adicionar formulário, abaixo-assinado ou pesquisa do Google Formulários"><span>▦</span>Google Formulários</button><button data-insert="list"><span>☷</span>Lista</button></div>
         <section id="home-quick-tools" class="home-quick-tools" aria-labelledby="home-quick-title">
@@ -78,7 +78,7 @@
           <p class="hint">Você pode duplicar, redimensionar ou mover os itens existentes com as setas ← →. O site só muda para os visitantes depois de publicar.</p>
         </section>
         <div class="sep"></div><h3>Elemento selecionado</h3><p id="selection-name" class="selection-empty">Selecione um texto, uma imagem ou um bloco na página.</p>
-        <div id="selection-props" hidden><section id="selected-text-panel" class="selected-text-panel" hidden>
+        <p id="selection-instructions" class="hint">Clique em qualquer texto do site, inclusive em notícias, artigos, botões e rodapé. Depois use os controles de animação e disposição que aparecem aqui.</p><div id="selection-props" hidden><section id="selected-text-panel" class="selected-text-panel" hidden>
           <h4>Editar texto selecionado</h4>
           <p class="hint">Edite aqui os textos do início, notícias, títulos ou rodapé. O resultado aparece na prévia, sem publicar automaticamente.</p>
           <label for="selected-text-content">Texto</label>
@@ -210,5 +210,5 @@
  </form></dialog>
  <input id="upload-image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden><input id="upload-shared-logo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>
 </div>
-<script src="./config.js"></script><script src="./editor.js" defer></script>
+<script src="./config.js?v=20261101r4"></script><script src="./editor.js?v=20261101r4" defer></script>
 </body></html>
