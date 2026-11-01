@@ -116,7 +116,7 @@ function reloadFrame(html,route=state.route){
    .fresuni-resize-grip:focus-visible{outline:3px solid #333;outline-offset:4px}
    .fresuni-resize-label{position:absolute;z-index:99998;background:#2d0c4f;color:white;font:12px Prompt,Arial,sans-serif;padding:3px 8px;border-radius:5px;pointer-events:none}
    body{scroll-behavior:auto!important}
-   [data-reveal]{opacity:1!important;transform:none!important;visibility:visible!important}
+   [data-reveal]:not(.fresuni-previewing){opacity:1!important;transform:none!important;visibility:visible!important}
    @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}`;
   style.textContent+=`
 .fresuni-quick-add{font:600 13px Prompt,Arial,sans-serif!important;color:#8300ea!important;background:#fbf7ff!important;border:1px dashed #9c3bdf!important;padding:12px!important;border-radius:8px!important;cursor:pointer!important;min-height:44px!important;text-align:left!important;max-width:100%!important;min-width:0!important}.fresuni-quick-add:hover,.fresuni-quick-add:focus-visible{background:#f0ddff!important;outline:2px solid #8300ea!important}`;
@@ -241,7 +241,15 @@ function stripTransient(root){root.classList.remove('dark-mode','high-contrast',
  root.querySelector('body')?.classList.add('homepage');
  const d=root.querySelector('title');if(d)d.textContent='Início | FRESUNI';
  root.querySelector('.main-nav')?.classList.remove('nav-open');
- $$('[data-editor-internal]',root).forEach(x=>x.remove());
+ // Limpar somente estados efêmeros; preservar configurações dos efeitos.
+ $('[data-fresuni-counted]',root).forEach(el=>el.removeAttribute('data-fresuni-counted'));
+ $('[data-fresuni-counter]',root).forEach(el=>{
+  const v=Math.max(0,Math.min(1000000,Number(el.dataset.fresuniCounter)||0));
+  const formatted=new Intl.NumberFormat('pt-BR',{maximumFractionDigits:0}).format(v);
+  el.textContent=formatted+(el.dataset.fresuniCounterSuffix||'');
+ });
+ $('.fresuni-activated,.fresuni-enter,.fresuni-previewing',root).forEach(el=>el.classList.remove('fresuni-activated','fresuni-enter','fresuni-previewing'));
+ $('[data-editor-internal]',root).forEach(x=>x.remove());
 }
 function refreshSearch(root){const scripts=$$('script',root);const script=scripts.find(s=>s.textContent.includes('window.FRESUNI_SEARCH_INDEX='));if(!script)return;
  const match=script.textContent.match(/window\.FRESUNI_SEARCH_INDEX=(\[[^\n]*?\]);/);if(!match)return;
@@ -911,7 +919,12 @@ $('#fs-motion-preview').addEventListener('click',()=>{
  pop:[{opacity:0,transform:'scale(.8)'},{opacity:1,transform:'none'}]
  };
  if(kind==='none'&&!el.hasAttribute('data-fresuni-counter')){notify('Escolha uma animação ou configure um contador.');return;}
- if(kind!=='none'&&el.animate){el.animate(poses[kind]||poses.slide,{duration,easing:'cubic-bezier(.19,.75,.25,1)'});}
+ if(kind!=='none'&&el.animate){
+  el.classList.add('fresuni-previewing');
+  const a=el.animate(poses[kind]||poses.slide,{duration,easing:'cubic-bezier(.19,.75,.25,1)'});
+  a.onfinish=()=>el.classList.remove('fresuni-previewing');
+  a.oncancel=()=>el.classList.remove('fresuni-previewing');
+ }
  if(el.hasAttribute('data-fresuni-counter')){
   const target=Number(el.dataset.fresuniCounter)||0,suffix=el.dataset.fresuniCounterSuffix||'';
   const start=performance.now();function step(now){
