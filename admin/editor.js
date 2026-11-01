@@ -812,10 +812,17 @@ function showPublishError(err){
  setStatus('Publicação não realizada · rascunho preservado');
 }
 $('#diagnose-publish').addEventListener('click',async()=>{
- const out=$('#diagnose-publish-result');out.textContent='Conferindo acesso ao repositório…';
- try{const r=await api('/permissions');const access=r.canPush===true?'O GitHub informa que o token pode escrever neste repositório.':r.canPush===false?'O GitHub informa que este token NÃO possui permissão de escrita.':'O GitHub não informou claramente a permissão de escrita.';
- out.textContent='Repositório: '+r.repository+' · Branch: '+r.branch+'\n'+access+'\n'+(r.guidance||'');
- }catch(e){out.textContent='Não foi possível verificar o acesso: '+e.message+' Atualize o código do Worker com o pacote fornecido e execute npx.cmd wrangler deploy.';}
+ const out=$('#diagnose-publish-result'),btn=$('#diagnose-publish');
+ btn.disabled=true;out.textContent='Testando permissão real de escrita do token da Cloudflare, sem alterar páginas…';
+ try{
+  const r=await api('/write-check',{method:'POST',body:'{}'});
+  out.textContent=(r.writeAllowed===true?'ESCRITA AUTORIZADA':'ESCRITA RECUSADA')+
+   '\nRepositório: '+(r.repository||'jassinks/fresuni')+' · HTTP '+r.status+
+   (r.requiredPermissions?'\nPermissão exigida pelo GitHub: '+r.requiredPermissions:'')+
+   (r.githubMessage?'\nResposta do GitHub: '+r.githubMessage:'')+
+   '\n'+(r.guidance||'');
+ }catch(e){out.textContent='Não foi possível completar o teste: '+e.message+'\nConfira se o Worker foi atualizado e publicado via npx.cmd wrangler deploy.';}
+ finally{btn.disabled=false;}
 });
 $('#dismiss-publish-error').addEventListener('click',()=>$('#publish-error').hidden=true);
 $('#copy-publish-error').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('#publish-error-message').textContent);notify('Detalhes copiados sem dados secretos.');}catch{notify('Selecione e copie a mensagem de erro.');}});
