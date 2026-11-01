@@ -190,3 +190,17 @@
 .google-forms-dialog .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
 .google-forms-dialog .modal-actions button{min-height:43px;border-radius:8px;font-weight:700}
 @media(max-width:540px){.google-forms-dialog{padding:21px 17px}}
+
+/* FRESUNI Editor 2026.11 — interface verificável */
+.autosave-status{font:600 11px/1.35 Prompt,Arial,sans-serif;color:#64606b;background:#f5f4f6;padding:6px 9px;border-radius:8px;border:1px solid #dfdce3;white-space:normal;max-width:200px}
+.autosave-status[data-status="saving"]{background:#fff8e7;color:#865c1b;border-color:#f0dfbb}
+.autosave-status[data-status="ok"]{background:#f0faf4;color:#226342;border-color:#bfe7cd}
+.autosave-status[data-status="error"]{background:#fff2ee;color:#9c3725;border-color:#f0c9ba}
+.editor-release{border:1px solid #d8bbed;border-radius:12px;padding:13px;background:linear-gradient(140deg,#fdfaff,#f4e8ff);margin-bottom:16px}
+.editor-release strong{display:block;font-size:13px;color:#5e188c;line-height:1.4}
+.editor-release small{display:block;font-size:11px;color:#735b86;margin-top:3px;line-height:1.5}
+.editor-quick-actions{display:grid;grid-template-columns:1fr;gap:7px;margin-top:11px}
+.editor-quick-actions button{display:block;box-sizing:border-box;width:100%;border:1px solid #cda4ee;border-radius:8px;padding:10px 12px;min-height:40px;text-align:left;background:white;color:#662091;font:600 12px Prompt,Arial,sans-serif;cursor:pointer}
+.editor-quick-actions button:hover,.editor-quick-actions button:focus-visible{border-color:#8e37d6;background:#f5eaff}
+#selection-instructions{padding:11px 12px;border-radius:8px;border-left:3px solid #8300ea;background:#faf6ff;color:#5f5268}
+@media(max-width:1320px){.autosave-status{max-width:125px;white-space:normal;font-size:10px}}
