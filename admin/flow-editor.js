@@ -4,11 +4,13 @@
  if(!bridge)return;
  const $=s=>document.querySelector(s);
  const zones='.directory-links,.card-grid,.directory-row,.home-opening,.home-directory,.prose,.page-article,.page-shell,.home-wrap,.home-values,.value-section,[data-fresuni-flow-grid]';
- const internal='[data-editor-internal],.sr-only,[data-fresuni-page-meta],.breadcrumbs';
+ const internal='[data-editor-internal],.sr-only,.breadcrumbs';
  let enabled=true,handle=null,drag=null,doc=null;
  function children(z){return [...z.children].filter(x=>!x.matches(internal));}
  function sourceFor(el){
   if(!el||!el.isConnected||!el.closest('.site-page:not([hidden])')||el.closest(internal))return null;
+  const stamp=el.closest('[data-fresuni-page-meta]');
+  if(stamp)return stamp;
   const z=el.closest(zones);if(!z)return null;
   let n=el;while(n.parentElement&&n.parentElement!==z)n=n.parentElement;
   return n.parentElement===z&&!n.matches(internal)?n:null;
