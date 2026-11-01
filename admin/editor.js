@@ -1387,7 +1387,7 @@ $('#quick-effects')?.addEventListener('click',()=>{
  $('#block-motion')?.focus();
 });
 
-window.FRESUNI_EDITOR_BRIDGE={state,frame,siteDoc,selectElement,clearSelection,snapshot,dirty,notify,positionResizeGrip};
+window.FRESUNI_EDITOR_BRIDGE={get selected(){return state.selected;},set selected(value){state.selected=value;},get editable(){return state.editable;},frame,siteDoc,selectElement,clearSelection,snapshot,dirty,notify,positionResizeGrip};
 window.addEventListener('beforeunload',e=>{if(state.dirty&&fsLastSavedRevision<fsDraftRevision){e.preventDefault();e.returnValue='';}});
 document.addEventListener('keydown',e=>{if(app.hidden||!(e.ctrlKey||e.metaKey))return;
  if(e.key.toLowerCase()==='s'){e.preventDefault();$('#draft-save').click();}
