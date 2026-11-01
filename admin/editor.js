@@ -257,7 +257,7 @@ async function restoreDraftIfAny(){let draft;try{draft=await draftAction('get');
 
  // Matérias são arquivadas pela data de publicação original, nunca pela última atualização.
  function fsNewsCurrentMonth(){
-  return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit'}).format(new Date()).replace(/[^0-9-]/g,'').slice(0,7);
+  const p=Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit'}).formatToParts(new Date()).map(x=>[x.type,x.value]));return p.year+'-'+p.month;
  }
  function fsIsNewsStory(page){
   return !!page?.dataset?.route && page.dataset.route.startsWith('/noticias/') &&
@@ -273,7 +273,7 @@ async function restoreDraftIfAny(){let draft;try{draft=await draftAction('get');
  function fsRefreshNewsArchives(root){
   const main=root.querySelector('main#conteudo'),collection=main?.querySelector('.site-page[data-route="/noticias"]');
   if(!collection)return;
-  const doc=root.ownerDocument;
+  const doc=root.nodeType===9?root:root.ownerDocument;
   const yearNow=Number(fsNewsCurrentMonth().slice(0,4));
   const months=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   const stories=[...main.querySelectorAll('.site-page[data-route]')].filter(fsIsNewsStory).map(page=>{
