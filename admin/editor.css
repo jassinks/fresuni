@@ -119,3 +119,28 @@
 .fresuni-float-toolbar button{min-width:28px;min-height:28px;border:0;border-radius:5px;background:transparent;color:#4a3550;font:600 13px Prompt,Arial}
 .fresuni-float-toolbar button:hover,.fresuni-float-toolbar button:focus-visible{background:#eee0ff;color:#6f00b9;outline:2px solid transparent}
 @media(max-width:900px){.format-toolbar{overflow-x:auto;flex-wrap:nowrap}.format-toolbar label{flex:none}.format-toolbar button{flex-shrink:0}}
+
+/* Editor FRESUNI: ferramentas de cabeçalho e rodapé */
+.tabbar{grid-template-columns:repeat(4,minmax(0,1fr));height:auto;min-height:64px}
+.tabbar button{font-size:11px;line-height:1.25;padding:8px 3px;overflow-wrap:anywhere}
+.shared-switches{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:13px 0}
+.shared-switches button{font-size:12px;white-space:normal;min-height:42px;border:1px solid #decbea;border-radius:8px;color:#6818a0;background:#faf5ff}
+.structure-links{display:flex;flex-direction:column;gap:10px;margin:13px 0 19px}
+.structure-link-row{border:1px solid #e8def1;border-radius:9px;padding:10px;display:flex;flex-direction:column;gap:6px;background:#fdfbff}
+.structure-link-row small{font-size:10px;color:#7b647f;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.structure-link-row input{width:100%;min-width:0;font-size:12px;padding:9px;box-sizing:border-box;border-radius:6px;border:1px solid #d9cfde;background:white;color:#221d23}
+.structure-link-actions{display:flex;gap:5px;justify-content:flex-end}
+.structure-link-actions button{min-width:36px;min-height:32px;border-radius:6px;border:1px solid #ddd2e6;background:white;color:#7400c6}
+[data-panel="structure"] textarea{width:100%;min-height:85px;border:1px solid #ded2e7;border-radius:7px;padding:10px;box-sizing:border-box;font:400 12px/1.5 Prompt,Arial,sans-serif;resize:vertical}
+[data-panel="structure"] label{display:block;margin:12px 0 6px}
+[data-panel="structure"] label>input:not([type=color]),[data-panel="structure"] select{box-sizing:border-box;width:100%;padding:9px;border-radius:7px;border:1px solid #ded2e7;background:white;min-height:38px}
+[data-panel="structure"] h3{margin-top:10px}
+@media(max-width:1050px){.tabbar button{font-size:10px}}
+
+/* Edição direta dos textos institucionais sem sobreposição */
+.selected-text-panel{padding:14px 11px;margin:10px 0 14px;border:1px solid #dfcce9;border-radius:12px;background:#fbf6ff}
+.selected-text-panel h4{margin:0 0 8px;font-size:14px;color:#5c1891}
+.selected-text-panel label{display:block;margin-top:8px;font-size:12px;font-weight:700}
+.selected-text-panel textarea{box-sizing:border-box;display:block;width:100%;min-height:100px;max-height:400px;resize:vertical;padding:10px;border:1px solid #aa8cc1;border-radius:8px;font:400 13px/1.5 Prompt,Arial,sans-serif;background:#fff;color:#1d1527}
+.selected-text-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
+.selected-text-actions button{white-space:normal;min-width:0}
