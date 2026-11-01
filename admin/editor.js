@@ -124,7 +124,7 @@ function reloadFrame(html,route=state.route){
   for(const p of pageNodes())p.dataset.editorGroup=groupFor(p);
   d.addEventListener('click',clickSite,true);
   d.addEventListener('focusin',e=>{if(e.target?.isContentEditable&&state.editable)remember();},true);
-  bindDrag(d);setupResizeGrip(d);setupFloatingToolbar(d);
+  bindDrag(d);setupResizeGrip(d);setupFloatingToolbar(d);setupGoogleFormsHandles(d);
   d.addEventListener('input',e=>{if(e.target?.isContentEditable){dirty();if(e.target===state.selected)updateTextInspector(e.target);requestAnimationFrame(positionResizeGrip);}});
   d.addEventListener('focusout',e=>{if(e.target?.isContentEditable){dirty();}},true);
   d.addEventListener('selectionchange',()=>{captureTextSelection();requestAnimationFrame(positionFloatingToolbar);});
@@ -308,7 +308,7 @@ function insertHTML(html){if(!state.editable){notify('Volte ao modo de edição 
  dest.parent.insertBefore(tpl.content,dest.before);setEditable(true);if(first)selectElement(first);dirty();
  first?.scrollIntoView({behavior:'smooth',block:'center'});
 }
-function actionInsert(type){const types={
+function actionInsert(type){if(type==='google-forms'){fsOpenGoogleForms();return;}const types={
  text:'<p data-fresuni-block="text">Escreva seu texto aqui. Clique para editar.</p>',
  heading:'<h2 data-fresuni-block="heading" style="font-family:Merriweather,serif;color:#8300ea">Novo título</h2>',
  button:'<p data-fresuni-block="button"><a class="editor-public-button" href="#/filiacao" style="display:inline-block;background:#8300ea;color:white;padding:12px 20px;border-radius:7px;text-decoration:none;font-weight:600">Clique aqui</a></p>',
@@ -328,6 +328,133 @@ function actionInsert(type){const types={
   insertHTML(`<div data-fresuni-block="embed" style="max-width:900px;margin:25px auto"><iframe title="Conteúdo incorporado" loading="lazy" src="${escapeHTML(safe)}" sandbox="allow-scripts allow-same-origin allow-presentation allow-forms" referrerpolicy="no-referrer" style="width:100%;min-height:390px;border:0;border-radius:10px"></iframe></div>`);return;}
  insertHTML(types[type]||types.text);
 }
+// Google Formulários: integrações reais dentro da página, configuráveis no editor.
+// Não é necessário colocar scripts do Google no site nem mexer no Worker.
+const gfDialog=$('#google-forms-dialog'),gfInput=$('#google-forms-url');
+let gfEditing=null;
+function fsParseGoogleForm(raw,mode){
+ let text=String(raw||'').trim(),suggestedHeight=0;
+ if(!text)throw Error('Cole o link para responder ao formulário ou o código de incorporação.');
+ if(/^<iframe\b/i.test(text)){
+  const doc=new DOMParser().parseFromString(text,'text/html');
+  const iframe=doc.querySelector('iframe');
+  if(!iframe)throw Error('Não foi possível reconhecer o iframe. Copie o código de incorporação do Google Formulários.');
+  suggestedHeight=Number(iframe.getAttribute('height'))||0;
+  text=iframe.getAttribute('src')||'';
+ }
+ let url;try{url=new URL(text);}catch{throw Error('O endereço precisa começar com https://.');}
+ if(url.protocol!=='https:'||url.username||url.password)throw Error('Use um link HTTPS público do Google Formulários.');
+ const host=url.hostname.toLowerCase();
+ const short=host==='forms.gle';
+ const full=host==='docs.google.com'&&/^\/forms\/(?:u\/\d+\/)?d\/(?:e\/)?[a-z0-9_-]+\/viewform\/?$/i.test(url.pathname);
+ if(!short&&!full)throw Error('Use um link de resposta do Google Formulários (docs.google.com/forms/…/viewform) ou um link curto forms.gle.');
+ if(short&&mode==='embed')throw Error('Links curtos forms.gle não podem ser incorporados diretamente. No Google Formulários, copie o código de incorporação (<>) ou escolha “Botão para abrir”.');
+ if(full&&mode==='embed')url.searchParams.set('embedded','true');
+ url.hash='';
+ return {url:url.toString(),suggestedHeight,short};
+}
+function fsGoogleFormBlock({url,title,height,mode}){
+ const name=String(title||'Formulário do FRESUNI').trim().slice(0,120)||'Formulário do FRESUNI';
+ const safeTitle=escapeHTML(name),safeUrlText=escapeHTML(url);
+ const label='<h2 class="fresuni-google-forms-title" style="font-family:Merriweather,Georgia,serif;font-size:1.4rem;line-height:1.4;color:var(--purple,#8300ea);margin:0 0 14px">'+safeTitle+'</h2>';
+ const link='<a href="'+safeUrlText+'" target="_blank" rel="noopener noreferrer" class="fresuni-google-form-link" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:11px 18px;border:1px solid var(--purple,#8300ea);border-radius:8px;color:var(--purple,#8300ea);font-family:Prompt,Arial,sans-serif;font-weight:600;text-decoration:none;overflow-wrap:anywhere">Abrir formulário em outra aba ↗</a>';
+ const iframe=mode==='embed'?'<iframe title="'+safeTitle+'" src="'+safeUrlText+'" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" sandbox="allow-forms allow-scripts allow-same-origin allow-popups" style="display:block;width:100%;height:'+height+'px;border:1px solid #e4d7eb;border-radius:10px;background:#fff;max-width:100%" allow="clipboard-write"></iframe>':'';
+ const content=label+iframe+'<div style="margin-top:12px">'+link+'</div>';
+ return '<section data-fresuni-block="google-forms" data-fresuni-google-forms-mode="'+mode+'" class="fresuni-google-forms" style="box-sizing:border-box;grid-column:1 / -1;width:100%;max-width:960px;min-width:0;margin:28px auto;padding:0;overflow-wrap:anywhere">'+content+'</section>';
+}
+function fsGoogleFormHost(){
+ const page=selectedPage();if(!page)return null;
+ const selected=state.selected?.closest('.site-page')===page?state.selected:null;
+ if(selected){
+  const directory=selected.closest('.directory-links');
+  if(directory){
+   const selectedItem=fsWholeGridItem(selected);
+   return {parent:directory,before:selectedItem?.nextSibling||null};
+  }
+  const cards=selected.closest('.card-grid');
+  if(cards){
+   const selectedItem=fsWholeGridItem(selected);
+   return {parent:cards,before:selectedItem?.nextSibling||null};
+  }
+  // Não aninhar iframe em parágrafos, links ou cartões já existentes.
+  const holder=selected.closest('.prose,.page-shell,.home-wrap,.home-values,.site-page');
+  if(holder){
+   let child=selected;
+   while(child.parentElement&&child.parentElement!==holder)child=child.parentElement;
+   if(child.parentElement===holder)return {parent:holder,before:child.nextSibling};
+  }
+ }
+ const holder=page.querySelector('.prose,.page-shell,.home-wrap,.home-values')||page;
+ return {parent:holder,before:null};
+}
+function fsOpenGoogleForms(edit=null){
+ if(!state.editable){notify('Volte ao modo de edição para integrar um formulário.');return;}
+ const current=edit||state.selected?.closest?.('[data-fresuni-block="google-forms"]')||null;
+ gfEditing=current?.isConnected?current:null;
+ const mode=gfEditing?.dataset.fresuniGoogleFormsMode||(gfEditing?.querySelector('iframe')?'embed':'link')||'embed';
+ const src=gfEditing?.querySelector('iframe')?.getAttribute('src')||gfEditing?.querySelector('a[href]')?.getAttribute('href')||'';
+ gfInput.value=src;
+ $('#google-forms-title').value=gfEditing?.querySelector('.fresuni-google-forms-title')?.textContent||'Formulário do FRESUNI';
+ $('#google-forms-mode').value=mode;
+ $('#google-forms-height').value=parseInt(gfEditing?.querySelector('iframe')?.style.height)||800;
+ $('#google-forms-submit').textContent=gfEditing?'Atualizar formulário':'Integrar à página';
+ $('#google-forms-warning').hidden=true;
+ fsToggleGoogleMode();
+ gfDialog.showModal();
+ gfInput.focus();
+}
+function fsToggleGoogleMode(){$('#google-forms-height-wrap').hidden=$('#google-forms-mode').value!=='embed';}
+$('#google-forms-mode').addEventListener('change',fsToggleGoogleMode);
+$('#google-forms-cancel').addEventListener('click',()=>gfDialog.close());
+gfDialog.addEventListener('close',()=>{gfEditing=null;});
+$('#google-forms-form').addEventListener('submit',event=>{
+ event.preventDefault();
+ const mode=$('#google-forms-mode').value;
+ let parsed;
+ const warning=$('#google-forms-warning');
+ try{parsed=fsParseGoogleForm(gfInput.value,mode);}catch(e){warning.textContent=e.message;warning.hidden=false;gfInput.focus();return;}
+ const name=$('#google-forms-title').value.trim()||'Formulário do FRESUNI';
+ const height=Math.max(350,Math.min(2600,Number($('#google-forms-height').value)||parsed.suggestedHeight||800));
+ const rendered=fsGoogleFormBlock({url:parsed.url,title:name,height,mode});
+ const target=gfEditing;
+ const d=siteDoc();
+ if(!d){warning.textContent='A prévia do site ainda não foi carregada.';warning.hidden=false;return;}
+ const template=d.createElement('template');template.innerHTML=rendered;
+ const replacement=template.content.firstElementChild;
+ if(!replacement){warning.textContent='Não foi possível montar o formulário.';warning.hidden=false;return;}
+ if(target?.isConnected){
+  snapshot();
+  // Preservar ajustes de largura e margens feitos na edição anterior.
+  const keepStyle=target.getAttribute('style');
+  if(keepStyle)replacement.setAttribute('style',keepStyle);
+  target.replaceWith(replacement);
+ }else{
+  const dest=fsGoogleFormHost();
+  if(!dest){warning.textContent='Selecione uma página para inserir o formulário.';warning.hidden=false;return;}
+  snapshot();
+  dest.parent.insertBefore(replacement,dest.before);
+ }
+ if(replacement.parentElement?.matches('.card-grid,.directory-links'))replacement.style.gridColumn='1 / -1';
+ gfDialog.close();
+ fsEnsureGoogleFormHandle(replacement);
+ state.selected=null;
+ selectElement(replacement);
+ dirty();
+ replacement.scrollIntoView({behavior:'smooth',block:'center'});
+ notify('Google Formulários integrado ao rascunho. Publique quando estiver pronto.');
+});
+function fsEnsureGoogleFormHandle(section){
+ if(!section||section.querySelector('[data-fresuni-google-edit]'))return;
+ const d=section.ownerDocument;
+ const button=d.createElement('button');button.type='button';button.className='fresuni-google-edit';button.textContent='✎ Editar Google Formulários';button.dataset.editorInternal='';button.dataset.fresuniGoogleEdit='';
+ button.style.cssText='display:block;margin:0 0 12px;padding:9px 14px;border:1px dashed #8300ea;border-radius:8px;color:#6500a8;background:#faf5ff;font:600 13px Prompt,Arial,sans-serif;cursor:pointer';
+ button.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();state.selected=null;selectElement(section);fsOpenGoogleForms(section);});
+ section.insertBefore(button,section.firstChild);
+}
+function setupGoogleFormsHandles(d){
+ $$('.fresuni-google-forms[data-fresuni-block="google-forms"]',d).forEach(fsEnsureGoogleFormHandle);
+}
+
 $$('[data-insert]').forEach(b=>b.addEventListener('click',()=>actionInsert(b.dataset.insert)));
 $('#upload-image').addEventListener('change',async e=>{const file=e.target.files[0];e.target.value='';if(!file)return;if(file.size>8*1024*1024){notify('A imagem deve ter no máximo 8 MB antes da compactação.');return;}
  try{const data=await resizeImage(file);const alt=prompt('Descreva a imagem para leitores de tela (texto alternativo):','')||'';
