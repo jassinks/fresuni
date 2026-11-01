@@ -265,6 +265,21 @@ function serialize(){const d=siteDoc();if(!d)return state.html;
  const head=root.querySelector('head');if(head){for(const el of Array.from(head.querySelectorAll('link[rel=stylesheet]'))){if((el.getAttribute('href')||'').includes('fonts.googleapis.com/css2'))el.remove();}const fontLink=root.ownerDocument.createElement('link');fontLink.rel='stylesheet';fontLink.href=COMPLETE_FONTS;head.append(fontLink);}
  const style=root.querySelector('#fresuni-extra-effects')||root.ownerDocument.createElement('style');style.id='fresuni-extra-effects';style.textContent=motionCss;
  if(!style.isConnected)root.querySelector('head').append(style);
+ // Ao recuperar um rascunho anterior, preservar os mecanismos de animação
+ // já publicados: eles não são conteúdo editável pelo visitante.
+ try{
+  const published=new DOMParser().parseFromString(state.html,'text/html');
+  for(const id of ['fresuni-motion-2026','fresuni-motion-runtime-2026',
+                   'fresuni-interactive-effects-2026','fresuni-interactive-effects-runtime-2026']){
+   const canonical=published.getElementById(id);
+   if(!canonical)continue;
+   let saved=root.querySelector('#'+id);
+   if(!saved){
+    saved=canonical.cloneNode(true);
+    (canonical.tagName==='STYLE'?root.querySelector('head'):root.querySelector('body'))?.append(saved);
+   }else if(saved.textContent!==canonical.textContent)saved.textContent=canonical.textContent;
+  }
+ }catch(e){/* Preservamos o restante do rascunho se não for possível analisar a base. */}
  return '<!doctype html>\n'+root.outerHTML;
 }
 function snapshot(){remember();dirty();}
