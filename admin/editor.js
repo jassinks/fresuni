@@ -165,6 +165,51 @@ async function restoreDraftIfAny(){let draft;try{draft=await draftAction('get');
    state.restoring=true;state.undo=[];state.redo=[];state.dirty=true;fsDraftRevision++;fsLastSavedRevision=fsDraftRevision;fsAutosaveStatus('✓ Rascunho recuperado do navegador','ok');reloadFrame(draft.html,draft.route&&draft.html.includes('data-route="'+draft.route+'"')?draft.route:'/');state.restoring=false;setStatus('Rascunho recuperado · não publicado');notify('Rascunho recuperado neste navegador.');return true;
  }return false;}
 
+
+ // Metadados editoriais automáticos: mudar somente na publicação, jamais em visitas.
+ function fsPageDate(value){
+  const date=new Date(value);
+  const parts=Object.fromEntries(new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(date).map(x=>[x.type,x.value]));
+  return parts.day+'/'+parts.month+'/'+parts.year+' às '+parts.hour+':'+parts.minute;
+ }
+ function fsPageDateElement(doc,created,updated){
+  const div=doc.createElement('div');div.className='fresuni-page-meta';div.setAttribute('data-fresuni-page-meta','');div.setAttribute('data-created-at',created);div.setAttribute('data-updated-at',updated);div.setAttribute('role','note');div.setAttribute('aria-label','Histórico desta página');
+  for(const [label,value] of [['Criado em:',created],['Última atualização:',updated]]){
+   const span=doc.createElement('span'),strong=doc.createElement('strong'),time=doc.createElement('time');
+   strong.textContent=label;time.dateTime=value;time.textContent=fsPageDate(value);span.append(strong,doc.createTextNode(' '),time);div.append(span);
+  }
+  return div;
+ }
+ function fsComparePageForDates(page){
+  if(!page)return '';
+  const copy=page.cloneNode(true);copy.removeAttribute('hidden');copy.removeAttribute('data-editor-group');
+  copy.querySelectorAll('[data-fresuni-page-meta]').forEach(el=>el.remove());
+  copy.querySelectorAll('.is-visible,.fresuni-enter,.fresuni-activated').forEach(el=>el.classList.remove('is-visible','fresuni-enter','fresuni-activated'));
+  return copy.outerHTML;
+ }
+ function fsPreparePublishDates(html){
+  const next=new DOMParser().parseFromString(html,'text/html');
+  const original=new DOMParser().parseFromString(state.html,'text/html');
+  const oldPages=new Map([...original.querySelectorAll('main > .site-page[data-route]')].map(p=>[p.dataset.route,p]));
+  const now=new Date().toISOString();
+  const sharedChanged=(original.querySelector('.site-header')?.outerHTML||'')!==(next.querySelector('.site-header')?.outerHTML||'')||(original.querySelector('.site-footer')?.outerHTML||'')!==(next.querySelector('.site-footer')?.outerHTML||'');
+  for(const page of next.querySelectorAll('main > .site-page[data-route]')){
+   const previous=oldPages.get(page.dataset.route);
+   const priorMeta=previous?.querySelector('[data-fresuni-page-meta]');
+   const created=previous?(priorMeta?.dataset.createdAt||now):now;
+   const updated=previous&&fsComparePageForDates(previous)===fsComparePageForDates(page)&&!sharedChanged?(priorMeta?.dataset.updatedAt||now):now;
+   page.querySelectorAll('[data-fresuni-page-meta]').forEach(el=>el.remove());
+   // Impede duplicação da data manual antiga ao recuperar rascunhos anteriores.
+   if(page.dataset.route==='/noticias/um-novo-site-fresuni')page.querySelectorAll('p[data-fresuni-block="text"]').forEach(p=>{if(p.textContent.trim().startsWith('Úlitma atualização 01/11/2026'))p.remove();});
+   page.append(fsPageDateElement(next,created,updated));
+  }
+  if(!next.getElementById('fresuni-page-meta-style')){
+   const publishedStyle=original.getElementById('fresuni-page-meta-style');
+   if(publishedStyle)next.head.append(publishedStyle.cloneNode(true));
+  }
+  return '<!doctype html>\n'+next.documentElement.outerHTML;
+ }
+
 function remember(){const html=serialize();if(state.undo[state.undo.length-1]!==html){state.undo.push(html);if(state.undo.length>25)state.undo.shift();state.redo=[];}}
 function selectRoute(route){
  if(!pageFor(route))return;
@@ -238,7 +283,7 @@ function reloadFrame(html,route=state.route){
 const editTextSelectors='h1,h2,h3,h4,h5,h6,p,li,summary,blockquote,cite,figcaption,dt,dd,th,td,small,caption,span,strong,em,b,i,mark,code,label,a,button,div,section,article,[data-fresuni-editor-text]';
 function editableTextElement(el){
  if(!el?.closest?.('.site-page,.site-header,.site-footer'))return false;
- if(el.closest('script,style,svg,iframe,.access-panel,.header-actions,.breadcrumbs,[data-editor-internal],.fresuni-quick-add'))return false;
+ if(el.closest('script,style,svg,iframe,.access-panel,.header-actions,.breadcrumbs,[data-editor-internal],.fresuni-quick-add,[data-fresuni-page-meta]'))return false;
  if(!el.matches(editTextSelectors))return false;
  if(el.matches('div,section,article')){
   if(el.matches('.site-page,.page-shell,.container,.home-wrap,.directory-row,.directory-links,.card-grid,.site-header,.site-footer,[data-fresuni-block="google-forms"]'))return false;
@@ -277,7 +322,7 @@ function clickSite(e){
  if(target.closest('a,button,summary'))e.preventDefault();
  const summary=target.closest('summary');
  if(summary&&summary.parentElement?.tagName==='DETAILS')summary.parentElement.open=!summary.parentElement.open;
- if(target.closest('.access-panel,.header-actions'))return;
+ if(target.closest('.access-panel,.header-actions,[data-fresuni-page-meta]'))return;
  const currentEditable=target.closest('[data-fresuni-editable]');
  let el=currentEditable||target.closest('p,h1,h2,h3,h4,h5,h6,li,summary,blockquote,cite,figcaption,dt,dd,th,td,small,label,button,img,iframe,a,figure,details,hr,span,strong,em,b,i,mark,code,div,section,article,[data-fresuni-block]');
  if(!el||!el.closest('.site-page,.site-header,.site-footer')){
@@ -914,7 +959,7 @@ function movePage(direction){const p=selectedPage();if(!p||p.dataset.route==='/'
 $('#page-up').addEventListener('click',()=>movePage('up'));$('#page-down').addEventListener('click',()=>movePage('down'));
 $('#duplicate-page').addEventListener('click',()=>{const p=selectedPage();if(!p)return;const name=prompt('Nome da cópia:',titleOf(p)+' (cópia)');if(!name)return;
  const parent=parentRouteOf(p)||'/';let route=(parent==='/'?'':parent)+'/'+slug(name);if(pageFor(route)){notify('Já existe uma página com esse endereço.');return;}
- snapshot();const n=p.cloneNode(true);n.dataset.route=route;n.dataset.title=name;n.dataset.editorGroup=groupFor(p);n.dataset.editorParent=parent;n.dataset.editorNav='true';const h=$('h1:not(.sr-only)',n);if(h)h.textContent=name;$$('[id]',n).forEach(x=>x.removeAttribute('id'));
+ snapshot();const n=p.cloneNode(true);n.querySelectorAll('[data-fresuni-page-meta]').forEach(x=>x.remove());n.dataset.route=route;n.dataset.title=name;n.dataset.editorGroup=groupFor(p);n.dataset.editorParent=parent;n.dataset.editorNav='true';const h=$('h1:not(.sr-only)',n);if(h)h.textContent=name;$$('[id]',n).forEach(x=>x.removeAttribute('id'));
  p.after(n);if(!autoRegisterStory(n))attachChildLink(parent,route,name);renderNav();reloadFrame(serialize(),route);dirty();notify('Página duplicada.');});
 $('#delete-page').addEventListener('click',()=>{const p=selectedPage();if(!p||p.dataset.route==='/'){notify('A página inicial não pode ser excluída.');return;}
  if(!confirm('Excluir permanentemente a página “'+titleOf(p)+'” do site? Os links que apontarem para ela precisarão ser revisados.'))return;
@@ -1283,9 +1328,9 @@ $('#dismiss-publish-error').addEventListener('click',()=>$('#publish-error').hid
 $('#copy-publish-error').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('#publish-error-message').textContent);notify('Detalhes copiados sem dados secretos.');}catch{notify('Selecione e copie a mensagem de erro.');}});
 $('#publish').addEventListener('click',async()=>{
  if(!state.dirty){notify('Não há alterações pendentes.');return;}
- const html=serialize();$('#publish-error').hidden=true;if(!confirm('Publicar agora todas as alterações no seu repositório do GitHub?'))return;
+ const html=fsPreparePublishDates(serialize());$('#publish-error').hidden=true;if(!confirm('Publicar agora todas as alterações no seu repositório do GitHub?'))return;
  const b=$('#publish');b.disabled=true;b.textContent='Publicando…';setStatus('Publicando no GitHub…');
- try{const r=await api('/publish',{method:'POST',body:JSON.stringify({html,expectedSha:state.sha})});if(!r.ok||!r.sha)throw Error('O servidor não confirmou o envio ao GitHub.');state.sha=r.sha;state.html=html;state.undo=[];state.redo=[];state.dirty=false;clearTimeout(draftTimer);fsLastSavedRevision=fsDraftRevision;await fsSaveQueue.catch(()=>{});await draftAction('delete').catch(()=>{});fsAutosaveStatus('✓ Publicação enviada ao GitHub','ok');setStatus('Publicado no GitHub');notify('Alterações enviadas ao GitHub! O Pages pode demorar a atualizar o site.');}
+ try{const r=await api('/publish',{method:'POST',body:JSON.stringify({html,expectedSha:state.sha})});if(!r.ok||!r.sha)throw Error('O servidor não confirmou o envio ao GitHub.');state.sha=r.sha;state.html=html;state.undo=[];state.redo=[];state.dirty=false;clearTimeout(draftTimer);fsLastSavedRevision=fsDraftRevision;await fsSaveQueue.catch(()=>{});await draftAction('delete').catch(()=>{});fsAutosaveStatus('✓ Publicação enviada ao GitHub','ok');setStatus('Publicado no GitHub');reloadFrame(html,state.route);notify('Alterações enviadas ao GitHub! O Pages pode demorar a atualizar o site.');}
  catch(e){dirty();showPublishError(e);notify('Publicação não concluída. Veja a mensagem com os detalhes abaixo da prévia.');}
  finally{b.disabled=false;b.textContent='Publicar alterações';}
 });
