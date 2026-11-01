@@ -35,7 +35,7 @@ async function loadSite(){
   const {html,sha}=await api('/source');
   if(!html.includes('data-route="/"'))throw Error('Arquivo diferente do site FRESUNI. Confira as configurações do repositório.');
   state.html=html;state.sha=sha;state.undo=[];state.redo=[];state.dirty=false;state.route='/';
-  reloadFrame(html,'/');setStatus('Versão publicada carregada');await restoreDraftIfAny();
+  const recovered=await restoreDraftIfAny();if(!recovered){reloadFrame(html,'/');setStatus('Versão publicada carregada');}
  }finally{state.loading=false;}
 }
 async function authenticated(){
@@ -159,11 +159,11 @@ async function saveDraft(){
  await fsSaveQueue;
  return true;
 }
-async function restoreDraftIfAny(){let draft;try{draft=await draftAction('get');}catch(e){notify('Salvamento local indisponível: '+e.message);return;}if(!draft?.html||draft.html===state.html)return;
+async function restoreDraftIfAny(){let draft;try{draft=await draftAction('get');}catch(e){notify('Salvamento local indisponível: '+e.message);return false;}if(!draft?.html||draft.html===state.html)return false;
  const date=new Date(draft.savedAt).toLocaleString('pt-BR');const conflict=draft.sha!==state.sha;
  if(confirm('Encontramos um rascunho de '+date+'.'+(conflict?' O site foi publicado novamente desde então; revise antes de publicar.':'')+'\n\nRestaurar o trabalho que não foi publicado?')){
-   state.restoring=true;state.undo=[];state.redo=[];state.dirty=true;fsDraftRevision++;fsLastSavedRevision=fsDraftRevision;fsAutosaveStatus('✓ Rascunho recuperado do navegador','ok');reloadFrame(draft.html,draft.route&&draft.html.includes('data-route="'+draft.route+'"')?draft.route:'/');state.restoring=false;setStatus('Rascunho recuperado · não publicado');notify('Rascunho recuperado neste navegador.');
- }}
+   state.restoring=true;state.undo=[];state.redo=[];state.dirty=true;fsDraftRevision++;fsLastSavedRevision=fsDraftRevision;fsAutosaveStatus('✓ Rascunho recuperado do navegador','ok');reloadFrame(draft.html,draft.route&&draft.html.includes('data-route="'+draft.route+'"')?draft.route:'/');state.restoring=false;setStatus('Rascunho recuperado · não publicado');notify('Rascunho recuperado neste navegador.');return true;
+ }return false;}
 
 function remember(){const html=serialize();if(state.undo[state.undo.length-1]!==html){state.undo.push(html);if(state.undo.length>25)state.undo.shift();state.redo=[];}}
 function selectRoute(route){
@@ -360,20 +360,20 @@ function toHex(color,fallback){const m=color.match(/\d+/g);if(!m||m.length<3)ret
 function stripTransient(root){root.classList.remove('dark-mode','high-contrast','simple-mode','reduce-motion');
  $$('link[data-fresuni-async-font],link[data-fresuni-font-catalog]',root).forEach(link=>{link.removeAttribute('data-fresuni-async-font');link.removeAttribute('media');});$$('#fresuni-editor-overlay',root).forEach(x=>x.remove());$$('[data-fresuni-selected]',root).forEach(x=>x.removeAttribute('data-fresuni-selected'));
  $$('[data-fresuni-editable]',root).forEach(x=>{x.removeAttribute('data-fresuni-editable');x.removeAttribute('contenteditable');x.removeAttribute('spellcheck');x.removeAttribute('draggable')});
- $('[data-fresuni-drag]',root).forEach(x=>{x.removeAttribute('data-fresuni-drag');x.removeAttribute('draggable');});
+ $$('[data-fresuni-drag]',root).forEach(x=>{x.removeAttribute('data-fresuni-drag');x.removeAttribute('draggable');});
  $$('main > .site-page',root).forEach(p=>{p.hidden=p.dataset.route!=='/';});
  root.querySelector('body')?.classList.add('homepage');
  const d=root.querySelector('title');if(d)d.textContent='Início | FRESUNI';
  root.querySelector('.main-nav')?.classList.remove('nav-open');
  // Limpar somente estados efêmeros; preservar configurações dos efeitos.
- $('[data-fresuni-counted]',root).forEach(el=>el.removeAttribute('data-fresuni-counted'));
- $('[data-fresuni-counter]',root).forEach(el=>{
+ $$('[data-fresuni-counted]',root).forEach(el=>el.removeAttribute('data-fresuni-counted'));
+ $$('[data-fresuni-counter]',root).forEach(el=>{
   const v=Math.max(0,Math.min(1000000,Number(el.dataset.fresuniCounter)||0));
   const formatted=new Intl.NumberFormat('pt-BR',{maximumFractionDigits:0}).format(v);
   el.textContent=formatted+(el.dataset.fresuniCounterSuffix||'');
  });
- $('.fresuni-activated,.fresuni-enter,.fresuni-previewing',root).forEach(el=>el.classList.remove('fresuni-activated','fresuni-enter','fresuni-previewing'));
- $('[data-editor-internal]',root).forEach(x=>x.remove());
+ $$('.fresuni-activated,.fresuni-enter,.fresuni-previewing',root).forEach(el=>el.classList.remove('fresuni-activated','fresuni-enter','fresuni-previewing'));
+ $$('[data-editor-internal]',root).forEach(x=>x.remove());
 }
 function refreshSearch(root){const scripts=$$('script',root);const script=scripts.find(s=>s.textContent.includes('window.FRESUNI_SEARCH_INDEX='));if(!script)return;
  const match=script.textContent.match(/window\.FRESUNI_SEARCH_INDEX=(\[[^\n]*?\]);/);if(!match)return;
@@ -1257,7 +1257,7 @@ function doRedo(){if(!state.redo.length){notify('Nada para refazer.');return;}st
 $('#undo').addEventListener('click',doUndo);$('#redo').addEventListener('click',doRedo);
 $('#draft-save').addEventListener('click',async()=>{try{await saveDraft();notify('Rascunho salvo neste navegador. Para atualizar o site, clique em Publicar alterações.');}catch(e){fsDraftFailed(e);}});
 $('#restore-published').addEventListener('click',async()=>{if(!confirm('Descartar todas as mudanças NÃO PUBLICADAS e voltar ao arquivo que está no GitHub?'))return;
- clearTimeout(draftTimer);await draftAction('delete').catch(()=>{});state.undo=[];state.redo=[];state.dirty=false;fsLastSavedRevision=fsDraftRevision;reloadFrame(state.html,'/');fsAutosaveStatus('✓ Versão publicada restaurada','ok');setStatus('Versão publicada restaurada');notify('Voltamos à versão publicada do site.');});
+ clearTimeout(draftTimer);state.dirty=false;await fsSaveQueue.catch(()=>{});await draftAction('delete').catch(()=>{});state.undo=[];state.redo=[];fsLastSavedRevision=fsDraftRevision;reloadFrame(state.html,'/');fsAutosaveStatus('✓ Versão publicada restaurada','ok');setStatus('Versão publicada restaurada');notify('Voltamos à versão publicada do site.');});
 function showPublishError(err){
  const panel=$('#publish-error');panel.hidden=false;
  let msg=String(err.message||err);if(err.status===401)msg+=' Sua sessão pode ter expirado: saia e entre novamente.';
@@ -1285,7 +1285,7 @@ $('#publish').addEventListener('click',async()=>{
  if(!state.dirty){notify('Não há alterações pendentes.');return;}
  const html=serialize();$('#publish-error').hidden=true;if(!confirm('Publicar agora todas as alterações no seu repositório do GitHub?'))return;
  const b=$('#publish');b.disabled=true;b.textContent='Publicando…';setStatus('Publicando no GitHub…');
- try{const r=await api('/publish',{method:'POST',body:JSON.stringify({html,expectedSha:state.sha})});if(!r.ok||!r.sha)throw Error('O servidor não confirmou o envio ao GitHub.');state.sha=r.sha;state.html=html;state.undo=[];state.redo=[];state.dirty=false;clearTimeout(draftTimer);fsLastSavedRevision=fsDraftRevision;await draftAction('delete').catch(()=>{});fsAutosaveStatus('✓ Publicação enviada ao GitHub','ok');setStatus('Publicado no GitHub');notify('Alterações enviadas ao GitHub! O Pages pode demorar a atualizar o site.');}
+ try{const r=await api('/publish',{method:'POST',body:JSON.stringify({html,expectedSha:state.sha})});if(!r.ok||!r.sha)throw Error('O servidor não confirmou o envio ao GitHub.');state.sha=r.sha;state.html=html;state.undo=[];state.redo=[];state.dirty=false;clearTimeout(draftTimer);fsLastSavedRevision=fsDraftRevision;await fsSaveQueue.catch(()=>{});await draftAction('delete').catch(()=>{});fsAutosaveStatus('✓ Publicação enviada ao GitHub','ok');setStatus('Publicado no GitHub');notify('Alterações enviadas ao GitHub! O Pages pode demorar a atualizar o site.');}
  catch(e){dirty();showPublishError(e);notify('Publicação não concluída. Veja a mensagem com os detalhes abaixo da prévia.');}
  finally{b.disabled=false;b.textContent='Publicar alterações';}
 });
