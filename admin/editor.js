@@ -13,7 +13,7 @@ function ensureCompleteFonts(d){
  for(const el of links){if((el.getAttribute('href')||'').includes('fonts.googleapis.com/css2')){el.remove();}}
  let l=d.createElement('link');l.rel='stylesheet';l.href=COMPLETE_FONTS;l.dataset.fresuniFontCatalog='';l.media='print';l.addEventListener('load',()=>l.media='all');d.head.append(l);
 }
-const motionCss=`@media(prefers-reduced-motion:no-preference){.js-motion [data-fresuni-motion]:not([data-fresuni-motion="none"]):not(.is-visible){opacity:0}.js-motion [data-fresuni-motion="slide"]:not(.is-visible){transform:translateY(24px)}.js-motion [data-fresuni-motion="zoom"]:not(.is-visible){transform:scale(.96)}.js-motion [data-fresuni-motion="left"]:not(.is-visible){transform:translateX(-24px)}.js-motion [data-fresuni-motion="right"]:not(.is-visible){transform:translateX(24px)}.js-motion [data-fresuni-motion]:not([data-fresuni-motion="none"]){transition:opacity var(--fresuni-motion-duration,650ms) ease,transform var(--fresuni-motion-duration,650ms) ease}.js-motion [data-fresuni-motion].is-visible{opacity:1;transform:none}}@media(prefers-reduced-motion:reduce){[data-fresuni-motion]{opacity:1!important;transform:none!important;transition:none!important}}`;
+const motionCss=`.directory-links > [data-fresuni-block="quick-item"],.directory-links > [data-fresuni-block="text"]{min-width:0;max-width:100%;overflow-wrap:anywhere} @media(prefers-reduced-motion:no-preference){.js-motion [data-fresuni-motion]:not([data-fresuni-motion="none"]):not(.is-visible){opacity:0}.js-motion [data-fresuni-motion="slide"]:not(.is-visible){transform:translateY(24px)}.js-motion [data-fresuni-motion="zoom"]:not(.is-visible){transform:scale(.96)}.js-motion [data-fresuni-motion="left"]:not(.is-visible){transform:translateX(-24px)}.js-motion [data-fresuni-motion="right"]:not(.is-visible){transform:translateX(24px)}.js-motion [data-fresuni-motion]:not([data-fresuni-motion="none"]){transition:opacity var(--fresuni-motion-duration,650ms) ease,transform var(--fresuni-motion-duration,650ms) ease}.js-motion [data-fresuni-motion].is-visible{opacity:1;transform:none}}@media(prefers-reduced-motion:reduce){[data-fresuni-motion]{opacity:1!important;transform:none!important;transition:none!important}}`;
 
 const notify=(s)=>{const t=$('#toast');t.textContent=s;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3600);};
 const setStatus=(t)=>{$('#save-state').textContent=t;};
@@ -82,7 +82,7 @@ function selectRoute(route){
  const pages=pageNodes();pages.forEach(p=>{p.hidden=p.dataset.route!==route;});
  const d=siteDoc();if(d){d.body.classList.toggle('homepage',route==='/');d.title=titleOf(pageFor(route))+' | FRESUNI';}
  $('#current-page-title').textContent=titleOf(pageFor(route));$('#current-route').textContent='#'+route;
- updatePageSidebar();renderPages();
+ updatePageSidebar();renderPages();updateHomeQuickTargets();refreshHomeQuickButtons();
  const win=frame.contentWindow;try{win.scrollTo(0,0);}catch{}
 }
 function reloadFrame(html,route=state.route){
@@ -118,6 +118,8 @@ function reloadFrame(html,route=state.route){
    body{scroll-behavior:auto!important}
    [data-reveal]{opacity:1!important;transform:none!important;visibility:visible!important}
    @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}`;
+  style.textContent+=`
+.fresuni-quick-add{font:600 13px Prompt,Arial,sans-serif!important;color:#8300ea!important;background:#fbf7ff!important;border:1px dashed #9c3bdf!important;padding:12px!important;border-radius:8px!important;cursor:pointer!important;min-height:44px!important;text-align:left!important;max-width:100%!important;min-width:0!important}.fresuni-quick-add:hover,.fresuni-quick-add:focus-visible{background:#f0ddff!important;outline:2px solid #8300ea!important}`;
   d.head.append(style);
   for(const p of pageNodes())p.dataset.editorGroup=groupFor(p);
   d.addEventListener('click',clickSite,true);
@@ -143,7 +145,7 @@ function reloadFrame(html,route=state.route){
 }
 function setEditable(on){state.editable=on;if(!on)hideFloatingToolbar();$('#preview').setAttribute('aria-pressed',String(!on));$('#preview').textContent=on?'◉ Pré-visualizar':'✎ Voltar à edição';
  const d=siteDoc();if(!d)return;
- const selectors='p,h1,h2,h3,h4,h5,h6,li,summary,blockquote,cite,.card-eyebrow,.card-action,.eyebrow,.directory-links > a,.fresuni-children a,.site-page .page-lead,header.site-header a.nav-root,header.site-header .subnav a,footer.site-footer nav a,footer.site-footer small';
+ const selectors='p,h1,h2,h3,h4,h5,h6,li,summary,blockquote,cite,.card-eyebrow,.card-action,.eyebrow,.directory-links > a,.directory-links > [data-fresuni-block="quick-item"],.fresuni-children a,.site-page .page-lead,header.site-header a.nav-root,header.site-header .subnav a,footer.site-footer nav a,footer.site-footer small';
  $$(selectors,d).forEach(el=>{
   if(el.closest('.access-panel,.header-actions,.breadcrumbs'))return;
   if(el.closest('header.site-header')&&!el.matches('a.nav-root,a.solo,a:not(.brand):not(.footer-logo),p,span[data-fresuni-header-message]'))return;
@@ -154,6 +156,7 @@ function setEditable(on){state.editable=on;if(!on)hideFloatingToolbar();$('#prev
   if(on){el.setAttribute('contenteditable','true');el.dataset.fresuniEditable='true';el.setAttribute('spellcheck','true');}
   else{el.removeAttribute('contenteditable');delete el.dataset.fresuniEditable;}
  });
+ refreshHomeQuickButtons();
 }
 function clickSite(e){
  if(!state.editable)return;
@@ -257,8 +260,16 @@ function snapshot(){remember();dirty();}
 function insertionParent(){const p=selectedPage();if(!p)return null;const sel=state.selected;
  if(sel?.closest('.site-header')){const header=siteDoc().querySelector('.site-header');return {parent:header,before:null};}
  if(sel?.closest('.site-footer')){const footer=siteDoc().querySelector('.site-footer .footer-inner');return {parent:footer,before:null};}
- if(sel?.closest('.site-page')===p){let n=sel;
-  if(n.matches('a,img,cite'))n=n.closest('figure,div,section,article,p,li')||n;
+ if(sel?.closest('.site-page')===p){
+  // The landing-page headings are labels in a two-column grid. New content belongs
+  // inside the second column (.directory-links), never next to the row heading.
+  const row=sel.closest('.directory-row');
+  if(row && sel.matches('h2,section.directory-row')){
+   const holder=row.querySelector('.directory-links');
+   if(holder)return {parent:holder,before:holder.querySelector('[data-editor-internal].fresuni-quick-add')};
+  }
+  let n=sel;
+  if(n.matches('a,img,cite')&&!n.parentElement?.classList.contains('directory-links'))n=n.closest('figure,div,section,article,p,li')||n;
   if(n.matches('li')&&n.parentElement)n=n.parentElement;
   if(n===p)n=null;
   if(n)return {parent:n.parentNode,before:n.nextSibling};}
@@ -267,6 +278,7 @@ function insertionParent(){const p=selectedPage();if(!p)return null;const sel=st
 }
 function insertHTML(html){if(!state.editable){notify('Volte ao modo de edição primeiro.');return;}
  snapshot();const d=siteDoc();const tpl=d.createElement('template');tpl.innerHTML=html;const first=tpl.content.firstElementChild;const dest=insertionParent();if(!dest)return;
+ if(dest.parent.classList.contains('directory-links')&&first){first.dataset.fresuniBlock=first.dataset.fresuniBlock||'quick-item';first.style.margin='0';first.style.maxWidth='100%';first.style.minWidth='0';first.style.overflowWrap='anywhere';}
  dest.parent.insertBefore(tpl.content,dest.before);setEditable(true);if(first)selectElement(first);dirty();
  first?.scrollIntoView({behavior:'smooth',block:'center'});
 }
@@ -478,10 +490,18 @@ function bindDrag(d){d.addEventListener('dragstart',e=>{if(!e.altKey||!state.edi
  d.addEventListener('dragend',()=>{dragged=null;});}
 function blockElement(){const el=state.selected;if(!el)return;return el.closest('[data-fresuni-block]')||el;}
 function isCoreShared(el){return !!el?.closest('.header-actions,.main-nav,.brand,.footer-logo')||el?.matches('.site-header,.site-footer,.header-inner,.footer-inner,.main-nav,.header-actions');}
-function blockMove(direction){const el=blockElement();if(!el||isCoreShared(el))return;snapshot();if(direction==='up'&&el.previousElementSibling)el.parentNode.insertBefore(el,el.previousElementSibling);
- if(direction==='down'&&el.nextElementSibling)el.parentNode.insertBefore(el.nextElementSibling,el);dirty();selectElement(el);}
-$('#move-block-up').addEventListener('click',()=>blockMove('up'));$('#move-block-down').addEventListener('click',()=>blockMove('down'));$('#move-selection-up').addEventListener('click',()=>blockMove('up'));$('#move-selection-down').addEventListener('click',()=>blockMove('down'));
-$('#duplicate-block').addEventListener('click',()=>{const el=blockElement();if(!el||isCoreShared(el)){notify('Para duplicar um link do menu, use a aba Cabeçalho e rodapé.');return;}snapshot();const n=el.cloneNode(true);el.after(n);setEditable(true);selectElement(n);});
+function blockMove(direction){const el=blockElement();if(!el||isCoreShared(el))return;
+ const grid=el.parentElement?.classList.contains('directory-links');
+ if((direction==='left'||direction==='right')&&!grid){notify('Use ← → nos links ou textos dos guias rápidos. Nas demais áreas, use Subir/Descer.');return;}
+ const step=(direction==='up'||direction==='left')?'previous':'next';
+ const sibling=step==='previous'?el.previousElementSibling:el.nextElementSibling;
+ if(!sibling||sibling.hasAttribute('data-editor-internal')){notify('Este elemento já está na extremidade da seção.');return;}
+ snapshot();el.parentNode.insertBefore(el,step==='previous'?sibling:sibling.nextSibling);dirty();selectElement(el);positionResizeGrip();}
+for(const [id,dir] of [['move-block-up','up'],['move-block-down','down'],['move-selection-up','up'],['move-selection-down','down'],['move-block-left','left'],['move-block-right','right'],['move-selection-left','left'],['move-selection-right','right']])$('#'+id).addEventListener('click',()=>blockMove(dir));
+function duplicateElement(){const el=blockElement();if(!el||isCoreShared(el)){notify('Para duplicar um link do menu, use a aba Cabeçalho e rodapé.');return;}snapshot();
+ const n=el.cloneNode(true);n.removeAttribute('data-fresuni-selected');n.removeAttribute('contenteditable');n.removeAttribute('data-fresuni-drag');n.removeAttribute('draggable');
+ el.after(n);setEditable(true);selectElement(n);dirty();notify('Elemento duplicado com texto, formatação e links. Salve o rascunho ou publique quando desejar.');}
+$('#duplicate-block').addEventListener('click',duplicateElement);$('#duplicate-selection').addEventListener('click',duplicateElement);
 $('#selected-remove').addEventListener('click',()=>{const el=blockElement();if(!el||!state.editable)return;if(isCoreShared(el)){notify('Use a aba Cabeçalho e rodapé para administrar este componente sem quebrar a navegação.');return;}if(!confirm('Remover este elemento da página?'))return;snapshot();el.remove();clearSelection();});
 // Páginas e ordem, sem alterar as URLs já publicadas.
 const expandedPages=new Set(['/','/noticias','/artigos','/acoes','/manifesto']);
@@ -604,6 +624,42 @@ $('#delete-page').addEventListener('click',()=>{const p=selectedPage();if(!p||p.
  if(!confirm('Excluir permanentemente a página “'+titleOf(p)+'” do site? Os links que apontarem para ela precisarão ser revisados.'))return;
  if(pageNodes().some(x=>parentRouteOf(x)===p.dataset.route)){notify('Esta página possui subpáginas. Exclua ou mova as subpáginas antes de excluí-la.');return;}
  snapshot();removeChildLink(p.dataset.route);p.remove();renderNav();reloadFrame(serialize(),'/');dirty();notify('Página removida do rascunho.');});
+// -------- Guias rápidos: inclusões e reordenação dentro da grade original --------
+const homeQuickSections={conheca:'CONHEÇA',noticias:'NOTÍCIAS',artigos:'ARTIGOS',palestras:'PALESTRAS'};
+function homeQuickRow(key){const p=pageFor('/');return p?.querySelector('.directory-row[aria-labelledby="'+key+'-label"]')||null;}
+function updateHomeQuickTargets(){const input=$('#home-quick-target');if(!input)return;const previous=input.value;input.replaceChildren();
+ for(const [value,label] of [['__plain','Somente texto, sem link'],['__external','Outro endereço (URL)']]){const op=document.createElement('option');op.value=value;op.textContent=label;input.append(op);}
+ for(const page of pageNodes()){const op=document.createElement('option');op.value='#'+page.dataset.route;op.textContent='Página: '+labelPath(page);input.append(op);}
+ input.value=Array.from(input.options).some(o=>o.value===previous)?previous:'__plain';
+ $('#home-quick-external-wrap').hidden=input.value!=='__external';
+}
+$('#home-quick-target').addEventListener('change',e=>{$('#home-quick-external-wrap').hidden=e.target.value!=='__external';});
+function addHomeQuick(key,title,target,external=''){
+ const row=homeQuickRow(key),holder=row?.querySelector('.directory-links');if(!holder){notify('Não foi encontrada a seção '+key+'.');return;}
+ title=String(title||'').trim();if(!title){notify('Escreva o texto que deseja adicionar.');return;}
+ const href=target==='__plain'?'':target==='__external'?String(external||'').trim():target;
+ if(href&&!safeUrl(href)){notify('O link é inválido. Utilize uma página interna ou endereço HTTPS.');return;}
+ snapshot();const d=siteDoc();const item=d.createElement(href?'a':'p');item.textContent=title;
+ if(href){item.href=href;if(/^https?:/i.test(href)){item.target='_blank';item.rel='noopener noreferrer';}}
+ item.dataset.fresuniBlock='quick-item';item.style.minWidth='0';item.style.maxWidth='100%';item.style.overflowWrap='anywhere';item.style.margin='0';
+ holder.insertBefore(item,holder.querySelector('.fresuni-quick-add[data-editor-internal]'));
+ selectRoute('/');selectElement(item);setEditable(true);item.scrollIntoView({block:'center',behavior:'smooth'});dirty();notify('Elemento adicionado ao guia '+homeQuickSections[key]+'. Os demais itens se reorganizaram automaticamente.');
+}
+function refreshHomeQuickButtons(){const d=siteDoc();if(!d)return;
+ d.querySelectorAll('.fresuni-quick-add[data-editor-internal]').forEach(b=>b.remove());
+ if(!state.editable)return;
+ for(const key of Object.keys(homeQuickSections)){
+  const row=homeQuickRow(key),holder=row?.querySelector('.directory-links');if(!holder)continue;
+  const button=d.createElement('button');button.type='button';button.textContent='+ Adicionar';button.className='fresuni-quick-add';button.dataset.editorInternal='';button.setAttribute('aria-label','Adicionar link ou texto à seção '+homeQuickSections[key]);
+  button.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();$('#home-quick-section').value=key;$$('[data-tab]').find(b=>b.dataset.tab==='insert')?.click();$('#home-quick-tools').scrollIntoView({block:'nearest'});$('#home-quick-label').focus();});
+  holder.append(button);
+ }
+}
+$('#home-quick-add').addEventListener('click',()=>{
+ const key=$('#home-quick-section').value;
+ addHomeQuick(key,$('#home-quick-label').value,$('#home-quick-target').value,$('#home-quick-external').value);
+ $('#home-quick-label').value='';
+});
 // Matérias e artigos podem ser destacados na página inicial sem duplicar o conteúdo.
 function toggleFeaturedStory(add){const p=selectedPage(),route=p?.dataset.route||'';const match=route.match(/^\/(noticias|artigos)\/.+/);if(!match){notify('Abra uma notícia ou artigo antes de destacar.');return;}
  const home=pageFor('/'),row=home?.querySelector('#'+match[1]+'-label')?.closest('.directory-row');const holder=row?.querySelector('.directory-links');if(!holder){notify('A seção correspondente não foi encontrada na página inicial.');return;}
@@ -755,6 +811,12 @@ function showPublishError(err){
  $('#publish-error-message').textContent=msg;panel.scrollIntoView({block:'nearest',behavior:'smooth'});
  setStatus('Publicação não realizada · rascunho preservado');
 }
+$('#diagnose-publish').addEventListener('click',async()=>{
+ const out=$('#diagnose-publish-result');out.textContent='Conferindo acesso ao repositório…';
+ try{const r=await api('/permissions');const access=r.canPush===true?'O GitHub informa que o token pode escrever neste repositório.':r.canPush===false?'O GitHub informa que este token NÃO possui permissão de escrita.':'O GitHub não informou claramente a permissão de escrita.';
+ out.textContent='Repositório: '+r.repository+' · Branch: '+r.branch+'\n'+access+'\n'+(r.guidance||'');
+ }catch(e){out.textContent='Não foi possível verificar o acesso: '+e.message+' Atualize o código do Worker com o pacote fornecido e execute npx.cmd wrangler deploy.';}
+});
 $('#dismiss-publish-error').addEventListener('click',()=>$('#publish-error').hidden=true);
 $('#copy-publish-error').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('#publish-error-message').textContent);notify('Detalhes copiados sem dados secretos.');}catch{notify('Selecione e copie a mensagem de erro.');}});
 $('#publish').addEventListener('click',async()=>{
