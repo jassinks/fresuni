@@ -254,6 +254,100 @@ async function restoreDraftIfAny(){let draft;try{draft=await draftAction('get');
   notify('Modo automático reativado. A data será renovada quando a página mudar e for publicada.');
  });
 
+
+ // Matérias são arquivadas pela data de publicação original, nunca pela última atualização.
+ function fsNewsCurrentMonth(){
+  return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit'}).format(new Date()).replace(/[^0-9-]/g,'').slice(0,7);
+ }
+ function fsIsNewsStory(page){
+  return !!page?.dataset?.route && page.dataset.route.startsWith('/noticias/') &&
+   !page.hasAttribute('data-fresuni-news-archive') && !/^\/noticias\/\d{4}$/.test(page.dataset.route);
+ }
+ function fsSyncNewsMonth(){
+  const p=selectedPage(),panel=$('#fs-news-publication'),input=$('#fs-news-month');
+  if(!panel||!input)return;
+  panel.hidden=!fsIsNewsStory(p);input.value=fsIsNewsStory(p)?(p.dataset.publishedMonth||''):'';
+  $('#fs-news-month-status').textContent=!panel.hidden
+   ?(input.value?'Arquivo baseado na publicação original: '+input.value.slice(5,7)+'/'+input.value.slice(0,4):'Informe o mês e o ano originais para arquivar corretamente.'):'';
+ }
+ function fsRefreshNewsArchives(root){
+  const main=root.querySelector('main#conteudo'),collection=main?.querySelector('.site-page[data-route="/noticias"]');
+  if(!collection)return;
+  const doc=root.ownerDocument;
+  const yearNow=Number(fsNewsCurrentMonth().slice(0,4));
+  const months=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  const stories=[...main.querySelectorAll('.site-page[data-route]')].filter(fsIsNewsStory).map(page=>{
+   const month=page.dataset.publishedMonth||'';
+   if(!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))return null;
+   return {route:page.dataset.route,title:page.dataset.title||page.querySelector('h1')?.textContent.trim()||'Notícia',
+    intro:page.querySelector('.page-lead')?.textContent.trim()||page.querySelector('article p')?.textContent.trim()||'',
+    month,year:Number(month.slice(0,4))};
+  }).filter(Boolean);
+  function card(story){
+   const a=doc.createElement('a');a.href='#'+story.route;a.className='content-card';a.dataset.fresuniMotion='zoom';a.setAttribute('data-reveal','');
+   const eye=doc.createElement('span');eye.className='card-eyebrow';eye.textContent='Notícia · '+months[Number(story.month.slice(5))-1]+' de '+story.year;
+   const name=doc.createElement('h3');name.textContent=story.title;
+   const text=doc.createElement('p');text.textContent=story.intro;
+   const link=doc.createElement('span');link.className='card-action';link.textContent='Ler notícia ↗';
+   a.append(eye,name,text,link);return a;
+  }
+  const latest=collection.querySelector('.container.page-shell > .card-grid');
+  if(latest){
+   for(const a of [...latest.querySelectorAll(':scope > a.content-card')]){
+    const s=stories.find(v=>'#'+v.route===a.getAttribute('href'));
+    if(s&&s.year<yearNow)a.remove();
+   }
+   for(const s of stories.filter(v=>v.year>=yearNow)){
+    if(![...latest.querySelectorAll(':scope > a.content-card')].some(a=>a.getAttribute('href')==='#'+s.route))latest.append(card(s));
+   }
+  }
+  const archiveStories=stories.filter(s=>s.year<yearNow);
+  const years=[...new Set(archiveStories.map(s=>s.year))].sort((a,b)=>b-a);
+  let index=collection.querySelector('[data-fresuni-year-index]');
+  if(!index){
+   index=doc.createElement('section');index.className='fresuni-year-index';index.dataset.fresuniYearIndex='';
+   index.innerHTML='<h2>Notícias de anos anteriores</h2><p>Arquivo por ano de publicação original.</p><nav aria-label="Arquivo de notícias por ano"></nav>';
+   collection.querySelector('.container.page-shell')?.append(index);
+  }
+  index.hidden=!years.length;
+  let nav=index.querySelector('nav');if(!nav){nav=doc.createElement('nav');nav.setAttribute('aria-label','Arquivo de notícias por ano');index.append(nav);}
+  nav.replaceChildren();
+  for(const year of years){
+   let p=main.querySelector('.site-page[data-fresuni-news-archive="'+year+'"]');
+   if(!p){
+    p=doc.createElement('div');p.className='site-page';p.hidden=true;p.dataset.route='/noticias/'+year;p.dataset.title='Arquivo de notícias — '+year;
+    p.dataset.editorGroup='noticias';p.dataset.editorParent='/noticias';p.dataset.editorNav='false';p.dataset.fresuniNewsArchive=String(year);
+    p.innerHTML='<div class="container page-shell"><nav class="breadcrumbs" aria-label="Caminho de navegação"><a href="#/">Início</a> / <a href="#/noticias">Notícias</a> / <span aria-current="page"></span></nav><div class="page-heading"><span class="eyebrow">Memória do FRESUNI</span><h1></h1><p class="page-lead">Arquivo por ano da publicação original.</p></div><nav aria-label="Voltar à seção" class="return-links"><a href="#/noticias">← Voltar para Notícias</a></nav></div>';
+    main.append(p);
+   }
+   const shell=p.querySelector('.container.page-shell');p.dataset.title='Arquivo de notícias — '+year;
+   p.querySelector('[aria-current="page"]').textContent=String(year);
+   p.querySelector('.page-heading h1').textContent='Arquivo de notícias de '+year;
+   shell.querySelectorAll('.fresuni-archive-month').forEach(n=>n.remove());
+   const list=archiveStories.filter(s=>s.year===year).sort((a,b)=>b.month.localeCompare(a.month)||a.title.localeCompare(b.title,'pt-BR'));
+   for(const month of [...new Set(list.map(s=>s.month))]){
+    const sec=doc.createElement('section');sec.className='fresuni-archive-month';sec.dataset.fresuniMonth=month;
+    const title=doc.createElement('h2');title.textContent=months[Number(month.slice(5))-1]+' de '+year;
+    const grid=doc.createElement('div');grid.className='card-grid';
+    list.filter(s=>s.month===month).forEach(s=>grid.append(card(s)));
+    sec.append(title,grid);shell.insertBefore(sec,shell.querySelector('.return-links'));
+   }
+   const a=doc.createElement('a');a.href='#/noticias/'+year;a.className='fresuni-year-link';
+   const strong=doc.createElement('strong');strong.textContent=String(year);
+   const detail=doc.createElement('span');detail.textContent=list.length+(list.length===1?' matéria':' matérias');
+   a.append(strong,detail);nav.append(a);
+  }
+ }
+ $('#fs-news-month').addEventListener('change',event=>{
+  const p=selectedPage();if(!fsIsNewsStory(p))return;
+  const month=event.target.value;
+  if(month&&!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)){notify('Informe um mês e ano válidos.');return;}
+  snapshot();
+  if(month)p.dataset.publishedMonth=month;else delete p.dataset.publishedMonth;
+  fsRefreshNewsArchives(siteDoc());fsSyncNewsMonth();renderPages();dirty();
+  notify('Data original atualizada no rascunho; o arquivo será reorganizado quando publicar.');
+ });
+
 function remember(){const html=serialize();if(state.undo[state.undo.length-1]!==html){state.undo.push(html);if(state.undo.length>25)state.undo.shift();state.redo=[];}}
 function selectRoute(route){
  if(!pageFor(route))return;
@@ -262,7 +356,7 @@ function selectRoute(route){
  const pages=pageNodes();pages.forEach(p=>{p.hidden=p.dataset.route!==route;});
  const d=siteDoc();if(d){d.body.classList.toggle('homepage',route==='/');d.title=titleOf(pageFor(route))+' | FRESUNI';}
  $('#current-page-title').textContent=titleOf(pageFor(route));$('#current-route').textContent='#'+route;
- updatePageSidebar();renderPages();updateHomeQuickTargets();refreshHomeQuickButtons();fsSyncPageDates();window.FRESUNI_FLOW_EDITOR?.onRoute?.();
+ updatePageSidebar();renderPages();updateHomeQuickTargets();refreshHomeQuickButtons();fsSyncPageDates();fsSyncNewsMonth();window.FRESUNI_FLOW_EDITOR?.onRoute?.();
  const win=frame.contentWindow;try{win.scrollTo(0,0);}catch{}
 }
 function reloadFrame(html,route=state.route){
@@ -311,7 +405,7 @@ function reloadFrame(html,route=state.route){
   d.addEventListener('mouseup',()=>{captureTextSelection();positionFloatingToolbar();});
   d.addEventListener('keyup',()=>{captureTextSelection();positionFloatingToolbar();});
   $$('a',d).forEach(a=>{if(a.target==='_blank')a.rel='noopener noreferrer';});
-  selectRoute(route);setEditable(state.editable);renderStructurePanel();
+  fsRefreshNewsArchives(d);selectRoute(route);setEditable(state.editable);renderStructurePanel();
  };
  frame.onload=init;
  frame.srcdoc=previewHtml;
@@ -474,7 +568,7 @@ function refreshSearch(root){const scripts=$$('script',root);const script=script
  const rep='window.FRESUNI_SEARCH_INDEX='+JSON.stringify([...pageEntries,...proposalItems]).replace(/<\//g,'<\\/')+';';script.textContent=script.textContent.replace(match[0],rep);
 }
 function serialize(){const d=siteDoc();if(!d)return state.html;
- const root=d.documentElement.cloneNode(true);stripTransient(root);refreshSearch(root);
+ const root=d.documentElement.cloneNode(true);stripTransient(root);fsRefreshNewsArchives(root);refreshSearch(root);
  const head=root.querySelector('head');if(head){for(const el of Array.from(head.querySelectorAll('link[rel=stylesheet]'))){if((el.getAttribute('href')||'').includes('fonts.googleapis.com/css2'))el.remove();}const fontLink=root.ownerDocument.createElement('link');fontLink.rel='stylesheet';fontLink.href=COMPLETE_FONTS;head.append(fontLink);}
  if(!root.querySelector('#fresuni-flow-grid-style')){const canonical=new DOMParser().parseFromString(state.html,'text/html').getElementById('fresuni-flow-grid-style');if(canonical)root.querySelector('head')?.append(canonical.cloneNode(true));}
  const style=root.querySelector('#fresuni-extra-effects')||root.ownerDocument.createElement('style');style.id='fresuni-extra-effects';style.textContent=motionCss;
@@ -909,7 +1003,7 @@ function renderPages(){
  $('#page-counter').textContent=pages.length+' páginas';
 }
 $('#page-filter').addEventListener('input',renderPages);
-function updatePageSidebar(){const p=selectedPage();if(!p)return;const isStory=/^\/(noticias|artigos)\/.+/.test(p.dataset.route);$('#featured-article-controls').hidden=!isStory;if(isStory){const a=pageFor('/')?.querySelector('.directory-row[aria-labelledby="'+(p.dataset.route.startsWith('/noticias/')?'noticias-label':'artigos-label')+'"] .directory-links a[href="#'+p.dataset.route+'"]');$('#feature-on-home').disabled=!!a;$('#unfeature-on-home').disabled=!a;} $('#page-title').value=titleOf(p);$('#page-group').value=groupFor(p);$('#page-show').checked=p.dataset.editorNav!=='false';}
+function updatePageSidebar(){const p=selectedPage();if(!p)return;const isStory=/^\/(noticias|artigos)\/.+/.test(p.dataset.route)&&!p.hasAttribute('data-fresuni-news-archive');$('#featured-article-controls').hidden=!isStory;if(isStory){const a=pageFor('/')?.querySelector('.directory-row[aria-labelledby="'+(p.dataset.route.startsWith('/noticias/')?'noticias-label':'artigos-label')+'"] .directory-links a[href="#'+p.dataset.route+'"]');$('#feature-on-home').disabled=!!a;$('#unfeature-on-home').disabled=!a;} $('#page-title').value=titleOf(p);$('#page-group').value=groupFor(p);$('#page-show').checked=p.dataset.editorNav!=='false';}
 function renderNav(){const d=siteDoc(),nav=$('#menu-principal',d);if(!nav)return;
  // Only edit known menus, preserving the original markup and drop-down behaviour.
  const index=new Map(pageNodes().map((p,i)=>[p.dataset.route,i]));
@@ -950,7 +1044,8 @@ function syncStoryReferences(route,title){
 }
 function autoRegisterStory(p){
  const group=groupFor(p),route=p.dataset.route;
- if(!['noticias','artigos'].includes(group)||route==='/'+group)return false;
+ if(!['noticias','artigos'].includes(group)||route==='/'+group||p.hasAttribute('data-fresuni-news-archive')||/^\/noticias\/\d{4}$/.test(route))return false;
+ if(group==='noticias'&&!p.dataset.publishedMonth)p.dataset.publishedMonth=fsNewsCurrentMonth();
  const parent=pageFor('/'+group),grid=parent?.querySelector('.card-grid');if(!grid)return false;
  if(!grid.querySelector('a.content-card[href="#'+CSS.escape(route)+'"]'))addCollectionCard(group,route,titleOf(p));
  return true;
@@ -994,7 +1089,7 @@ $('#new-page-form').addEventListener('submit',e=>{
  let route=(parentRoute==='/'?'':parentRoute)+'/'+nameSlug;
  if(parentRoute==='/'&&['acoes','manifesto','noticias','artigos'].includes(group))route='/'+group+'/'+nameSlug;
  if(pageFor(route)){notify('Já existe uma página com este endereço. Escolha outro.');return;}
- snapshot();const d=siteDoc();const main=$('main#conteudo',d);const div=d.createElement('div');div.className='site-page';div.dataset.route=route;div.dataset.title=name;div.dataset.editorGroup=group;div.dataset.editorParent=parentRoute;div.dataset.editorNav=String(group!=='oculto');div.hidden=true;
+ snapshot();const d=siteDoc();const main=$('main#conteudo',d);const div=d.createElement('div');div.className='site-page';div.dataset.route=route;div.dataset.title=name;div.dataset.editorGroup=group;div.dataset.editorParent=parentRoute;div.dataset.editorNav=String(group!=='oculto');if(group==='noticias'&&route.startsWith('/noticias/'))div.dataset.publishedMonth=fsNewsCurrentMonth();div.hidden=true;
  const ancestors=[];let walk=parentRoute;for(let i=0;walk&&walk!=='/'&&i<12;i++){const p=pageFor(walk);if(!p)break;ancestors.unshift({route:walk,title:titleOf(p)});walk=parentRouteOf(p);}
  const crumbs='<a href="#/">Início</a>'+ancestors.map(x=>'<span class="breadcrumb-sep" aria-hidden="true"> / </span><a href="#'+escapeHTML(x.route)+'">'+escapeHTML(x.title)+'</a>').join('');
  div.innerHTML=`<div class="container page-shell"><nav class="breadcrumbs" aria-label="Caminho de navegação">${crumbs}<span class="breadcrumb-sep" aria-hidden="true"> / </span><span aria-current="page">${escapeHTML(name)}</span></nav><div class="page-heading"><span class="eyebrow">FRESUNI Social</span><h1>${escapeHTML(name)}</h1><p class="page-lead">Escreva aqui uma apresentação da página.</p></div><article class="prose page-article"><p>Clique neste texto para começar a escrever.</p></article></div>`;
@@ -1006,7 +1101,7 @@ function movePage(direction){const p=selectedPage();if(!p||p.dataset.route==='/'
 $('#page-up').addEventListener('click',()=>movePage('up'));$('#page-down').addEventListener('click',()=>movePage('down'));
 $('#duplicate-page').addEventListener('click',()=>{const p=selectedPage();if(!p)return;const name=prompt('Nome da cópia:',titleOf(p)+' (cópia)');if(!name)return;
  const parent=parentRouteOf(p)||'/';let route=(parent==='/'?'':parent)+'/'+slug(name);if(pageFor(route)){notify('Já existe uma página com esse endereço.');return;}
- snapshot();const n=p.cloneNode(true);n.querySelectorAll('[data-fresuni-page-meta]').forEach(x=>x.remove());n.dataset.route=route;n.dataset.title=name;n.dataset.editorGroup=groupFor(p);n.dataset.editorParent=parent;n.dataset.editorNav='true';const h=$('h1:not(.sr-only)',n);if(h)h.textContent=name;$$('[id]',n).forEach(x=>x.removeAttribute('id'));
+ snapshot();const n=p.cloneNode(true);n.querySelectorAll('[data-fresuni-page-meta]').forEach(x=>x.remove());n.dataset.route=route;n.dataset.title=name;n.dataset.editorGroup=groupFor(p);n.dataset.editorParent=parent;n.dataset.editorNav='true';if(groupFor(n)==='noticias')n.dataset.publishedMonth=fsNewsCurrentMonth();const h=$('h1:not(.sr-only)',n);if(h)h.textContent=name;$$('[id]',n).forEach(x=>x.removeAttribute('id'));
  p.after(n);if(!autoRegisterStory(n))attachChildLink(parent,route,name);renderNav();reloadFrame(serialize(),route);dirty();notify('Página duplicada.');});
 $('#delete-page').addEventListener('click',()=>{const p=selectedPage();if(!p||p.dataset.route==='/'){notify('A página inicial não pode ser excluída.');return;}
  if(!confirm('Excluir permanentemente a página “'+titleOf(p)+'” do site? Os links que apontarem para ela precisarão ser revisados.'))return;
@@ -1049,7 +1144,7 @@ $('#home-quick-add').addEventListener('click',()=>{
  $('#home-quick-label').value='';
 });
 // Matérias e artigos podem ser destacados na página inicial sem duplicar o conteúdo.
-function toggleFeaturedStory(add){const p=selectedPage(),route=p?.dataset.route||'';const match=route.match(/^\/(noticias|artigos)\/.+/);if(!match){notify('Abra uma notícia ou artigo antes de destacar.');return;}
+function toggleFeaturedStory(add){const p=selectedPage(),route=p?.dataset.route||'';const match=p?.hasAttribute('data-fresuni-news-archive')?null:route.match(/^\/(noticias|artigos)\/.+/);if(!match){notify('Abra uma notícia ou artigo antes de destacar.');return;}
  const home=pageFor('/'),row=home?.querySelector('#'+match[1]+'-label')?.closest('.directory-row');const holder=row?.querySelector('.directory-links');if(!holder){notify('A seção correspondente não foi encontrada na página inicial.');return;}
  const existing=Array.from(holder.querySelectorAll('a[href]')).find(a=>a.getAttribute('href')==='#'+route);
  if(add&&existing){notify('Esta matéria já está destacada no início.');return;}
