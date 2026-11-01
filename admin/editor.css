@@ -204,3 +204,8 @@
 .editor-quick-actions button:hover,.editor-quick-actions button:focus-visible{border-color:#8e37d6;background:#f5eaff}
 #selection-instructions{padding:11px 12px;border-radius:8px;border-left:3px solid #8300ea;background:#faf6ff;color:#5f5268}
 @media(max-width:1320px){.autosave-status{max-width:125px;white-space:normal;font-size:10px}}
+
+/* FRESUNI — abas legíveis no painel: quatro seções, sem perder a quarta aba */
+.toolbox .tabbar{height:auto;min-height:77px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(38px,auto))}
+.toolbox .tabbar button{padding:8px 5px;min-height:39px;line-height:1.2;font-size:11px;white-space:normal}
+.toolbox .tabbar button.active:after{bottom:0;left:12px;right:12px}
