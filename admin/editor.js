@@ -64,14 +64,105 @@ function parentRouteOf(page){
 function labelPath(page){const parts=[];let p=page;const seen=new Set();while(p&&!seen.has(p.dataset.route)&&parts.length<12){seen.add(p.dataset.route);parts.unshift(titleOf(p));p=pageFor(parentRouteOf(p));}return parts.join(' › ');}
 function depthOf(page){const path=page.dataset.route||'/';return path==='/'?0:Math.min(2,path.split('/').length-2);}
 function titleOf(page){return page.dataset.title||$('h1',page)?.textContent.trim()||page.dataset.route;}
-function dirty(){state.dirty=true;setStatus('Rascunho aguardando salvamento…');if(!state.restoring){clearTimeout(draftTimer);draftTimer=setTimeout(()=>saveDraft().catch(err=>notify('Não foi possível salvar o rascunho: '+err.message)),1500);}}
-function openDraftDb(){return new Promise((resolve,reject)=>{if(!window.indexedDB)return reject(Error('O navegador não disponibiliza armazenamento local.'));const req=indexedDB.open('fresuni-editor-drafts-v1',1);req.onupgradeneeded=()=>req.result.createObjectStore('drafts');req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);});}
-async function draftAction(mode,value){const db=await openDraftDb();return new Promise((resolve,reject)=>{const tx=db.transaction('drafts',mode==='get'?'readonly':'readwrite');const store=tx.objectStore('drafts');const req=mode==='get'?store.get(DRAFT_KEY):mode==='delete'?store.delete(DRAFT_KEY):store.put(value,DRAFT_KEY);req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);tx.oncomplete=()=>db.close();});}
-async function saveDraft(){if(!state.dirty||state.loading||state.restoring)return;const html=serialize();await draftAction('put',{html,sha:state.sha,savedAt:Date.now(),route:state.route});setStatus('Rascunho salvo neste navegador · não publicado');}
+// Salvamento real: IndexedDB com alternativa local e indicação visível de sucesso.
+let fsDraftRevision=0,fsLastSavedRevision=0,fsSaveQueue=Promise.resolve(),fsDraftLastSuccess=0;
+const FS_DRAFT_FALLBACK='fresuni-editor-draft-backup-v2';
+function fsAutosaveStatus(message,kind='info'){
+ const el=$('#autosave-state');if(!el)return;
+ el.textContent=message;el.dataset.status=kind;el.title=kind==='ok'?'Salvo somente neste navegador; clique em Publicar para atualizar o site.':'Salvamento automático do rascunho';
+}
+function dirty(){
+ state.dirty=true;fsDraftRevision++;
+ setStatus('Alterações no rascunho · não publicadas');
+ fsAutosaveStatus('◌ Salvando automaticamente…','saving');
+ if(!state.restoring){
+  clearTimeout(draftTimer);
+  draftTimer=setTimeout(()=>saveDraft().catch(e=>fsDraftFailed(e)),950);
+ }
+}
+function fsDraftFailed(error){
+ fsAutosaveStatus('⚠ Erro ao salvar; use Backup','error');
+ setStatus('Falha no salvamento local · use Backup para preservar seu trabalho');
+ notify('Salvamento automático não concluído: '+(error?.message||'armazenamento indisponível'));
+}
+function openDraftDb(){return new Promise((resolve,reject)=>{
+ if(!window.indexedDB)return reject(Error('IndexedDB indisponível.'));
+ const req=indexedDB.open('fresuni-editor-drafts-v1',1);
+ req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('drafts'))req.result.createObjectStore('drafts');};
+ req.onsuccess=()=>resolve(req.result);
+ req.onerror=()=>reject(req.error||Error('Falha ao abrir armazenamento do navegador.'));
+ req.onblocked=()=>reject(Error('O armazenamento está ocupado por outra aba.'));
+});}
+function fsIndexedDraftAction(mode,value){
+ return openDraftDb().then(db=>new Promise((resolve,reject)=>{
+  let result,settled=false;
+  try{
+   const tx=db.transaction('drafts',mode==='get'?'readonly':'readwrite');
+   const store=tx.objectStore('drafts');
+   const req=mode==='get'?store.get(DRAFT_KEY):mode==='delete'?store.delete(DRAFT_KEY):store.put(value,DRAFT_KEY);
+   req.onsuccess=()=>{result=req.result;};
+   req.onerror=()=>{if(!settled){settled=true;db.close();reject(req.error||Error('Falha na gravação do rascunho.'));}};
+   tx.oncomplete=()=>{if(!settled){settled=true;db.close();resolve(result);}};
+   tx.onabort=()=>{if(!settled){settled=true;db.close();reject(tx.error||Error('Armazenamento cancelou a operação.'));}};
+   tx.onerror=()=>{if(!settled){settled=true;db.close();reject(tx.error||Error('Falha na transação de armazenamento.'));}};
+  }catch(e){try{db.close();}catch{}reject(e);}
+ }));
+}
+function fsFallbackDraftAction(mode,value){
+ if(mode==='get'){
+  const json=localStorage.getItem(FS_DRAFT_FALLBACK);
+  return json?JSON.parse(json):null;
+ }
+ if(mode==='delete'){localStorage.removeItem(FS_DRAFT_FALLBACK);return null;}
+ localStorage.setItem(FS_DRAFT_FALLBACK,JSON.stringify(value));return true;
+}
+async function draftAction(mode,value){
+ if(mode==='get'){
+  let indexed=null,fallback=null;
+  try{indexed=await fsIndexedDraftAction('get');}catch(e){}
+  try{fallback=fsFallbackDraftAction('get');}catch(e){}
+  if(indexed||fallback)return !indexed?fallback:!fallback?indexed:
+   (Number(indexed.savedAt)||0)>=(Number(fallback.savedAt)||0)?indexed:fallback;
+  return null;
+ }
+ if(mode==='delete'){
+  try{await fsIndexedDraftAction('delete');}catch(e){}
+  try{fsFallbackDraftAction('delete');}catch(e){}
+  return true;
+ }
+ try{
+  await fsIndexedDraftAction('put',value);
+  // O arquivo foi gravado e a transação foi concluída.
+  try{localStorage.removeItem(FS_DRAFT_FALLBACK);}catch(e){}
+  return true;
+ }catch(err){
+  try{return fsFallbackDraftAction('put',value);}
+  catch(localErr){throw Error('IndexedDB: '+err.message+'. Armazenamento local: '+localErr.message);}
+ }
+}
+async function saveDraft(){
+ if(!state.dirty||state.restoring||state.loading)return false;
+ const revision=fsDraftRevision,html=serialize();
+ const value={html,sha:state.sha,savedAt:Date.now(),route:state.route};
+ const work=async()=>{
+  if(!state.dirty)return;
+  await draftAction('put',value);
+  fsLastSavedRevision=Math.max(fsLastSavedRevision,revision);
+  fsDraftLastSuccess=Date.now();
+  if(fsLastSavedRevision>=fsDraftRevision){
+   const date=new Date(fsDraftLastSuccess).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+   fsAutosaveStatus('✓ Salvo automaticamente às '+date,'ok');
+   setStatus('Rascunho salvo neste navegador · ainda não publicado');
+  }else fsAutosaveStatus('◌ Registrando últimas alterações…','saving');
+ };
+ fsSaveQueue=fsSaveQueue.catch(()=>{}).then(work);
+ await fsSaveQueue;
+ return true;
+}
 async function restoreDraftIfAny(){let draft;try{draft=await draftAction('get');}catch(e){notify('Salvamento local indisponível: '+e.message);return;}if(!draft?.html||draft.html===state.html)return;
  const date=new Date(draft.savedAt).toLocaleString('pt-BR');const conflict=draft.sha!==state.sha;
  if(confirm('Encontramos um rascunho de '+date+'.'+(conflict?' O site foi publicado novamente desde então; revise antes de publicar.':'')+'\n\nRestaurar o trabalho que não foi publicado?')){
-   state.restoring=true;state.undo=[];state.redo=[];state.dirty=true;reloadFrame(draft.html,draft.route&&draft.html.includes('data-route="'+draft.route+'"')?draft.route:'/');state.restoring=false;setStatus('Rascunho recuperado · não publicado');notify('Rascunho recuperado neste navegador.');
+   state.restoring=true;state.undo=[];state.redo=[];state.dirty=true;fsDraftRevision++;fsLastSavedRevision=fsDraftRevision;fsAutosaveStatus('✓ Rascunho recuperado do navegador','ok');reloadFrame(draft.html,draft.route&&draft.html.includes('data-route="'+draft.route+'"')?draft.route:'/');state.restoring=false;setStatus('Rascunho recuperado · não publicado');notify('Rascunho recuperado neste navegador.');
  }}
 
 function remember(){const html=serialize();if(state.undo[state.undo.length-1]!==html){state.undo.push(html);if(state.undo.length>25)state.undo.shift();state.redo=[];}}
@@ -1159,9 +1250,9 @@ $('#backup').addEventListener('click',()=>{exportText(serialize(),'fresuni-backu
 function doUndo(){if(!state.undo.length){notify('Nada para desfazer.');return;}state.redo.push(serialize());const html=state.undo.pop();reloadFrame(html,state.route);dirty();notify('Alteração desfeita.');}
 function doRedo(){if(!state.redo.length){notify('Nada para refazer.');return;}state.undo.push(serialize());const html=state.redo.pop();reloadFrame(html,state.route);dirty();notify('Alteração refeita.');}
 $('#undo').addEventListener('click',doUndo);$('#redo').addEventListener('click',doRedo);
-$('#draft-save').addEventListener('click',async()=>{try{await saveDraft();notify('Rascunho salvo localmente. Não foi publicado.');}catch(e){notify('Não foi possível salvar: '+e.message);}});
+$('#draft-save').addEventListener('click',async()=>{try{await saveDraft();notify('Rascunho salvo neste navegador. Para atualizar o site, clique em Publicar alterações.');}catch(e){fsDraftFailed(e);}});
 $('#restore-published').addEventListener('click',async()=>{if(!confirm('Descartar todas as mudanças NÃO PUBLICADAS e voltar ao arquivo que está no GitHub?'))return;
- clearTimeout(draftTimer);await draftAction('delete').catch(()=>{});state.undo=[];state.redo=[];state.dirty=false;reloadFrame(state.html,'/');setStatus('Versão publicada restaurada');notify('Voltamos à versão publicada do site.');});
+ clearTimeout(draftTimer);await draftAction('delete').catch(()=>{});state.undo=[];state.redo=[];state.dirty=false;fsLastSavedRevision=fsDraftRevision;reloadFrame(state.html,'/');fsAutosaveStatus('✓ Versão publicada restaurada','ok');setStatus('Versão publicada restaurada');notify('Voltamos à versão publicada do site.');});
 function showPublishError(err){
  const panel=$('#publish-error');panel.hidden=false;
  let msg=String(err.message||err);if(err.status===401)msg+=' Sua sessão pode ter expirado: saia e entre novamente.';
@@ -1189,12 +1280,23 @@ $('#publish').addEventListener('click',async()=>{
  if(!state.dirty){notify('Não há alterações pendentes.');return;}
  const html=serialize();$('#publish-error').hidden=true;if(!confirm('Publicar agora todas as alterações no seu repositório do GitHub?'))return;
  const b=$('#publish');b.disabled=true;b.textContent='Publicando…';setStatus('Publicando no GitHub…');
- try{const r=await api('/publish',{method:'POST',body:JSON.stringify({html,expectedSha:state.sha})});if(!r.ok||!r.sha)throw Error('O servidor não confirmou o envio ao GitHub.');state.sha=r.sha;state.html=html;state.undo=[];state.redo=[];state.dirty=false;clearTimeout(draftTimer);await draftAction('delete').catch(()=>{});setStatus('Publicado no GitHub');notify('Alterações enviadas ao GitHub! O Pages pode demorar a atualizar o site.');}
+ try{const r=await api('/publish',{method:'POST',body:JSON.stringify({html,expectedSha:state.sha})});if(!r.ok||!r.sha)throw Error('O servidor não confirmou o envio ao GitHub.');state.sha=r.sha;state.html=html;state.undo=[];state.redo=[];state.dirty=false;clearTimeout(draftTimer);fsLastSavedRevision=fsDraftRevision;await draftAction('delete').catch(()=>{});fsAutosaveStatus('✓ Publicação enviada ao GitHub','ok');setStatus('Publicado no GitHub');notify('Alterações enviadas ao GitHub! O Pages pode demorar a atualizar o site.');}
  catch(e){dirty();showPublishError(e);notify('Publicação não concluída. Veja a mensagem com os detalhes abaixo da prévia.');}
  finally{b.disabled=false;b.textContent='Publicar alterações';}
 });
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'&&state.dirty)saveDraft().catch(()=>{});});
-window.addEventListener('beforeunload',e=>{if(state.dirty){e.preventDefault();e.returnValue='';}});
+document.addEventListener('visibilitychange',()=>{
+ if(document.visibilityState==='hidden'&&state.dirty)saveDraft().catch(fsDraftFailed);
+});
+setInterval(()=>{if(state.dirty&&!state.loading&&fsLastSavedRevision<fsDraftRevision)saveDraft().catch(fsDraftFailed);},12000);
+$('#quick-save-draft')?.addEventListener('click',()=>$('#draft-save').click());
+$('#quick-google-form')?.addEventListener('click',()=>actionInsert('google-forms'));
+$('#quick-effects')?.addEventListener('click',()=>{
+ const el=state.selected;if(!el){notify('Selecione um título, texto, botão ou cartão na prévia para editar a animação.');return;}
+ $('#fs-motion-advanced')?.scrollIntoView({block:'center',behavior:'smooth'});
+ $('#block-motion')?.focus();
+});
+
+window.addEventListener('beforeunload',e=>{if(state.dirty&&fsLastSavedRevision<fsDraftRevision){e.preventDefault();e.returnValue='';}});
 document.addEventListener('keydown',e=>{if(app.hidden||!(e.ctrlKey||e.metaKey))return;
  if(e.key.toLowerCase()==='s'){e.preventDefault();$('#draft-save').click();}
  if(e.key.toLowerCase()==='z'&&!e.target.closest('input,textarea,[contenteditable]')){e.preventDefault();e.shiftKey?doRedo():doUndo();}
