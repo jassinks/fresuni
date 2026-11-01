@@ -65,7 +65,7 @@
  function hide(){if(handle)handle.hidden=true;}
  function position(){
   if(!handle||!handle.isConnected||drag)return;
-  const el=enabled&&bridge.state.editable?sourceFor(bridge.state.selected):null;
+  const el=enabled&&bridge.editable?sourceFor(bridge.selected):null;
   if(!el){hide();return;}
   const rect=el.getBoundingClientRect();
   if(!rect.width||!rect.height){hide();return;}
@@ -110,8 +110,8 @@
   frameWindow.addEventListener('scroll',position,{passive:true});
   frameWindow.addEventListener('resize',position,{passive:true});
   b.addEventListener('pointerdown',e=>{
-   const src=sourceFor(bridge.state.selected);
-   if(!enabled||!bridge.state.editable||!src)return;
+   const src=sourceFor(bridge.selected);
+   if(!enabled||!bridge.editable||!src)return;
    e.preventDefault();e.stopPropagation();
    drag={src,id:e.pointerId,drop:null};
    b.setPointerCapture(e.pointerId);b.classList.add('is-dragging');
@@ -134,7 +134,7 @@
      src.removeAttribute('draggable');src.removeAttribute('data-fresuni-drag');
      zone.insertBefore(src,ref);
      activate(zone,src,near,was);
-     bridge.state.selected=null;
+     bridge.selected=null;
      bridge.clearSelection();bridge.selectElement(src);bridge.dirty();
      bridge.notify('Caixa reposicionada. Ajuste a largura das colunas ou mova outra caixa.');
     }
@@ -154,15 +154,15 @@
   bridge.notify(enabled?'Selecione uma caixa e arraste pela alça ✥.':'Modo organizar desativado; textos continuam editáveis.');
  });
  $('#fs-flow-span')?.addEventListener('change',e=>{
-  const item=sourceFor(bridge.state.selected);
+  const item=sourceFor(bridge.selected);
   if(!item?.parentElement?.classList.contains('fresuni-flow-grid'))return;
-  bridge.snapshot();resize(item,Number(e.target.value));bridge.dirty();updateSlider(bridge.state.selected);position();bridge.positionResizeGrip();
+  bridge.snapshot();resize(item,Number(e.target.value));bridge.dirty();updateSlider(bridge.selected);position();bridge.positionResizeGrip();
  });
  $('#fs-flow-equalize')?.addEventListener('click',()=>{
-  const item=sourceFor(bridge.state.selected),zone=item?.parentElement;
+  const item=sourceFor(bridge.selected),zone=item?.parentElement;
   if(!zone?.classList.contains('fresuni-flow-grid')){bridge.notify('Selecione uma caixa da grade antes de distribuir.');return;}
   bridge.snapshot();const kids=children(zone),width=kids.length<=4?Math.max(2,Math.floor(12/kids.length)):4;
-  kids.forEach(x=>setSpan(x,width));bridge.dirty();updateSlider(bridge.state.selected);bridge.notify('Larguras redistribuídas sem sobreposição.');
+  kids.forEach(x=>setSpan(x,width));bridge.dirty();updateSlider(bridge.selected);bridge.notify('Larguras redistribuídas sem sobreposição.');
  });
  window.FRESUNI_FLOW_EDITOR={bind,onSelect(el){updateSlider(el);position();},onClear:hide,onRoute:position,onMode:position,sync:updateSlider};
 })();
