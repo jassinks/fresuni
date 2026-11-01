@@ -373,6 +373,43 @@ async function restoreDraftIfAny(){let draft;try{draft=await draftAction('get');
   notify('Data original atualizada no rascunho; o arquivo será reorganizado quando publicar.');
  });
 
+
+ // Boxes próprios, editáveis como bloco com título e texto independentes.
+ function fsCurrentInfoBox(){return state.selected?.closest?.('.fresuni-info-box')||null;}
+ function fsSyncInfoBox(){
+  const box=fsCurrentInfoBox(),panel=$('#fs-info-box-controls');
+  if(!panel)return;
+  panel.hidden=!box;if(!box)return;
+  const style=frame.contentWindow.getComputedStyle(box);
+  $('#fs-info-box-theme').value=box.dataset.fresuniBoxTheme||'soft';
+  $('#fs-info-box-background').value=toHex(style.backgroundColor,'#faf6ff');
+  $('#fs-info-box-border').value=toHex(style.borderTopColor,'#c8a5e8');
+  $('#fs-info-box-radius').value=parseInt(style.borderTopLeftRadius)||0;
+  $('#fs-info-box-padding').value=parseInt(style.paddingTop)||24;
+ }
+ $('#fs-info-box-select').addEventListener('click',()=>{
+  const box=fsCurrentInfoBox();if(!box)return;
+  state.selected=null;selectElement(box);
+  notify('Box inteiro selecionado. Ajuste suas dimensões ou arraste-o pela grade.');
+ });
+ $('#fs-info-box-theme').addEventListener('change',e=>{
+  const box=fsCurrentInfoBox();if(!box)return;
+  snapshot();box.dataset.fresuniBoxTheme=e.target.value;
+  for(const prop of ['background-color','border-color','border-width','border-style'])box.style.removeProperty(prop);
+  fsSyncInfoBox();dirty();
+ });
+ for(const [id,prop,convert] of [
+  ['fs-info-box-background','backgroundColor',v=>v],
+  ['fs-info-box-border','borderColor',v=>v],
+  ['fs-info-box-radius','borderRadius',v=>Math.max(0,Math.min(60,+v||0))+'px'],
+  ['fs-info-box-padding','padding',v=>Math.max(4,Math.min(100,+v||24))+'px']
+ ]){
+  $('#'+id).addEventListener('change',e=>{
+   const box=fsCurrentInfoBox();if(!box)return;
+   snapshot();box.style[prop]=convert(e.target.value);dirty();positionResizeGrip();
+  });
+ }
+
 function remember(){const html=serialize();if(state.undo[state.undo.length-1]!==html){state.undo.push(html);if(state.undo.length>25)state.undo.shift();state.redo=[];}}
 function selectRoute(route){
  if(!pageFor(route))return;
@@ -496,7 +533,7 @@ function clickSite(e){
  if(el.closest('[data-fresuni-block="shape"]')&&!el.isContentEditable)el=el.closest('[data-fresuni-block="shape"]');
  selectElement(el);
 }
-function clearSelection(){window.FRESUNI_FLOW_EDITOR?.onClear?.();savedTextRange=null;hideFloatingToolbar();const d=siteDoc();if(d)$$('[data-fresuni-selected]',d).forEach(x=>x.removeAttribute('data-fresuni-selected'));state.selected=null;hideResizeGrip();$('#selection-name').textContent='Selecione texto, imagem, cabeçalho ou rodapé na prévia.';$('#selection-props').hidden=true;const help=$('#selection-instructions');if(help)help.hidden=false;}
+function clearSelection(){window.FRESUNI_FLOW_EDITOR?.onClear?.();$('#fs-info-box-controls')?.setAttribute('hidden','');savedTextRange=null;hideFloatingToolbar();const d=siteDoc();if(d)$$('[data-fresuni-selected]',d).forEach(x=>x.removeAttribute('data-fresuni-selected'));state.selected=null;hideResizeGrip();$('#selection-name').textContent='Selecione texto, imagem, cabeçalho ou rodapé na prévia.';$('#selection-props').hidden=true;const help=$('#selection-instructions');if(help)help.hidden=false;}
 function selectElement(el){if(state.selected===el)return;clearSelection();state.selected=el;el.dataset.fresuniSelected='';const blk=el.closest('[data-fresuni-block]');if(blk){blk.draggable=true;blk.dataset.fresuniDrag='';}
  $('#selection-name').textContent=(el.tagName.toLowerCase())+' · '+(el.textContent.trim().slice(0,48)||'elemento visual');$('#selection-props').hidden=false;
  updateTextInspector(el);
@@ -513,7 +550,7 @@ function selectElement(el){if(state.selected===el)return;clearSelection();state.
  $('#element-height').value=parseInt(el.style.minHeight)||0;$('#corner-radius').value=parseInt(el.style.borderRadius)||0;$('#border-size').value=parseInt(el.style.borderWidth)||0;
  $('#border-color').value=toHex(cs.borderTopColor,'#8300ea');$('#block-motion').value=el.dataset.fresuniMotion||'none';$('#motion-time').value=parseInt(el.style.getPropertyValue('--fresuni-motion-duration'))||650;
  $('#shape-kind').value=el.dataset.fresuniShape||'box';
- fsSyncControls(el);
+ fsSyncControls(el);fsSyncInfoBox();
  const gridItem=fsWholeGridItem(el);
  if(gridItem&&state.editable){gridItem.draggable=true;gridItem.dataset.fresuniDrag='';}
  positionResizeGrip();positionFloatingToolbar();window.FRESUNI_FLOW_EDITOR?.onSelect?.(el);
@@ -592,9 +629,31 @@ function refreshSearch(root){const scripts=$$('script',root);const script=script
  const pageEntries=$$('main > .site-page[data-route]',root).map(p=>({title:titleOf(p),description:p.textContent.trim().replace(/\s+/g,' ').slice(0,240),url:'#'+p.dataset.route,type:'Página'}));
  const rep='window.FRESUNI_SEARCH_INDEX='+JSON.stringify([...pageEntries,...proposalItems]).replace(/<\//g,'<\\/')+';';script.textContent=script.textContent.replace(match[0],rep);
 }
+
+ // Limpa apenas campos duplicados de introdução e parágrafos realmente vazios.
+ function fsCleanupRepeats(root){
+  for(const page of root.querySelectorAll('main > .site-page')){
+   const lead=page.querySelector('.page-heading .page-lead');
+   const norm=v=>(v||'').replace(/\s+/g,' ').trim().toLocaleLowerCase('pt-BR');
+   page.querySelectorAll('.collection-intro').forEach(p=>{
+    if(!norm(p.textContent)||(lead&&norm(lead.textContent)===norm(p.textContent)))p.remove();
+   });
+   page.querySelectorAll('article p').forEach(p=>{
+    if(p.hasAttribute('data-fresuni-block')||p.closest('[contenteditable]'))return;
+    if(!p.textContent.trim()&&!p.querySelector('img,iframe,svg,video,audio,input'))p.remove();
+   });
+  }
+ }
+
 function serialize(){const d=siteDoc();if(!d)return state.html;
- const root=d.documentElement.cloneNode(true);stripTransient(root);fsRefreshNewsArchives(root);refreshSearch(root);
+ const root=d.documentElement.cloneNode(true);stripTransient(root);fsCleanupRepeats(root);fsRefreshNewsArchives(root);refreshSearch(root);
  const head=root.querySelector('head');if(head){for(const el of Array.from(head.querySelectorAll('link[rel=stylesheet]'))){if((el.getAttribute('href')||'').includes('fonts.googleapis.com/css2'))el.remove();}const fontLink=root.ownerDocument.createElement('link');fontLink.rel='stylesheet';fontLink.href=COMPLETE_FONTS;head.append(fontLink);}
+ for(const id of ['fresuni-layout-polish-v2','fresuni-custom-box-style']){
+  if(!root.querySelector('#'+id)){
+   const fromPublished=new DOMParser().parseFromString(state.html,'text/html').getElementById(id);
+   if(fromPublished)root.querySelector('head')?.append(fromPublished.cloneNode(true));
+  }
+ }
  if(!root.querySelector('#fresuni-flow-grid-style')){const canonical=new DOMParser().parseFromString(state.html,'text/html').getElementById('fresuni-flow-grid-style');if(canonical)root.querySelector('head')?.append(canonical.cloneNode(true));}
  const style=root.querySelector('#fresuni-extra-effects')||root.ownerDocument.createElement('style');style.id='fresuni-extra-effects';style.textContent=motionCss;
  if(!style.isConnected)root.querySelector('head').append(style);
@@ -647,6 +706,7 @@ function actionInsert(type){if(type==='google-forms'){fsOpenGoogleForms();return
  button:'<p data-fresuni-block="button"><a class="editor-public-button" href="#/filiacao" style="display:inline-block;background:#8300ea;color:white;padding:12px 20px;border-radius:7px;text-decoration:none;font-weight:600">Clique aqui</a></p>',
  accordion:'<details data-fresuni-block="accordion" style="border-bottom:1px solid #ddd;padding:15px 0"><summary style="font-weight:700;cursor:pointer;color:#8300ea">Título do conteúdo recolhível</summary><p>Escreva o conteúdo que será mostrado ao abrir.</p></details>',
  more:'<details data-fresuni-block="more" style="margin:20px 0"><summary style="color:#8300ea;font-weight:600;cursor:pointer;list-style-position:inside">Leia mais…</summary><div style="padding:12px 15px"><p>Conteúdo completo. Clique para editar.</p></div></details>',
+ 'info-box':'<aside class="fresuni-info-box" data-fresuni-block="info-box" data-fresuni-box-theme="soft"><h3>Título do box</h3><p>Escreva seu texto aqui. Altere livremente o conteúdo, as cores, o tamanho, a borda e o formato.</p></aside>',
  box:'<div data-fresuni-block="shape" data-fresuni-shape="box" style="display:block;box-sizing:border-box;max-width:100%;width:100%;min-height:110px;padding:24px;border:2px solid #8300ea;background:#f4e8ff;border-radius:0"><h3 style="color:#8300ea">Título do quadro</h3><p>Texto dentro da forma, que pode ser editado.</p></div>',
  circle:'<div data-fresuni-block="shape" data-fresuni-shape="circle" style="box-sizing:border-box;max-width:100%;width:260px;min-height:260px;aspect-ratio:1;border-radius:50%;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:34px;background:#e9d4ff;border:2px solid #8300ea;overflow-wrap:anywhere"><p>Seu texto dentro do círculo</p></div>',
  pill:'<div data-fresuni-block="shape" data-fresuni-shape="pill" style="box-sizing:border-box;max-width:100%;width:60%;min-height:60px;border-radius:100px;background:#8300ea;color:#fff;text-align:center;padding:16px 24px"><p style="color:inherit">Texto da etiqueta</p></div>',
