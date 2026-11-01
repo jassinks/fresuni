@@ -66,7 +66,7 @@
     <div class="toolbox-scroll">
       <div data-panel="insert" class="tab-panel">
         <p class="pane-intro">Clique em qualquer título, parágrafo ou link — inclusive na página inicial, cabeçalho e rodapé. Edite direto na prévia ou no campo “Editar texto selecionado” abaixo. Para remover, use “Apagar texto” ou “Excluir elemento”.</p>
-        <div class="insert-grid"><button data-insert="text"><span>▤</span>Caixa de texto</button><button data-insert="heading"><span>𝐓</span>Título</button><button data-insert="image"><span>▧</span>Imagem</button><button data-insert="button"><span>⊞</span>Botão</button><button data-insert="accordion"><span>▾</span>Grupo recolhível</button><button data-insert="more"><span>⋯</span>Leia mais</button><button data-insert="box"><span>▢</span>Quadro</button><button data-insert="circle"><span>◯</span>Círculo</button><button data-insert="pill"><span>▱</span>Etiqueta</button><button data-insert="divider"><span>─</span>Divisor</button><button data-insert="quote"><span>❞</span>Citação</button><button data-insert="embed"><span>⌘</span>Incorporar</button><button data-insert="list"><span>☷</span>Lista</button></div>
+        <div class="insert-grid"><button data-insert="text"><span>▤</span>Caixa de texto</button><button data-insert="heading"><span>𝐓</span>Título</button><button data-insert="image"><span>▧</span>Imagem</button><button data-insert="button"><span>⊞</span>Botão</button><button data-insert="accordion"><span>▾</span>Grupo recolhível</button><button data-insert="more"><span>⋯</span>Leia mais</button><button data-insert="box"><span>▢</span>Quadro</button><button data-insert="circle"><span>◯</span>Círculo</button><button data-insert="pill"><span>▱</span>Etiqueta</button><button data-insert="divider"><span>─</span>Divisor</button><button data-insert="quote"><span>❞</span>Citação</button><button data-insert="embed"><span>⌘</span>Incorporar</button><button data-insert="google-forms" type="button" class="google-forms-tool" title="Adicionar formulário, abaixo-assinado ou pesquisa do Google Formulários"><span>▦</span>Google Formulários</button><button data-insert="list"><span>☷</span>Lista</button></div>
         <section id="home-quick-tools" class="home-quick-tools" aria-labelledby="home-quick-title">
           <h3 id="home-quick-title">+ Guias rápidos da página inicial</h3>
           <p class="hint">Adicione um link ou texto ao lado de CONHEÇA, NOTÍCIAS, ARTIGOS ou PALESTRAS. Os itens se acomodam automaticamente na grade sem sobreposição.</p>
@@ -169,6 +169,25 @@
   </aside>
  </div>
  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+ <dialog id="google-forms-dialog" class="modal google-forms-dialog" aria-labelledby="google-forms-heading">
+  <form id="google-forms-form">
+   <div class="google-forms-dialog-header"><span aria-hidden="true">▦</span><div><h2 id="google-forms-heading">Integrar Google Formulários</h2><p class="hint">Inclua inscrições, pesquisas, abaixo-assinados e sugestões na página selecionada do FRESUNI.</p></div></div>
+   <label for="google-forms-url">Link público ou código de incorporação do Google Formulários</label>
+   <textarea id="google-forms-url" rows="3" required spellcheck="false" placeholder="https://docs.google.com/forms/d/e/.../viewform ou &lt;iframe src=...&gt;"></textarea>
+   <p class="hint">No Google Formulários, use <strong>Enviar / Publicar → Incorporar (&lt;&gt;)</strong> e copie o código, ou cole o link direto do formulário.</p>
+   <label for="google-forms-title">Título para identificar o formulário</label>
+   <input id="google-forms-title" type="text" maxlength="120" value="Formulário do FRESUNI" placeholder="Ex.: Envie sua sugestão">
+   <label for="google-forms-mode">Como mostrar no site</label>
+   <select id="google-forms-mode"><option value="embed">Incorporado na página (recomendado)</option><option value="link">Botão para abrir o formulário</option></select>
+   <div id="google-forms-height-wrap">
+    <label for="google-forms-height">Altura do formulário (px)</label>
+    <input id="google-forms-height" type="number" min="350" max="2600" step="50" value="800">
+    <p class="hint">A largura se adapta ao computador e celular. Ajuste a altura se o formulário tiver muitas perguntas.</p>
+   </div>
+   <p id="google-forms-warning" class="google-forms-warning" role="alert" hidden></p>
+   <div class="modal-actions"><button class="btn" type="button" id="google-forms-cancel">Cancelar</button><button class="primary" id="google-forms-submit" type="submit">Integrar à página</button></div>
+  </form>
+ </dialog>
  <dialog id="link-dialog" class="modal link-dialog" aria-labelledby="link-dialog-heading">
  <form id="link-form"><h2 id="link-dialog-heading">Inserir ou editar link</h2>
   <p id="link-context" class="hint">Escolha uma página do FRESUNI ou cole um endereço externo.</p>
