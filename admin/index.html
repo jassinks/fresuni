@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive"><meta name="color-scheme" content="light">
+<title>Editor de conteúdo — FRESUNI Social</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=Merriweather:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./editor.css">
+</head>
+<body>
+<div id="login-screen" class="login-screen">
+ <div class="login-shell">
+   <div class="login-art"><span class="login-kicker">ÁREA ADMINISTRATIVA</span><h1>O espaço de quem faz a inclusão acontecer.</h1><p>Um editor construído para a identidade do FRESUNI, com páginas, textos, imagens e publicação em um só lugar.</p><span class="login-art-bottom">FRESUNI SOCIAL · GESTÃO DO SITE</span></div>
+   <form id="login-form" class="login-card">
+     <img class="login-logo" src="./logo.png" alt="FRESUNI Social">
+     <h2>Entrar no editor</h2>
+     <p>Este acesso é exclusivo para a administração. Quem visita o site não precisa fazer login.</p>
+     <label for="admin-user">Usuário</label><input id="admin-user" name="username" autocomplete="username" required placeholder="Seu usuário">
+     <label for="admin-pass">Senha</label><div class="pass-line"><input id="admin-pass" name="password" type="password" autocomplete="current-password" required placeholder="Sua senha"><button id="show-pass" type="button" aria-label="Mostrar ou ocultar senha">Ver</button></div>
+     <button type="submit" id="login-submit" class="primary full">Entrar no painel</button>
+     <p id="login-error" role="alert" class="error" aria-live="assertive"></p>
+     <p class="login-help" id="setup-help" hidden>Para ativar a autenticação, publique o serviço de segurança e informe seu endereço em <code>admin/config.js</code>. Consulte o guia de instalação.</p>
+     <a class="back-link" href="../index.html">← Voltar ao site público</a>
+   </form>
+ </div>
+</div>
+<div id="app" hidden>
+ <header class="topbar">
+  <div class="topbrand"><img class="topbar-logo" src="./logo.png" alt=""><div><b>FRESUNI <span>Editor</span></b><small>Gerenciador do site</small></div></div>
+  <div class="top-actions">
+   <span id="save-state" role="status" aria-live="polite">Pronto</span>
+   <button class="btn" id="undo" title="Desfazer última alteração">↶ <span>Desfazer</span></button>
+   <button class="btn" id="preview" aria-pressed="false">◉ Pré-visualizar</button>
+   <button class="btn" id="backup">↓ Backup</button>
+   <button class="btn" id="export">↓ Exportar HTML</button>
+   <button class="primary" id="publish">Publicar alterações</button>
+   <button class="icon-action" id="logout" title="Sair do editor" aria-label="Sair do editor">⏻</button>
+  </div>
+ </header>
+ <div class="editor-layout">
+  <aside class="pages-pane" aria-label="Gerenciador de páginas">
+   <div class="pane-heading"><div><span class="eyebrow">ESTRUTURA</span><h2>Páginas</h2></div><button id="add-page" class="round-add" aria-label="Criar página" title="Criar página">+</button></div>
+   <label class="search-pages"><span>⌕</span><input id="page-filter" placeholder="Buscar página" aria-label="Buscar páginas"></label>
+   <div class="pages-scroll"><div id="page-tree" class="page-tree" role="list"></div></div>
+   <div class="page-actions"><button id="duplicate-page">Duplicar</button><button id="delete-page">Excluir</button><button id="page-up">↑</button><button id="page-down">↓</button></div>
+   <div class="left-footer"><span class="status-dot"></span> <span id="page-counter">19 páginas</span><a href="../index.html" target="_blank" rel="noopener">Abrir site ↗</a></div>
+  </aside>
+  <main class="workspace">
+   <div class="workspace-top"><div><span class="eyebrow">EDITANDO PÁGINA</span><strong id="current-page-title">Início</strong><span class="crumb" id="current-route">#/</span></div><div class="viewport-controls"><button class="vbtn active" id="view-desktop" aria-pressed="true">▣ Computador</button><button class="vbtn" id="view-mobile" aria-pressed="false">▯ Celular</button></div></div>
+   <div class="format-toolbar" role="toolbar" aria-label="Ferramentas para formatar texto"><label>Fonte<select id="font-family" title="Fonte"><option value="Prompt">Prompt</option><option value="Merriweather">Merriweather</option><option value="Arial">Arial</option><option value="Georgia">Georgia</option></select></label><label>Tamanho<input id="font-size" type="number" min="10" max="96" value="16" title="Tamanho em pixels"></label><button data-format="bold" title="Negrito" aria-label="Negrito"><b>B</b></button><button data-format="italic" title="Itálico" aria-label="Itálico"><i>I</i></button><button data-format="underline" title="Sublinhado" aria-label="Sublinhado"><u>U</u></button><label class="color-wrapper" title="Cor do texto"><span>Cor</span><input id="text-color" type="color" value="#8300ea"></label><button data-format="insertUnorderedList" title="Lista com marcadores">☷</button><button data-align="left" aria-label="Alinhar à esquerda">≡</button><button data-align="center" aria-label="Centralizar">☰</button><button data-align="right" aria-label="Alinhar à direita">≣</button><button id="make-link" title="Inserir ou editar link">🔗</button><span class="toolbar-note">Selecione um texto para formatar</span></div>
+   <div class="canvas-wrapper"><div class="canvas" id="canvas"><iframe id="site-frame" title="Área de edição visual do FRESUNI" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe></div></div>
+   <div class="workspace-bottom"><span><span class="live-dot"></span> As alterações ficam em rascunho até você publicar.</span><button id="selected-remove">Remover bloco selecionado</button></div>
+  </main>
+  <aside class="toolbox" aria-label="Ferramentas de edição">
+    <div class="tabbar" role="tablist" aria-label="Seções do editor"><button class="active" role="tab" aria-selected="true" data-tab="insert">Inserir</button><button role="tab" aria-selected="false" data-tab="pages">Páginas</button><button role="tab" aria-selected="false" data-tab="theme">Temas</button></div>
+    <div class="toolbox-scroll">
+      <div data-panel="insert" class="tab-panel">
+        <p class="pane-intro">Clique no conteúdo para editar diretamente. Adicione novos elementos abaixo.</p>
+        <div class="insert-grid"><button data-insert="text"><span>▤</span>Caixa de texto</button><button data-insert="heading"><span>𝐓</span>Título</button><button data-insert="image"><span>▧</span>Imagem</button><button data-insert="button"><span>⊞</span>Botão</button><button data-insert="accordion"><span>▾</span>Grupo recolhível</button><button data-insert="divider"><span>─</span>Divisor</button><button data-insert="quote"><span>❞</span>Citação</button><button data-insert="embed"><span>⌘</span>Incorporar</button><button data-insert="list"><span>☷</span>Lista</button></div>
+        <div class="sep"></div><h3>Elemento selecionado</h3><p id="selection-name" class="selection-empty">Selecione um texto, uma imagem ou um bloco na página.</p>
+        <div id="selection-props" hidden><label>Link ou endereço da imagem <input id="element-url" placeholder="https://..."></label><label>Texto alternativo (imagens) <input id="element-alt" placeholder="Descreva a imagem"></label><label>Cor de fundo <input id="background-color" type="color" value="#ffffff"></label><div class="prop-buttons"><button id="move-block-up">↑ Subir</button><button id="move-block-down">↓ Descer</button><button id="duplicate-block">Duplicar</button></div></div>
+      </div>
+      <div data-panel="pages" class="tab-panel" hidden>
+         <p class="pane-intro">Organize a navegação. Páginas e textos existentes são preservados até você alterar ou excluir.</p>
+         <h3>Configurações da página</h3><label>Nome da página<input id="page-title" placeholder="Título da página"></label><label>Grupo do menu<select id="page-group"><option value="inicio">Início</option><option value="manifesto">Manifesto</option><option value="acoes">Ações</option><option value="principal">Menu principal</option><option value="oculto">Não mostrar no menu</option></select></label><label class="check-label"><input id="page-show" type="checkbox" checked> Exibir na navegação</label><p class="hint">A ordem é alterada com as setas na coluna Páginas. O endereço original é mantido para não quebrar links.</p>
+         <div class="sep"></div><h3>Nova página</h3><button id="add-page-secondary" class="btn full">+ Adicionar página</button>
+      </div>
+      <div data-panel="theme" class="tab-panel" hidden>
+         <p class="pane-intro">Personalize o visual sem perder a identidade do FRESUNI.</p><h3>Identidade</h3><label>Cor principal <input type="color" id="theme-primary" value="#8300ea"></label><label>Cor do texto <input type="color" id="theme-text" value="#000000"></label><label>Fundo do site <input type="color" id="theme-bg" value="#ffffff"></label><label>Fonte dos textos<select id="theme-font"><option value="Prompt">Prompt</option><option value="Merriweather">Merriweather</option><option value="Arial">Arial</option></select></label><p class="hint">As mudanças de tema afetam todas as páginas. Alto contraste e modo escuro continuam disponíveis aos visitantes.</p><button id="reset-theme" class="btn full">Restaurar cores oficiais</button>
+      </div>
+    </div>
+  </aside>
+ </div>
+ <div class="toast" id="toast" role="status" aria-live="polite"></div>
+ <dialog id="new-page-dialog" class="modal"><form method="dialog" id="new-page-form"><h2>Criar nova página</h2><p>A página será adicionada ao site e poderá aparecer no menu.</p><label>Nome da página<input id="new-page-title" required maxlength="100" placeholder="Ex.: Novas ações"></label><label>Endereço (automático)<input id="new-page-slug" placeholder="novas-acoes"></label><label>Adicionar ao grupo<select id="new-page-group"><option value="inicio">Início</option><option value="acoes">Ações</option><option value="manifesto">Manifesto</option><option value="principal">Menu principal</option><option value="oculto">Oculta do menu</option></select></label><div class="modal-actions"><button value="cancel" id="cancel-new" type="button">Cancelar</button><button value="create" class="primary" id="confirm-new" type="submit">Criar página</button></div></form></dialog>
+ <input id="upload-image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden>
+</div>
+<script src="./config.js"></script><script src="./editor.js" defer></script>
+</body></html>
