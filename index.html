@@ -453,5 +453,186 @@ html.simple-mode .js-motion [data-reveal]{opacity:1!important;transform:none!imp
   document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeAll();}});
   window.addEventListener('hashchange',()=>closeAll());
 })();</script>
+<script id="fresuni-share-script">
+/* FRESUNI Social — Compartilhamento acessível para todas as páginas, inclusive novas notícias e artigos.
+   O endereço público permanece no GitHub Pages; no editor (iframe srcdoc) usamos a URL canônica. */
+(()=>{
+  'use strict';
+  if(window.__FRESUNI_SHARE_INIT__)return;
+  window.__FRESUNI_SHARE_INIT__=true;
+
+  const DEFAULT_SITE='https://jassinks.github.io/fresuni/';
+  const d=document;
+  const css=d.createElement('style');
+  css.id='fresuni-share-style';
+  css.dataset.editorInternal='';
+  css.textContent=`
+    .fs-share-row{display:flex;align-items:center;justify-content:flex-start;gap:10px;margin:22px 0 30px;clear:both}
+    .fs-share-row.fs-share-row--end{margin:22px 0 12px}
+    .fs-share-launch{display:inline-flex;align-items:center;gap:10px;background:var(--surface,#fff);color:var(--purple,#8300ea);border:1.5px solid var(--purple,#8300ea);border-radius:8px;padding:9px 16px;font:600 14px/1.4 Prompt,Arial,sans-serif;min-height:44px;cursor:pointer;transition:transform .16s ease,background .16s ease,box-shadow .16s ease}
+    .fs-share-launch:hover{background:color-mix(in srgb,var(--purple,#8300ea) 9%,var(--surface,#fff));box-shadow:0 3px 10px rgba(80,0,120,.12);transform:translateY(-1px)}
+    .fs-share-launch svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .fs-share-launch:focus-visible,.fs-share-panel button:focus-visible,.fs-share-panel a:focus-visible{outline:3px solid #d15c00;outline-offset:3px}
+    .fs-share-overlay[hidden]{display:none!important}
+    .fs-share-overlay{position:fixed;inset:0;z-index:2147482000;display:grid;place-items:center;padding:20px;background:rgba(17,8,30,.6);backdrop-filter:blur(3px)}
+    .fs-share-panel{width:min(520px,100%);max-height:min(88dvh,760px);overflow-y:auto;background:var(--surface,#fff);color:var(--ink,#111);border-radius:18px;padding:25px;box-shadow:0 18px 65px rgba(0,0,0,.22);font:400 16px/1.45 Prompt,Arial,sans-serif}
+    .fs-share-head{display:flex;gap:14px;align-items:flex-start;justify-content:space-between;margin-bottom:7px}
+    .fs-share-panel h2{margin:0 0 8px;font:700 22px/1.35 Merriweather,Georgia,serif;color:var(--purple,#8300ea)}
+    .fs-share-close{border:0;background:transparent;color:inherit;font-size:28px;line-height:1;width:44px;height:44px;border-radius:8px;cursor:pointer}
+    .fs-share-title{margin:0 0 15px;overflow-wrap:anywhere;font-size:14px;color:var(--muted,#4c4c4c)}
+    .fs-share-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .fs-share-options a,.fs-share-options button{box-sizing:border-box;display:flex;align-items:center;justify-content:center;text-align:center;gap:6px;min-width:0;min-height:48px;padding:10px 8px;border:1px solid var(--line,#ddd);border-radius:9px;background:var(--surface,#fff);color:var(--ink,#111);font:600 14px/1.4 Prompt,Arial,sans-serif;text-decoration:none;cursor:pointer}
+    .fs-share-options a:hover,.fs-share-options button:hover{border-color:var(--purple,#8300ea);color:var(--purple,#8300ea);background:color-mix(in srgb,var(--purple,#8300ea) 6%,var(--surface,#fff))}
+    .fs-share-options .fs-share-primary{grid-column:1 / -1;background:var(--purple,#8300ea);color:white;border-color:var(--purple,#8300ea)}
+    .fs-share-options .fs-share-primary:hover{color:white;filter:brightness(.95)}
+    .fs-share-note{margin:14px 0 0;font-size:12px;line-height:1.55;color:var(--muted,#4c4c4c)}
+    .fs-share-status{min-height:1.5em;margin-top:12px;font-size:14px;font-weight:600;color:var(--purple,#8300ea)}
+    @media(max-width:480px){.fs-share-overlay{padding:12px;align-items:end}.fs-share-panel{padding:20px 16px;border-radius:18px 18px 10px 10px}.fs-share-options{gap:8px}.fs-share-launch{font-size:14px}}
+    @media(prefers-reduced-motion:reduce){.fs-share-launch{transition:none!important;transform:none!important}.fs-share-overlay{backdrop-filter:none}}
+  `;
+  d.head.append(css);
+
+  const overlay=d.createElement('div');
+  overlay.className='fs-share-overlay';
+  overlay.dataset.editorInternal='';
+  overlay.hidden=true;
+  overlay.innerHTML=`<section class="fs-share-panel" role="dialog" aria-modal="true" aria-labelledby="fs-share-heading" aria-describedby="fs-share-current">
+    <div class="fs-share-head"><h2 id="fs-share-heading">Compartilhe esta página</h2><button class="fs-share-close" type="button" aria-label="Fechar compartilhamento" data-share-close>×</button></div>
+    <p class="fs-share-title" id="fs-share-current"></p>
+    <div class="fs-share-options">
+      <button class="fs-share-primary" type="button" data-share-native>Compartilhar pelo dispositivo</button>
+      <a data-share-to="whatsapp" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+      <a data-share-to="facebook" target="_blank" rel="noopener noreferrer">Facebook</a>
+      <a data-share-to="telegram" target="_blank" rel="noopener noreferrer">Telegram</a>
+      <a data-share-to="x" target="_blank" rel="noopener noreferrer">X (Twitter)</a>
+      <a data-share-to="linkedin" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+      <a data-share-to="bluesky" target="_blank" rel="noopener noreferrer">Bluesky</a>
+      <a data-share-to="email">E-mail</a>
+      <button type="button" data-share-instagram>Instagram: copiar link</button>
+      <button type="button" data-share-copy>Copiar link</button>
+    </div>
+    <p class="fs-share-note">No Instagram, não é possível preencher automaticamente uma publicação a partir deste site. Copie o link para colar em uma conversa, bio ou Story; no celular, também é possível tentar “Compartilhar pelo dispositivo”.</p>
+    <div class="fs-share-status" role="status" aria-live="polite"></div>
+  </section>`;
+  d.body.append(overlay);
+
+  const status=overlay.querySelector('.fs-share-status');
+  const nativeBtn=overlay.querySelector('[data-share-native]');
+  const copyBtn=overlay.querySelector('[data-share-copy]');
+  const instagramBtn=overlay.querySelector('[data-share-instagram]');
+  let active={title:'FRESUNI Social',url:DEFAULT_SITE};
+  let trigger=null;
+
+  const canonicalUrl=route=>{
+    let base=DEFAULT_SITE;
+    try{
+      if(/^https?:$/.test(location.protocol)&&!(/(?:^|\.)localhost$|^127\.0\.0\.1$/.test(location.hostname))&&!location.pathname.includes('/admin')){
+        base=location.origin+location.pathname+location.search;
+      }
+      const u=new URL(base);
+      u.hash=route;
+      return u.href;
+    }catch{return DEFAULT_SITE+'#'+route;}
+  };
+  const pageInfo=page=>{
+    const title=page.dataset.title||page.querySelector('h1')?.textContent?.trim()||'FRESUNI Social';
+    const route=page.dataset.route||'/';
+    return {title,url:canonicalUrl(route)};
+  };
+  const textToShare=()=>`${active.title} — FRESUNI Social\n${active.url}`;
+  const hrefs=()=>{
+    const u=encodeURIComponent(active.url),t=encodeURIComponent(active.title),both=encodeURIComponent(textToShare());
+    return {
+      whatsapp:`https://wa.me/?text=${both}`,
+      facebook:`https://www.facebook.com/sharer/sharer.php?u=${u}`,
+      telegram:`https://t.me/share/url?url=${u}&text=${t}`,
+      x:`https://twitter.com/intent/tweet?text=${t}&url=${u}`,
+      linkedin:`https://www.linkedin.com/sharing/share-offsite/?url=${u}`,
+      bluesky:`https://bsky.app/intent/compose?text=${both}`,
+      email:`mailto:?subject=${t}&body=${both}`
+    };
+  };
+  const open=button=>{
+    const page=button.closest('.site-page[data-route]');
+    if(!page)return;
+    active=pageInfo(page);
+    trigger=button;
+    overlay.querySelector('#fs-share-current').textContent=active.title;
+    status.textContent='';
+    const urls=hrefs();
+    overlay.querySelectorAll('[data-share-to]').forEach(a=>a.setAttribute('href',urls[a.dataset.shareTo]||'#'));
+    nativeBtn.hidden=typeof navigator.share!=='function';
+    overlay.hidden=false;
+    d.body.dataset.fresuniShareOpen='true';
+    overlay.querySelector('[data-share-close]').focus();
+  };
+  const close=()=>{
+    overlay.hidden=true;
+    delete d.body.dataset.fresuniShareOpen;
+    if(trigger?.isConnected)trigger.focus();
+  };
+  const copy=async()=>{
+    try{
+      if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(active.url);return true;}
+      const area=d.createElement('textarea');area.value=active.url;area.setAttribute('readonly','');area.style.cssText='position:fixed;left:-10000px;top:0';d.body.append(area);area.select();const done=d.execCommand('copy');area.remove();return done;
+    }catch{return false;}
+  };
+  const shareButton=page=>{
+    const row=d.createElement('div');row.className='fs-share-row';row.dataset.editorInternal='';
+    const button=d.createElement('button');button.type='button';button.className='fs-share-launch';
+    button.setAttribute('aria-label',`Compartilhar: ${pageInfo(page).title}`);
+    button.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.5 6.8-4m-6.8 9 6.8 4"/></svg><span>Compartilhar</span>`;
+    button.addEventListener('click',()=>open(button));
+    row.append(button);
+    return row;
+  };
+  const addToPage=page=>{
+    if(page.querySelector('.fs-share-row'))return;
+    const row=shareButton(page);
+    const heading=page.querySelector('.page-heading');
+    const container=heading?.parentElement||page.querySelector('.container, .home-wrap')||page;
+    if(heading)heading.after(row);
+    else {
+      const opening=page.querySelector('.home-opening,.page-shell h1,h1');
+      if(opening)opening.after(row);else container.prepend(row);
+    }
+    // Offer a second share action after long reads without duplicating the dialog.
+    const article=page.querySelector('article.prose');
+    if(article){const bottom=shareButton(page);bottom.classList.add('fs-share-row--end');article.after(bottom);}
+  };
+  const refresh=()=>{
+    d.querySelectorAll('main > .site-page[data-route]').forEach(addToPage);
+  };
+  overlay.addEventListener('click',e=>{if(e.target===overlay||e.target.closest('[data-share-close]'))close();});
+  d.addEventListener('keydown',e=>{
+    if(overlay.hidden)return;
+    if(e.key==='Escape'){e.preventDefault();close();}
+    if(e.key==='Tab'){
+      const focusables=[...overlay.querySelectorAll('button:not([hidden]):not([disabled]),a[href]')];
+      const first=focusables[0],last=focusables.at(-1);
+      if(e.shiftKey&&d.activeElement===first){e.preventDefault();last.focus();}
+      else if(!e.shiftKey&&d.activeElement===last){e.preventDefault();first.focus();}
+    }
+  });
+  d.addEventListener('click',e=>{if(e.target.closest('a[href^="#/"]')&&!overlay.hidden)close();});
+  copyBtn.addEventListener('click',async()=>{status.textContent=await copy()?'Link copiado. Agora é só compartilhar!':'Não foi possível copiar automaticamente. Selecione o endereço na barra do navegador.';});
+  instagramBtn.addEventListener('click',async()=>{
+    const ok=await copy();
+    status.textContent=ok?'Link copiado! Abra o Instagram e cole onde desejar.':'Use o botão “Compartilhar pelo dispositivo” ou copie o endereço na barra do navegador.';
+  });
+  nativeBtn.addEventListener('click',async()=>{
+    if(typeof navigator.share!=='function')return;
+    try{await navigator.share({title:active.title,text:'FRESUNI Social',url:active.url});status.textContent='Compartilhamento enviado ao dispositivo.';}
+    catch(e){if(e.name!=='AbortError')status.textContent='Não foi possível abrir o compartilhamento. Escolha uma das opções abaixo.';}
+  });
+  if(d.readyState==='loading')d.addEventListener('DOMContentLoaded',refresh,{once:true});else refresh();
+  // Ao criar páginas no editor, o botão surge também nas páginas novas.
+  const main=d.querySelector('main');
+  if(main){const observer=new MutationObserver(records=>{
+    if(records.some(r=>[...r.addedNodes].some(n=>n.nodeType===1 && (n.matches?.('.site-page[data-route]')||n.querySelector?.('.site-page[data-route]')))))refresh();
+  });observer.observe(main,{childList:true});}
+  window.addEventListener('fresuni:navegacao',refresh);
+})();
+</script>
 </body>
 </html>
