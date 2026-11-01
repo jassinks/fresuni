@@ -202,6 +202,7 @@ async function restoreDraftIfAny(){let draft;try{draft=await draftAction('get');
    const previous=oldPages.get(page.dataset.route);
    const priorMeta=previous?.querySelector('[data-fresuni-page-meta]');
    const pendingMeta=page.querySelector('[data-fresuni-page-meta]');
+   if(page.dataset.fresuniDates==='off'){page.querySelectorAll('[data-fresuni-page-meta]').forEach(x=>x.remove());continue;}
    const created=pendingMeta?.hasAttribute('data-fresuni-created-manual')?(pendingMeta.dataset.createdAt||now):previous?(priorMeta?.dataset.createdAt||now):now;
    const updated=pendingMeta?.hasAttribute('data-fresuni-updated-manual')?(pendingMeta.dataset.updatedAt||now):previous&&fsComparePageForDates(previous)===fsComparePageForDates(page)&&!sharedChanged?(priorMeta?.dataset.updatedAt||now):now;
    // A posição e a formatação da caixa de datas são preservadas.
@@ -224,14 +225,39 @@ async function restoreDraftIfAny(){let draft;try{draft=await draftAction('get');
   return p.year+'-'+p.month+'-'+p.day+'T'+p.hour+':'+p.minute;
  }
  function fsSyncPageDates(){
-  const meta=selectedPage()?.querySelector('[data-fresuni-page-meta]');
+  const page=selectedPage(),meta=page?.querySelector('[data-fresuni-page-meta]');
   $('#fs-date-created').value=fsDateInput(meta?.dataset.createdAt);
   $('#fs-date-updated').value=fsDateInput(meta?.dataset.updatedAt);
-  $('#fs-date-status').textContent=meta?'Horário de Brasília. Corrija quando precisar; a atualização volta a ser automática após publicar.':'A criação será registrada quando a página for publicada.';
+  $('#fs-date-status').textContent=page?.dataset.fresuniDates==='off'?'Bloco removido desta página. Você pode adicioná-lo ou restaurá-lo.':meta?'Datas ativas: você pode ajustá-las manualmente ou deixar a atualização automática.':'Esta página não possui datas: use Adicionar bloco.';
+  $('#fs-date-add').disabled=!!meta;
+  $('#fs-date-remove').disabled=!meta;
  }
+ function fsPublishedDates(page){
+  const published=new DOMParser().parseFromString(state.html,'text/html');
+  return [...published.querySelectorAll('main > .site-page[data-route]')].find(p=>p.dataset.route===page.dataset.route)?.querySelector('[data-fresuni-page-meta]')||null;
+ }
+ function fsAddDates(page,restore){
+  if(!page)return null;
+  const existing=page.querySelector('[data-fresuni-page-meta]');if(existing){delete page.dataset.fresuniDates;return existing;}
+  const previous=fsPublishedDates(page),now=new Date().toISOString();
+  const el=fsPageDateElement(siteDoc(),previous?.dataset.createdAt||now,restore?(previous?.dataset.updatedAt||now):now);
+  if(previous)fsKeepDateStyle(previous,el);
+  page.append(el);delete page.dataset.fresuniDates;return el;
+ }
+ $('#fs-date-add').addEventListener('click',()=>{const page=selectedPage();if(!page)return;snapshot();fsAddDates(page,true);fsSyncPageDates();dirty();notify('Bloco de datas adicionado a esta página.');});
+ $('#fs-date-remove').addEventListener('click',()=>{const page=selectedPage(),el=page?.querySelector('[data-fresuni-page-meta]');if(!el)return;
+  if(!confirm('Remover as datas desta página? Você poderá restaurá-las depois.'))return;
+  snapshot();page.dataset.fresuniDates='off';el.remove();clearSelection();fsSyncPageDates();dirty();notify('Datas removidas somente desta página.');
+ });
+ $('#fs-date-restore').addEventListener('click',()=>{const page=selectedPage();if(!page)return;const previous=fsPublishedDates(page);
+  if(!previous){notify('Ainda não há datas salvas na versão publicada. Use Adicionar bloco.');return;}
+  snapshot();page.querySelectorAll('[data-fresuni-page-meta]').forEach(x=>x.remove());
+  page.append(siteDoc().importNode(previous,true));delete page.dataset.fresuniDates;clearSelection();fsSyncPageDates();dirty();
+  notify('Bloco original de datas restaurado no rascunho.');
+ });
  function fsUpdateDateMeta(created,updated,manualCreated,manualUpdated){
-  const page=selectedPage(),old=page?.querySelector('[data-fresuni-page-meta]');
-  if(!old){notify('Esta página ainda não possui datas publicadas.');return;}
+  const page=selectedPage();if(!page)return;
+  const old=fsAddDates(page,true);
   const next=fsPageDateElement(siteDoc(),created,updated);fsKeepDateStyle(old,next);
   if(manualCreated)next.setAttribute('data-fresuni-created-manual','');
   if(manualUpdated)next.setAttribute('data-fresuni-updated-manual','');
@@ -247,10 +273,9 @@ async function restoreDraftIfAny(){let draft;try{draft=await draftAction('get');
   notify('Datas corrigidas no rascunho. Publique para atualizar o site.');
  });
  $('#fs-date-reset').addEventListener('click',()=>{
-  const page=selectedPage(),old=page?.querySelector('[data-fresuni-page-meta]');if(!old)return;
-  const published=new DOMParser().parseFromString(state.html,'text/html');
-  const prior=[...published.querySelectorAll('main > .site-page[data-route]')].find(p=>p.dataset.route===page.dataset.route)?.querySelector('[data-fresuni-page-meta]');
-  snapshot();fsUpdateDateMeta(prior?.dataset.createdAt||old.dataset.createdAt,old.dataset.updatedAt,false,false);
+  const page=selectedPage();if(!page)return;
+  snapshot();const el=fsAddDates(page,true),old=fsPublishedDates(page);
+  fsUpdateDateMeta(old?.dataset.createdAt||el.dataset.createdAt,el.dataset.updatedAt,false,false);
   notify('Modo automático reativado. A data será renovada quando a página mudar e for publicada.');
  });
 
@@ -984,7 +1009,11 @@ function duplicateElement(){const el=blockElement();if(!el||isCoreShared(el)){no
  const n=el.cloneNode(true);n.removeAttribute('data-fresuni-selected');n.removeAttribute('contenteditable');n.removeAttribute('data-fresuni-drag');n.removeAttribute('draggable');
  el.after(n);setEditable(true);selectElement(n);dirty();notify('Elemento duplicado com texto, formatação e links. Salve o rascunho ou publique quando desejar.');}
 $('#duplicate-block').addEventListener('click',duplicateElement);$('#duplicate-selection').addEventListener('click',duplicateElement);
-$('#selected-remove').addEventListener('click',()=>{const el=blockElement();if(!el||!state.editable)return;if(isCoreShared(el)){notify('Use a aba Cabeçalho e rodapé para administrar este componente sem quebrar a navegação.');return;}if(!confirm('Remover este elemento da página?'))return;snapshot();el.remove();clearSelection();});
+$('#selected-remove').addEventListener('click',()=>{const el=blockElement();if(!el||!state.editable)return;
+ if(el.closest('[data-fresuni-page-meta]')){const page=el.closest('.site-page');if(!page)return;
+  if(!confirm('Remover as datas desta página? Você pode restaurá-las depois.'))return;
+  snapshot();page.dataset.fresuniDates='off';el.closest('[data-fresuni-page-meta]').remove();clearSelection();fsSyncPageDates();dirty();notify('Datas removidas nesta página.');return;
+ }if(isCoreShared(el)){notify('Use a aba Cabeçalho e rodapé para administrar este componente sem quebrar a navegação.');return;}if(!confirm('Remover este elemento da página?'))return;snapshot();el.remove();clearSelection();});
 // Páginas e ordem, sem alterar as URLs já publicadas.
 const expandedPages=new Set(['/','/noticias','/artigos','/acoes','/manifesto']);
 function renderPages(){
