@@ -168,3 +168,25 @@
 #fs-layout-reset{margin-top:10px;min-height:39px;background:#fbf9fe;border:1px solid #d8c6e8;color:#643487}
 #fs-grid-hint{border-left:3px solid #9e5bd6;padding-left:8px;margin-top:10px}
 #fs-grid-span:disabled{opacity:.55;cursor:not-allowed}
+
+/* Google Formulários no editor FRESUNI */
+.insert-grid .google-forms-tool{background:#f7f2ff;border:1px solid #cdaef1;color:#5d1c92;font-weight:700}
+.insert-grid .google-forms-tool span{font-size:26px}
+.insert-grid .google-forms-tool:hover,.insert-grid .google-forms-tool:focus-visible{background:#ecddff;border-color:#9052d1;outline-offset:3px}
+.google-forms-dialog{box-sizing:border-box;width:min(560px,calc(100vw - 26px));max-width:560px;max-height:min(90dvh,780px);overflow:auto;padding:25px 28px}
+.google-forms-dialog-header{display:flex;align-items:flex-start;gap:12px;margin-bottom:18px}
+.google-forms-dialog-header>span{display:grid;place-items:center;border-radius:11px;width:46px;height:46px;flex:none;background:#f2e8ff;color:#8300ea;font-size:27px}
+.google-forms-dialog-header h2{font-size:20px;line-height:1.3;color:#33223d;margin:0 0 5px}
+.google-forms-dialog-header p{margin:0}
+.google-forms-dialog form>label{font-weight:700;font-size:12px;display:block;margin:14px 0 6px;color:#4e3d59}
+.google-forms-dialog textarea,.google-forms-dialog input,.google-forms-dialog select{box-sizing:border-box;width:100%;border:1px solid #d9d0e0;border-radius:9px;background:#fff;padding:11px 12px;font:400 13px/1.5 Prompt,Arial,sans-serif;color:#302637}
+.google-forms-dialog textarea{display:block;resize:vertical;min-height:88px;max-height:210px;overflow-wrap:anywhere}
+.google-forms-dialog input,.google-forms-dialog select{height:44px}
+.google-forms-dialog input:focus-visible,.google-forms-dialog textarea:focus-visible,.google-forms-dialog select:focus-visible{outline:3px solid #c99aff;outline-offset:1px}
+.google-forms-dialog .hint{margin:6px 0 12px}
+.google-forms-dialog #google-forms-height-wrap{border:1px solid #e8dced;padding:9px 13px 11px;margin-top:13px;border-radius:10px;background:#fcf9ff}
+.google-forms-dialog #google-forms-height-wrap>label{font-size:12px;display:block;font-weight:700;margin-bottom:6px}
+.google-forms-dialog .google-forms-warning{background:#fff3ec;color:#8e3d13;padding:10px 12px;border-radius:8px;border-left:3px solid #cc652c;font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.google-forms-dialog .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;flex-wrap:wrap}
+.google-forms-dialog .modal-actions button{min-height:43px;border-radius:8px;font-weight:700}
+@media(max-width:540px){.google-forms-dialog{padding:21px 17px}}
