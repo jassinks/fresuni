@@ -172,6 +172,11 @@ async function restoreDraftIfAny(){let draft;try{draft=await draftAction('get');
   const parts=Object.fromEntries(new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Sao_Paulo',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(date).map(x=>[x.type,x.value]));
   return parts.day+'/'+parts.month+'/'+parts.year+' às '+parts.hour+':'+parts.minute;
  }
+ function fsKeepDateStyle(old,next){
+  for(const attr of [...old.attributes]){
+   if(attr.name==='style'||attr.name==='class'||(attr.name.startsWith('data-fresuni-')&&!/date|created|updated|manual|selected/i.test(attr.name)))next.setAttribute(attr.name,attr.value);
+  }
+ }
  function fsPageDateElement(doc,created,updated){
   const div=doc.createElement('div');div.className='fresuni-page-meta';div.setAttribute('data-fresuni-page-meta','');div.setAttribute('data-created-at',created);div.setAttribute('data-updated-at',updated);div.setAttribute('role','note');div.setAttribute('aria-label','Histórico desta página');
   for(const [label,value] of [['Criado em:',created],['Última atualização:',updated]]){
@@ -199,10 +204,11 @@ async function restoreDraftIfAny(){let draft;try{draft=await draftAction('get');
    const pendingMeta=page.querySelector('[data-fresuni-page-meta]');
    const created=pendingMeta?.hasAttribute('data-fresuni-created-manual')?(pendingMeta.dataset.createdAt||now):previous?(priorMeta?.dataset.createdAt||now):now;
    const updated=pendingMeta?.hasAttribute('data-fresuni-updated-manual')?(pendingMeta.dataset.updatedAt||now):previous&&fsComparePageForDates(previous)===fsComparePageForDates(page)&&!sharedChanged?(priorMeta?.dataset.updatedAt||now):now;
-   page.querySelectorAll('[data-fresuni-page-meta]').forEach(el=>el.remove());
+   // A posição e a formatação da caixa de datas são preservadas.
    // Impede duplicação da data manual antiga ao recuperar rascunhos anteriores.
    if(page.dataset.route==='/noticias/um-novo-site-fresuni')page.querySelectorAll('p[data-fresuni-block="text"]').forEach(p=>{if(p.textContent.trim().startsWith('Úlitma atualização 01/11/2026'))p.remove();});
-   page.append(fsPageDateElement(next,created,updated));
+   const fresh=fsPageDateElement(next,created,updated);
+   if(pendingMeta){fsKeepDateStyle(pendingMeta,fresh);pendingMeta.replaceWith(fresh);page.querySelectorAll('[data-fresuni-page-meta]').forEach(el=>{if(el!==fresh)el.remove();});}else page.append(fresh);
   }
   if(!next.getElementById('fresuni-page-meta-style')){
    const publishedStyle=original.getElementById('fresuni-page-meta-style');
@@ -226,7 +232,7 @@ async function restoreDraftIfAny(){let draft;try{draft=await draftAction('get');
  function fsUpdateDateMeta(created,updated,manualCreated,manualUpdated){
   const page=selectedPage(),old=page?.querySelector('[data-fresuni-page-meta]');
   if(!old){notify('Esta página ainda não possui datas publicadas.');return;}
-  const next=fsPageDateElement(siteDoc(),created,updated);
+  const next=fsPageDateElement(siteDoc(),created,updated);fsKeepDateStyle(old,next);
   if(manualCreated)next.setAttribute('data-fresuni-created-manual','');
   if(manualUpdated)next.setAttribute('data-fresuni-updated-manual','');
   old.replaceWith(next);if(state.selected===old){state.selected=null;selectElement(next);}
@@ -376,7 +382,7 @@ function selectElement(el){if(state.selected===el)return;clearSelection();state.
  $('#selection-name').textContent=(el.tagName.toLowerCase())+' · '+(el.textContent.trim().slice(0,48)||'elemento visual');$('#selection-props').hidden=false;
  updateTextInspector(el);
  const help=$('#selection-instructions');if(help)help.hidden=true;
- if(el.matches('[data-fresuni-page-meta]')){fsSyncPageDates();$('#selection-name').textContent='Datas desta página · altere nos campos Criação e atualização';$('#selection-props').hidden=true;return;}
+ if(el.matches('[data-fresuni-page-meta]')){fsSyncPageDates();$('#selection-name').textContent='Caixa de datas · valores em Criação e atualização; estilo e tamanho abaixo';}
  const target=el.matches('img,iframe,a')?el:el.querySelector('img,iframe,a');
  $('#element-url').value=findLinkFor(el)?.getAttribute('href')||'';
  $('#element-alt').value=el.matches('img')?el.alt:(el.querySelector('img')?.alt||'');
