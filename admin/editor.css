@@ -144,3 +144,14 @@
 .selected-text-panel textarea{box-sizing:border-box;display:block;width:100%;min-height:100px;max-height:400px;resize:vertical;padding:10px;border:1px solid #aa8cc1;border-radius:8px;font:400 13px/1.5 Prompt,Arial,sans-serif;background:#fff;color:#1d1527}
 .selected-text-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
 .selected-text-actions button{white-space:normal;min-width:0}
+
+/* Editor FRESUNI — guia de links da página inicial e duplicação em um clique. */
+.home-quick-tools{border:1px solid #dac8ef;background:#fbf8ff;padding:14px;border-radius:12px;margin:18px 0 8px}
+.home-quick-tools h3{color:#6900b0;margin:0 0 8px}
+.home-quick-tools input,.home-quick-tools select{width:100%}
+.home-quick-tools .primary{white-space:normal}
+.duplicate-prominent,#duplicate-selection{background:#f2e4ff!important;color:#6700ad!important;border:1px solid #c88deb!important;border-radius:8px;padding:8px!important;text-decoration:none!important;font-weight:700!important}
+.workspace-bottom{height:auto;min-height:44px;padding-block:7px;flex-wrap:wrap}
+.workspace-bottom-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.diagnose-result{font-size:12px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere;color:#4d3158}
+@media(max-width:730px){.workspace-bottom{align-items:flex-start}.workspace-bottom-actions{justify-content:flex-start}}
