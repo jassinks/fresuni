@@ -77,7 +77,11 @@
           <button id="home-quick-add" class="primary full" type="button">+ Adicionar na grade</button>
           <p class="hint">Você pode duplicar, redimensionar ou mover os itens existentes com as setas ← →. O site só muda para os visitantes depois de publicar.</p>
         </section>
-        <div class="sep"></div><h3>Elemento selecionado</h3><p id="selection-name" class="selection-empty">Selecione um texto, uma imagem ou um bloco na página.</p>
+        <div class="sep"></div><section id="fs-date-editor" class="props-section" aria-label="Datas da página">
+<h3>◷ Criação e atualização</h3><p class="hint">Você pode corrigir as datas manualmente. O horário é de Brasília; alterações só aparecem para visitantes depois de publicar.</p>
+<div class="fields-2"><label>Criado em<input id="fs-date-created" type="datetime-local"></label><label>Última atualização<input id="fs-date-updated" type="datetime-local"></label></div>
+<button type="button" id="fs-date-apply" class="btn full">Aplicar datas à página</button>
+<button type="button" id="fs-date-reset" class="btn full">Restaurar atualização automática</button><small id="fs-date-status" role="status">Atualiza ao publicar modificações nesta página.</small></section><div class="sep"></div><h3>Elemento selecionado</h3><p id="selection-name" class="selection-empty">Selecione um texto, uma imagem ou um bloco na página.</p>
         <p id="selection-instructions" class="hint">Clique em qualquer texto do site, inclusive em notícias, artigos, botões e rodapé. Depois use os controles de animação e disposição que aparecem aqui.</p><div id="selection-props" hidden><section id="selected-text-panel" class="selected-text-panel" hidden>
           <h4>Editar texto selecionado</h4>
           <p class="hint">Edite textos de qualquer página — início, notícias, artigos, ações, menus e rodapé. O rascunho é salvo automaticamente no navegador; para atualizar o site público, use Publicar alterações.</p>
