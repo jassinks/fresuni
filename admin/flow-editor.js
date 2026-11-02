@@ -226,5 +226,23 @@
   bridge.snapshot();blocks.forEach(el=>span(el,width));bridge.dirty();sync(bridge.selected);
   bridge.notify('Blocos distribuídos na grade sem sobreposição.');
  });
+
+ function moveEdge(edge){
+  const src=sourceFor(bridge.selected),page=visiblePage();
+  if(!src||!page){bridge.notify('Selecione primeiro uma caixa ou texto da página.');return;}
+  const root=rootArea(page);
+  if(src===root||src.contains(root)){bridge.notify('Selecione uma caixa ou texto, não a página inteira.');return;}
+  const breadcrumb=root.querySelector(':scope > .breadcrumbs');
+  const returnNav=root.querySelector(':scope > .return-links');
+  let target=edge==='top'?(breadcrumb?breadcrumb.nextSibling:root.firstElementChild):(returnNav||null);
+  if(target===src)target=src.nextSibling;
+  if(src.parentElement===root&&(edge==='top'&&src===target||edge==='bottom'&&src.nextSibling===target))return;
+  bridge.snapshot();root.insertBefore(src,target);makeGrid(root);span(src,12);
+  bridge.selected=null;bridge.clearSelection();bridge.selectElement(src);bridge.dirty();
+  src.scrollIntoView({behavior:'smooth',block:'center'});
+  bridge.notify(edge==='top'?'Bloco movido para a parte superior da página.':'Bloco movido para a parte inferior da página.');
+ }
+ $('#fs-move-page-top')?.addEventListener('click',()=>moveEdge('top'));
+ $('#fs-move-page-bottom')?.addEventListener('click',()=>moveEdge('bottom'));
  window.FRESUNI_FLOW_EDITOR={bind,insertionSpot,onSelect(el){sync(el);positionHandle();},onClear:hide,onRoute:positionHandle,onMode:positionHandle,sync};
 })();

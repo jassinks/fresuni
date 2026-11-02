@@ -209,3 +209,11 @@
 .toolbox .tabbar{height:auto;min-height:77px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(38px,auto))}
 .toolbox .tabbar button{padding:8px 5px;min-height:39px;line-height:1.2;font-size:11px;white-space:normal}
 .toolbox .tabbar button.active:after{bottom:0;left:12px;right:12px}
+
+/* Opções claras para reaproveitar textos e escolher o local exato de inserção. */
+.fs-insert-options{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;margin:12px 0 18px;padding:14px;border-radius:12px;border:1px solid #e4d8ed;background:#faf7ff}
+.fs-insert-options label{display:grid;gap:5px;font-size:12px;font-weight:650;color:#392749}
+.fs-insert-options select{min-height:39px;width:100%;border:1px solid #d3c0de;border-radius:7px;padding:7px 9px;background:white;color:#20132a;max-width:100%}
+.fs-insert-options .hint{margin:0;color:#665676;font-size:12px;line-height:1.45}
+.fs-flow-edge-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:7px;margin:10px 0}
+.fs-flow-edge-actions .btn{white-space:normal;text-align:center;padding:10px}
