@@ -968,7 +968,10 @@ $('#fs-edit-selected-media').addEventListener('click',()=>{
 });
 function fsMediaApply(markup,existing){
  fsMediaCheckBudget(markup,existing);
- if(!existing){insertHTML(markup);fsMediaRefreshSelected(state.selected);return;}
+ if(!existing){
+  if(state.selected?.closest('.site-header,.site-footer,.directory-links'))clearSelection();
+  insertHTML(markup);fsMediaRefreshSelected(state.selected);return;
+ }
  snapshot();
  const d=siteDoc(),template=d.createElement('template');template.innerHTML=markup;
  const block=template.content.firstElementChild;existing.replaceWith(block);
@@ -977,7 +980,7 @@ function fsMediaApply(markup,existing){
 }
 function fsOpenGallery(edit=null){
  if(!state.editable){notify('Volte ao modo de edição para inserir uma galeria.');return;}
- fsGalleryEditing=edit||fsMediaSelectedBlock('gallery');fsGalleryItems=[];
+ fsGalleryEditing=edit?.isConnected?edit:null;fsGalleryItems=[];
  for(const fig of fsGalleryEditing?.querySelectorAll('.fresuni-gallery-grid figure')||[]){
   const img=fig.querySelector('img'),src=img?.getAttribute('src')||'';
   if(img&&fsMediaSrcAllowed(src))fsGalleryItems.push({src,alt:img.getAttribute('alt')||'',caption:fig.querySelector('figcaption')?.textContent||''});
@@ -1048,7 +1051,7 @@ $('#fs-gallery-form').addEventListener('submit',e=>{
 });
 function fsOpenBanner(edit=null){
  if(!state.editable){notify('Volte ao modo de edição para inserir um banner.');return;}
- fsBannerEditing=edit||fsMediaSelectedBlock('banner');
+ fsBannerEditing=edit?.isConnected?edit:null;
  fsBannerSource=fsBannerEditing?.querySelector('.fresuni-banner-image img')?.getAttribute('src')||'';
  $('#fs-banner-title').value=fsBannerEditing?.querySelector('.fresuni-banner-text h2')?.textContent||'';
  $('#fs-banner-description').value=fsBannerEditing?.querySelector('.fresuni-banner-text p')?.textContent||'';
