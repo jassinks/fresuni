@@ -542,7 +542,7 @@ function clickSite(e){
  if(el.closest('[data-fresuni-block="shape"]')&&!el.isContentEditable)el=el.closest('[data-fresuni-block="shape"]');
  selectElement(el);
 }
-function clearSelection(){window.FRESUNI_FLOW_EDITOR?.onClear?.();$('#fs-info-box-controls')?.setAttribute('hidden','');savedTextRange=null;hideFloatingToolbar();const d=siteDoc();if(d)$$('[data-fresuni-selected]',d).forEach(x=>x.removeAttribute('data-fresuni-selected'));state.selected=null;hideResizeGrip();$('#selection-name').textContent='Selecione texto, imagem, cabeçalho ou rodapé na prévia.';$('#selection-props').hidden=true;const help=$('#selection-instructions');if(help)help.hidden=false;}
+function clearSelection(){window.FRESUNI_FLOW_EDITOR?.onClear?.();$('#fs-info-box-controls')?.setAttribute('hidden','');savedTextRange=null;hideFloatingToolbar();const d=siteDoc();if(d)$$('[data-fresuni-selected]',d).forEach(x=>x.removeAttribute('data-fresuni-selected'));state.selected=null;hideResizeGrip();$('#selection-name').textContent='Selecione texto, imagem, cabeçalho ou rodapé na prévia.';$('#selection-props').hidden=true;const media=$('#fs-selected-media');if(media)media.hidden=true;const help=$('#selection-instructions');if(help)help.hidden=false;}
 function selectElement(el){if(state.selected===el)return;clearSelection();state.selected=el;el.dataset.fresuniSelected='';const blk=el.closest('[data-fresuni-block]');if(blk){blk.draggable=true;blk.dataset.fresuniDrag='';}
  $('#selection-name').textContent=(el.tagName.toLowerCase())+' · '+(el.textContent.trim().slice(0,48)||'elemento visual');$('#selection-props').hidden=false;
  updateTextInspector(el);
@@ -559,7 +559,7 @@ function selectElement(el){if(state.selected===el)return;clearSelection();state.
  $('#element-height').value=parseInt(el.style.minHeight)||0;$('#corner-radius').value=parseInt(el.style.borderRadius)||0;$('#border-size').value=parseInt(el.style.borderWidth)||0;
  $('#border-color').value=toHex(cs.borderTopColor,'#8300ea');$('#block-motion').value=el.dataset.fresuniMotion||'none';$('#motion-time').value=parseInt(el.style.getPropertyValue('--fresuni-motion-duration'))||650;
  $('#shape-kind').value=el.dataset.fresuniShape||'box';
- fsSyncControls(el);fsSyncInfoBox();
+ fsSyncControls(el);fsSyncInfoBox();fsMediaRefreshSelected(el);
  const gridItem=fsWholeGridItem(el);
  if(gridItem&&state.editable){gridItem.draggable=true;gridItem.dataset.fresuniDrag='';}
  positionResizeGrip();positionFloatingToolbar();window.FRESUNI_FLOW_EDITOR?.onSelect?.(el);
@@ -667,7 +667,7 @@ function fsPrepareSafePublish(html){
   'fresuni-interactive-effects-2026','fresuni-interactive-effects-runtime-2026',
   'fresuni-flow-grid-style','fresuni-page-meta-style','fresuni-archive-styles',
   'fresuni-layout-polish-v2','fresuni-custom-box-style',
-  'fresuni-mobile-pdf-and-navigation-2026'];
+  'fresuni-mobile-pdf-and-navigation-2026','fresuni-media-styles','fresuni-media-runtime'];
  for(const id of requiredAssets){
   const source=published.getElementById(id);
   if(!source||next.getElementById(id))continue;
@@ -859,6 +859,8 @@ function insertHTML(html){if(!state.editable){notify('Volte ao modo de edição 
  first?.scrollIntoView({behavior:'smooth',block:'center'});
 }
 function actionInsert(type){
+ if(type==='gallery'){fsOpenGallery();return;}
+ if(type==='banner'){fsOpenBanner();return;}
  if(type==='google-forms'){fsOpenGoogleForms();return;}
  if($('#fs-insert-behavior')?.value!=='new'&&fsConvertSelected(type))return;
  const types={
@@ -882,6 +884,210 @@ function actionInsert(type){
   insertHTML(`<div data-fresuni-block="embed" style="max-width:900px;margin:25px auto"><iframe title="Conteúdo incorporado" loading="lazy" src="${escapeHTML(safe)}" sandbox="allow-scripts allow-same-origin allow-presentation allow-forms" referrerpolicy="no-referrer" style="width:100%;min-height:390px;border:0;border-radius:10px"></iframe></div>`);return;}
  insertHTML(types[type]||types.text);
 }
+
+/* GALERIA E BANNERS — uploads locais compactados antes de integrar ao HTML.
+   Limites conservadores porque o site é publicado como um único index.html. */
+const FS_MEDIA_INPUT_LIMIT=5*1024*1024;
+const FS_MEDIA_SITE_LIMIT=6*1024*1024;
+const FS_MEDIA_MAX_GALLERY=12;
+const FS_MEDIA_TYPES=['image/jpeg','image/png','image/webp'];
+let fsGalleryEditing=null,fsGalleryItems=[],fsGalleryBusy=false;
+let fsBannerEditing=null,fsBannerSource='',fsBannerBusy=false;
+const fsBytes=text=>new TextEncoder().encode(text).length;
+function fsMediaStatus(id,text){const el=$('#'+id);if(el)el.textContent=text;}
+function fsMediaErrorText(err){return err?.message||String(err||'Falha ao tratar a imagem.');}
+function fsMediaSrcAllowed(src){return /^data:image\/(?:webp|png|jpeg);base64,[a-z0-9+/=]+$/i.test(src)||/^https:\/\//i.test(src);}
+function fsMediaLinkAllowed(link){
+ if(!link)return true;
+ if(/^#\/[a-z0-9/_-]*$/i.test(link))return true;
+ try{const u=new URL(link);return u.protocol==='https:'&&!!u.hostname&&u.username===''&&u.password==='';}catch{return false;}
+}
+function fsMediaCheckBudget(markup,existing=null){
+ const current=serialize();
+ const projected=fsBytes(current)-fsBytes(existing?.outerHTML||'')+fsBytes(markup)+16384;
+ if(projected>FS_MEDIA_SITE_LIMIT)
+  throw Error('Limite de 6 MB para o HTML atingido. Remova ou substitua algumas imagens antes de adicionar mais.');
+}
+function fsValidateMediaPublish(html){
+ if(fsBytes(html)>FS_MEDIA_SITE_LIMIT)throw Error('Publicação bloqueada: o site ultrapassou 6 MB. Reduza a quantidade de imagens ou seus tamanhos.');
+ const doc=new DOMParser().parseFromString(html,'text/html');
+ for(const gallery of doc.querySelectorAll('[data-fresuni-block="gallery"]')){
+  const images=gallery.querySelectorAll('.fresuni-gallery-grid img');
+  if(!images.length||images.length>FS_MEDIA_MAX_GALLERY)throw Error('Galeria inválida: são permitidas de 1 a 12 fotografias por bloco.');
+  for(const img of images)if(!fsMediaSrcAllowed(img.getAttribute('src')||''))throw Error('Imagem com formato ou endereço inválido na galeria.');
+ }
+ for(const banner of doc.querySelectorAll('[data-fresuni-block="banner"]')){
+  const img=banner.querySelector('.fresuni-banner-image img');
+  if(!img||!fsMediaSrcAllowed(img.getAttribute('src')||''))throw Error('Banner sem imagem válida.');
+  const href=banner.querySelector('.fresuni-banner-image a')?.getAttribute('href')||'';
+  if(!fsMediaLinkAllowed(href))throw Error('Link inválido em um banner.');
+ }
+}
+async function fsCompressMedia(file,kind){
+ if(!FS_MEDIA_TYPES.includes(file.type))throw Error('Formato não aceito. Use JPG, PNG ou WebP.');
+ if(!file.size||file.size>FS_MEDIA_INPUT_LIMIT)throw Error('Imagem recusada: máximo de 5 MB por arquivo original.');
+ const url=URL.createObjectURL(file);
+ try{
+  const image=await new Promise((resolve,reject)=>{
+   const im=new Image();im.onload=()=>resolve(im);im.onerror=()=>reject(Error('O navegador não conseguiu abrir esta imagem.'));
+   im.src=url;
+  });
+  if(!image.naturalWidth||!image.naturalHeight||image.naturalWidth*image.naturalHeight>55000000)throw Error('Resolução inválida ou alta demais.');
+  const target=kind==='banner'?300*1024:200*1024;
+  const maxDimension=kind==='banner'?1920:1600;
+  for(const scale of [1,.82,.68,.54,.42,.32]){
+   const factor=Math.min(1,maxDimension/Math.max(image.naturalWidth,image.naturalHeight))*scale;
+   const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.naturalWidth*factor));
+   canvas.height=Math.max(1,Math.round(image.naturalHeight*factor));
+   const ctx=canvas.getContext('2d',{alpha:false});if(!ctx)throw Error('O navegador não conseguiu preparar a compactação.');
+   ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+   ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(image,0,0,canvas.width,canvas.height);
+   for(const quality of [.82,.70,.58,.46,.35]){
+    let data=canvas.toDataURL('image/webp',quality);
+    if(!data.startsWith('data:image/webp;'))data=canvas.toDataURL('image/jpeg',quality);
+    const bytes=Math.ceil((data.length-data.indexOf(',')-1)*.75);
+    if(bytes<=target)return {src:data,bytes,width:canvas.width,height:canvas.height};
+   }
+  }
+  throw Error('Não foi possível comprimir esta imagem dentro do limite. Tente outro arquivo.');
+ }finally{URL.revokeObjectURL(url);}
+}
+function fsMediaSelectedBlock(type){
+ const selected=state.selected;
+ return selected?.closest?.('[data-fresuni-block="'+type+'"]')||null;
+}
+function fsMediaRefreshSelected(el){
+ const block=el?.closest?.('[data-fresuni-block="gallery"],[data-fresuni-block="banner"]');
+ const panel=$('#fs-selected-media');if(!panel)return;
+ panel.hidden=!block;$('#fs-selected-media-title').textContent=block?.dataset.fresuniBlock==='banner'?'Banner selecionado':'Galeria selecionada';
+}
+$('#fs-edit-selected-media').addEventListener('click',()=>{
+ const selected=state.selected?.closest?.('[data-fresuni-block="gallery"],[data-fresuni-block="banner"]');
+ if(!selected)return;
+ if(selected.dataset.fresuniBlock==='banner')fsOpenBanner(selected);else fsOpenGallery(selected);
+});
+function fsMediaApply(markup,existing){
+ fsMediaCheckBudget(markup,existing);
+ if(!existing){insertHTML(markup);fsMediaRefreshSelected(state.selected);return;}
+ snapshot();
+ const d=siteDoc(),template=d.createElement('template');template.innerHTML=markup;
+ const block=template.content.firstElementChild;existing.replaceWith(block);
+ state.selected=null;setEditable(true);selectElement(block);dirty();
+ block.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function fsOpenGallery(edit=null){
+ if(!state.editable){notify('Volte ao modo de edição para inserir uma galeria.');return;}
+ fsGalleryEditing=edit||fsMediaSelectedBlock('gallery');fsGalleryItems=[];
+ for(const fig of fsGalleryEditing?.querySelectorAll('.fresuni-gallery-grid figure')||[]){
+  const img=fig.querySelector('img'),src=img?.getAttribute('src')||'';
+  if(img&&fsMediaSrcAllowed(src))fsGalleryItems.push({src,alt:img.getAttribute('alt')||'',caption:fig.querySelector('figcaption')?.textContent||''});
+ }
+ $('#fs-gallery-title').value=fsGalleryEditing?.querySelector(':scope > h2')?.textContent||'Galeria de fotos';
+ $('#fs-gallery-files').value='';$('#fs-gallery-save').textContent=fsGalleryEditing?'Atualizar galeria':'Inserir galeria';
+ fsMediaStatus('fs-gallery-status',fsGalleryItems.length+' de 12 fotos. Compactação automática antes de inserir.');
+ fsRenderGalleryDraft();$('#fs-gallery-dialog').showModal();
+}
+function fsRenderGalleryDraft(){
+ const host=$('#fs-gallery-items');host.replaceChildren();
+ for(const [index,item] of fsGalleryItems.entries()){
+  const row=document.createElement('div');row.className='fs-gallery-item';
+  const image=document.createElement('img');image.src=item.src;image.alt='Prévia da fotografia '+(index+1);image.loading='lazy';
+  const fields=document.createElement('div');fields.className='fs-gallery-item-fields';
+  function editable(label,field,max){
+   const lab=document.createElement('label');lab.textContent=label;
+   const inp=document.createElement('input');inp.type='text';inp.maxLength=max;inp.value=item[field]||'';
+   inp.addEventListener('input',()=>{item[field]=inp.value;});lab.append(inp);fields.append(lab);
+  }
+  editable('Descrição acessível da foto '+(index+1),'alt',180);
+  editable('Legenda (opcional)','caption',250);
+  const buttons=document.createElement('div');buttons.className='fs-gallery-item-buttons';
+  function action(symbol,title,disabled,handler){
+   const b=document.createElement('button');b.type='button';b.textContent=symbol;b.title=title;b.setAttribute('aria-label',title+' foto '+(index+1));b.disabled=disabled;
+   if(symbol==='✕')b.className='danger';
+   b.addEventListener('click',handler);buttons.append(b);
+  }
+  action('↑','Subir',index===0,()=>{[fsGalleryItems[index-1],fsGalleryItems[index]]=[fsGalleryItems[index],fsGalleryItems[index-1]];fsRenderGalleryDraft();});
+  action('↓','Descer',index===fsGalleryItems.length-1,()=>{[fsGalleryItems[index+1],fsGalleryItems[index]]=[fsGalleryItems[index],fsGalleryItems[index+1]];fsRenderGalleryDraft();});
+  action('✕','Remover',false,()=>{fsGalleryItems.splice(index,1);fsRenderGalleryDraft();});
+  fields.append(buttons);row.append(image,fields);host.append(row);
+ }
+ $('#fs-gallery-save').disabled=fsGalleryBusy;
+}
+$('#fs-gallery-files').addEventListener('change',async event=>{
+ const input=event.target,files=[...input.files];input.value='';
+ if(!files.length||fsGalleryBusy)return;
+ if(fsGalleryItems.length+files.length>FS_MEDIA_MAX_GALLERY){
+  fsMediaStatus('fs-gallery-status','Limite de 12 fotos por galeria. Selecione menos imagens ou remova alguma.');return;
+ }
+ fsGalleryBusy=true;$('#fs-gallery-save').disabled=true;input.disabled=true;
+ const errors=[];let count=0,totalBytes=0;
+ try{
+  for(const file of files){
+   try{
+    fsMediaStatus('fs-gallery-status','Compactando '+(count+errors.length+1)+' de '+files.length+': '+file.name);
+    const data=await fsCompressMedia(file,'gallery');totalBytes+=data.bytes;
+    const alt=file.name.replace(/\.[^.]+$/,'').replace(/[-_]+/g,' ').trim().slice(0,180)||'Foto do FRESUNI';
+    fsGalleryItems.push({src:data.src,alt,caption:''});count++;
+   }catch(err){errors.push(file.name+': '+fsMediaErrorText(err));}
+  }
+ }finally{fsGalleryBusy=false;input.disabled=false;$('#fs-gallery-save').disabled=false;fsRenderGalleryDraft();}
+ const message=count+' foto(s) compactadas; '+fsGalleryItems.length+'/12 no total. '+(errors.length?'Não adicionadas: '+errors.join('; '):'Prontas para inserir.');
+ fsMediaStatus('fs-gallery-status',message);
+});
+$('#fs-gallery-cancel').addEventListener('click',()=>{$('#fs-gallery-dialog').close();});
+$('#fs-gallery-form').addEventListener('submit',e=>{
+ e.preventDefault();if(fsGalleryBusy)return;
+ if(!fsGalleryItems.length){fsMediaStatus('fs-gallery-status','Adicione pelo menos uma fotografia.');return;}
+ if(fsGalleryItems.some(item=>!fsMediaSrcAllowed(item.src))){fsMediaStatus('fs-gallery-status','Uma das imagens é inválida.');return;}
+ const title=$('#fs-gallery-title').value.trim();
+ const figures=fsGalleryItems.map(item=>'<figure><button type="button" class="fresuni-gallery-zoom" aria-label="Ampliar foto: '+escapeHTML(item.alt||'fotografia')+'"><img src="'+escapeHTML(item.src)+'" alt="'+escapeHTML(item.alt)+'" loading="lazy" decoding="async"></button>'+
+  (item.caption.trim()?'<figcaption>'+escapeHTML(item.caption.trim())+'</figcaption>':'')+'</figure>').join('');
+ const html='<section class="fresuni-photo-gallery" data-fresuni-block="gallery" aria-label="'+escapeHTML(title||'Galeria de fotos')+'">'+(title?'<h2>'+escapeHTML(title)+'</h2>':'')+'<div class="fresuni-gallery-grid">'+figures+'</div></section>';
+ try{fsMediaApply(html,fsGalleryEditing);$('#fs-gallery-dialog').close();notify('Galeria de fotos '+(fsGalleryEditing?'atualizada':'adicionada')+' no rascunho.');}
+ catch(err){fsMediaStatus('fs-gallery-status',fsMediaErrorText(err));}
+});
+function fsOpenBanner(edit=null){
+ if(!state.editable){notify('Volte ao modo de edição para inserir um banner.');return;}
+ fsBannerEditing=edit||fsMediaSelectedBlock('banner');
+ fsBannerSource=fsBannerEditing?.querySelector('.fresuni-banner-image img')?.getAttribute('src')||'';
+ $('#fs-banner-title').value=fsBannerEditing?.querySelector('.fresuni-banner-text h2')?.textContent||'';
+ $('#fs-banner-description').value=fsBannerEditing?.querySelector('.fresuni-banner-text p')?.textContent||'';
+ $('#fs-banner-alt').value=fsBannerEditing?.querySelector('.fresuni-banner-image img')?.getAttribute('alt')||'';
+ $('#fs-banner-link').value=fsBannerEditing?.querySelector('.fresuni-banner-image a')?.getAttribute('href')||'';
+ $('#fs-banner-ratio').value=fsBannerEditing?.dataset.bannerRatio==='standard'?'standard':'wide';
+ $('#fs-banner-file').value='';$('#fs-banner-save').textContent=fsBannerEditing?'Atualizar banner':'Inserir banner';
+ $('#fs-banner-preview').hidden=!fsBannerSource;
+ if(fsBannerSource)$('#fs-banner-preview').src=fsBannerSource;else $('#fs-banner-preview').removeAttribute('src');
+ fsMediaStatus('fs-banner-status',fsBannerSource?'Você pode trocar a imagem ou atualizar o texto e link.':'Envie uma imagem para criar seu banner.');
+ $('#fs-banner-dialog').showModal();
+}
+$('#fs-banner-file').addEventListener('change',async e=>{
+ const input=e.target,file=input.files?.[0];input.value='';if(!file||fsBannerBusy)return;
+ fsBannerBusy=true;input.disabled=true;$('#fs-banner-save').disabled=true;
+ fsMediaStatus('fs-banner-status','Compactando banner…');
+ try{
+  const result=await fsCompressMedia(file,'banner');fsBannerSource=result.src;
+  $('#fs-banner-preview').src=fsBannerSource;$('#fs-banner-preview').hidden=false;
+  if(!$('#fs-banner-alt').value.trim())$('#fs-banner-alt').value=file.name.replace(/\.[^.]+$/,'').replace(/[-_]+/g,' ').slice(0,180);
+  fsMediaStatus('fs-banner-status','Imagem compactada para '+Math.ceil(result.bytes/1024)+' KB. Pronta para adicionar.');
+ }catch(err){fsMediaStatus('fs-banner-status',fsMediaErrorText(err));}
+ finally{fsBannerBusy=false;input.disabled=false;$('#fs-banner-save').disabled=false;}
+});
+$('#fs-banner-cancel').addEventListener('click',()=>$('#fs-banner-dialog').close());
+$('#fs-banner-form').addEventListener('submit',e=>{
+ e.preventDefault();if(fsBannerBusy)return;
+ if(!fsMediaSrcAllowed(fsBannerSource)){fsMediaStatus('fs-banner-status','Selecione uma imagem válida para o banner.');return;}
+ const title=$('#fs-banner-title').value.trim(),description=$('#fs-banner-description').value.trim(),alt=$('#fs-banner-alt').value.trim();
+ const link=$('#fs-banner-link').value.trim(),ratio=$('#fs-banner-ratio').value;
+ if(!fsMediaLinkAllowed(link)){fsMediaStatus('fs-banner-status','Use um endereço interno (#/pagina) ou HTTPS válido.');return;}
+ const image='<img src="'+escapeHTML(fsBannerSource)+'" alt="'+escapeHTML(alt)+'" decoding="async" loading="lazy">';
+ const media='<div class="fresuni-banner-image">'+(link?'<a href="'+escapeHTML(link)+'"'+(link.startsWith('https://')?' target="_blank" rel="noopener noreferrer"':'')+'>'+image+'</a>':image)+'</div>';
+ const caption=(title||description)?'<div class="fresuni-banner-text">'+(title?'<h2>'+escapeHTML(title)+'</h2>':'')+(description?'<p>'+escapeHTML(description)+'</p>':'')+'</div>':'';
+ const html='<section class="fresuni-site-banner" data-fresuni-block="banner" data-banner-ratio="'+(ratio==='standard'?'standard':'wide')+'">'+media+caption+'</section>';
+ try{fsMediaApply(html,fsBannerEditing);$('#fs-banner-dialog').close();notify('Banner '+(fsBannerEditing?'atualizado':'adicionado')+' no rascunho.');}
+ catch(err){fsMediaStatus('fs-banner-status',fsMediaErrorText(err));}
+});
+
 // Google Formulários: integrações reais dentro da página, configuráveis no editor.
 // Não é necessário colocar scripts do Google no site nem mexer no Worker.
 const gfDialog=$('#google-forms-dialog'),gfInput=$('#google-forms-url');
@@ -1886,7 +2092,7 @@ $('#copy-publish-error').addEventListener('click',async()=>{try{await navigator.
 $('#publish').addEventListener('click',async()=>{
  if(!state.dirty){notify('Não há alterações pendentes.');return;}
  let html;
- try{html=fsPreparePublishDates(fsPrepareSafePublish(serialize()));}
+ try{html=fsPreparePublishDates(fsPrepareSafePublish(serialize()));fsValidateMediaPublish(html);}
  catch(e){alert(e.message);notify('Publicação protegida: '+e.message);return;}
  const warnings=fsPublicationWarnings(html);
  if(warnings.length&&!confirm('ATENÇÃO: foram detectadas alterações que podem ocultar conteúdos existentes:\n\n• '+warnings.join('\n• ')+'\n\nVocê confirma que deseja removê-los?'))return;
