@@ -161,6 +161,15 @@ async function saveDraft(){
 }
 async function restoreDraftIfAny(){let draft;try{draft=await draftAction('get');}catch(e){notify('Salvamento local indisponível: '+e.message);return false;}if(!draft?.html||draft.html===state.html)return false;
  const date=new Date(draft.savedAt).toLocaleString('pt-BR');const conflict=draft.sha!==state.sha;
+ if(conflict){
+  if(confirm('Este rascunho foi criado sobre uma versão antiga do site. Restaurá-lo integralmente poderia apagar melhorias mais recentes.\n\nDeseja baixar uma cópia de segurança do rascunho antigo? A versão atual será carregada sem sobrescrever nada.')){
+   exportText(draft.html,'fresuni-rascunho-antigo-'+new Date(draft.savedAt).toISOString().slice(0,10)+'.html');
+  }
+  fsAutosaveStatus('⚠ Rascunho antigo não aplicado para proteger o site','error');
+  notify('Versão publicada preservada. Rascunho antigo não substituiu o site.');
+  return false;
+ }
+
  if(confirm('Encontramos um rascunho de '+date+'.'+(conflict?' O site foi publicado novamente desde então; revise antes de publicar.':'')+'\n\nRestaurar o trabalho que não foi publicado?')){
    state.restoring=true;state.undo=[];state.redo=[];state.dirty=true;fsDraftRevision++;fsLastSavedRevision=fsDraftRevision;fsAutosaveStatus('✓ Rascunho recuperado do navegador','ok');reloadFrame(draft.html,draft.route&&draft.html.includes('data-route="'+draft.route+'"')?draft.route:'/');state.restoring=false;setStatus('Rascunho recuperado · não publicado');notify('Rascunho recuperado neste navegador.');return true;
  }return false;}
@@ -644,6 +653,75 @@ function refreshSearch(root){const scripts=$$('script',root);const script=script
    });
   }
  }
+
+// Publicações devem preservar infraestrutura não editável e alertar sobre exclusões.
+function fsPrepareSafePublish(html){
+ const published=new DOMParser().parseFromString(state.html,'text/html');
+ const next=new DOMParser().parseFromString(html,'text/html');
+ const oldPages=[...published.querySelectorAll('main > .site-page[data-route]')];
+ const nextRoutes=new Set([...next.querySelectorAll('main > .site-page[data-route]')].map(p=>p.dataset.route));
+ const missingPages=oldPages.filter(p=>!nextRoutes.has(p.dataset.route)).map(p=>p.dataset.route);
+ if(missingPages.length)throw Error('Publicação bloqueada: estas páginas desapareceram da prévia: '+missingPages.join(', ')+'. Recarregue a versão publicada, confira seu rascunho e tente novamente.');
+ // Recursos técnicos injetados por publicações anteriores não devem sumir ao editar textos.
+ const requiredAssets=['fresuni-motion-2026','fresuni-motion-runtime-2026',
+  'fresuni-interactive-effects-2026','fresuni-interactive-effects-runtime-2026',
+  'fresuni-flow-grid-style','fresuni-page-meta-style','fresuni-archive-styles',
+  'fresuni-layout-polish-v2','fresuni-custom-box-style',
+  'fresuni-mobile-pdf-and-navigation-2026'];
+ for(const id of requiredAssets){
+  const source=published.getElementById(id);
+  if(!source||next.getElementById(id))continue;
+  const destination=source.tagName==='SCRIPT'&&source.closest('body')?next.body:next.head;
+  destination?.append(source.cloneNode(true));
+ }
+ // O Estatuto deve sempre apontar para o PDF real, jamais ao antigo base64 incorporado.
+ const sourceStat=published.querySelector('.site-page[data-route="/estatuto"]');
+ const nextStat=next.querySelector('.site-page[data-route="/estatuto"]');
+ const sourceActions=sourceStat?.querySelector('.fresuni-file-actions');
+ if(nextStat&&sourceActions){
+  const actions=nextStat.querySelector('.fresuni-file-actions');
+  if(!actions){
+   const obsolete=[...nextStat.querySelectorAll('a[href^="data:application/pdf"]')][0]
+    ||nextStat.querySelector('a[download="Estatuto-da-Associacao-FRESUNI.pdf"]');
+   if(obsolete)obsolete.replaceWith(sourceActions.cloneNode(true));
+   else nextStat.querySelector('.page-article')?.prepend(sourceActions.cloneNode(true));
+  }else{
+   const canonicalLinks=[...sourceActions.querySelectorAll('a')];
+   for(const link of [...actions.querySelectorAll('a')]){
+    if((link.getAttribute('href')||'').startsWith('data:application/pdf')){
+     const canonical=canonicalLinks.find(a=>a.hasAttribute('download')===link.hasAttribute('download'));
+     if(canonical)link.replaceWith(canonical.cloneNode(true));
+    }
+   }
+  }
+ }
+ const distinctEyebrow={
+  '/acoes':'PROJETOS E INICIATIVAS','/noticias':'INFORMAÇÃO E MOBILIZAÇÃO',
+  '/artigos':'IDEIAS E REFLEXÕES','/acessibilidade':'INCLUSÃO PARA TODOS',
+  '/estatuto':'NOSSOS PRINCÍPIOS E DIRETRIZES'
+ };
+ const norm=t=>(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toLocaleLowerCase('pt-BR');
+ for(const page of next.querySelectorAll('main > .site-page[data-route]')){
+  const eye=page.querySelector('.page-heading .eyebrow');
+  const heading=page.querySelector('.page-heading h1');
+  if(eye&&heading&&norm(eye.textContent)===norm(heading.textContent))
+   eye.textContent=distinctEyebrow[page.dataset.route]||'CONHEÇA MAIS SOBRE O FRESUNI';
+ }
+ return '<!doctype html>\n'+next.documentElement.outerHTML;
+}
+function fsPublicationWarnings(html){
+ const before=new DOMParser().parseFromString(state.html,'text/html');
+ const after=new DOMParser().parseFromString(html,'text/html');
+ const oldMenu=[...before.querySelectorAll('.site-header .main-nav > a.nav-root[href]')];
+ const newMenu=new Set([...after.querySelectorAll('.site-header .main-nav > a.nav-root[href]')].map(x=>x.getAttribute('href')));
+ const removed=oldMenu.filter(a=>!newMenu.has(a.getAttribute('href'))).map(a=>a.textContent.trim());
+ const warnings=[];
+ if(removed.length)warnings.push('Links removidos do menu principal: '+removed.join(', '));
+ const oldForms=before.querySelectorAll('.fresuni-google-forms').length;
+ const newForms=after.querySelectorAll('.fresuni-google-forms').length;
+ if(newForms<oldForms)warnings.push('Formulários Google removidos: '+(oldForms-newForms));
+ return warnings;
+}
 
 function serialize(){const d=siteDoc();if(!d)return state.html;
  const root=d.documentElement.cloneNode(true);stripTransient(root);fsCleanupRepeats(root);fsRefreshNewsArchives(root);refreshSearch(root);
@@ -1687,7 +1765,13 @@ $('#dismiss-publish-error').addEventListener('click',()=>$('#publish-error').hid
 $('#copy-publish-error').addEventListener('click',async()=>{try{await navigator.clipboard.writeText($('#publish-error-message').textContent);notify('Detalhes copiados sem dados secretos.');}catch{notify('Selecione e copie a mensagem de erro.');}});
 $('#publish').addEventListener('click',async()=>{
  if(!state.dirty){notify('Não há alterações pendentes.');return;}
- const html=fsPreparePublishDates(serialize());$('#publish-error').hidden=true;if(!confirm('Publicar agora todas as alterações no seu repositório do GitHub?'))return;
+ let html;
+ try{html=fsPreparePublishDates(fsPrepareSafePublish(serialize()));}
+ catch(e){alert(e.message);notify('Publicação protegida: '+e.message);return;}
+ const warnings=fsPublicationWarnings(html);
+ if(warnings.length&&!confirm('ATENÇÃO: foram detectadas alterações que podem ocultar conteúdos existentes:\n\n• '+warnings.join('\n• ')+'\n\nVocê confirma que deseja removê-los?'))return;
+ $('#publish-error').hidden=true;
+ if(!confirm('Publicar agora todas as alterações no seu repositório do GitHub?'))return;
  const b=$('#publish');b.disabled=true;b.textContent='Publicando…';setStatus('Publicando no GitHub…');
  try{const r=await api('/publish',{method:'POST',body:JSON.stringify({html,expectedSha:state.sha})});if(!r.ok||!r.sha)throw Error('O servidor não confirmou o envio ao GitHub.');state.sha=r.sha;state.html=html;state.undo=[];state.redo=[];state.dirty=false;clearTimeout(draftTimer);fsLastSavedRevision=fsDraftRevision;await fsSaveQueue.catch(()=>{});await draftAction('delete').catch(()=>{});fsAutosaveStatus('✓ Publicação enviada ao GitHub','ok');setStatus('Publicado no GitHub');reloadFrame(html,state.route);notify('Alterações enviadas ao GitHub! O Pages pode demorar a atualizar o site.');}
  catch(e){dirty();showPublishError(e);notify('Publicação não concluída. Veja a mensagem com os detalhes abaixo da prévia.');}
