@@ -52,7 +52,7 @@
   // Use all layers under the cursor. The helper controls themselves never become targets.
   const hovered=doc.elementsFromPoint(x,y).find(el=>el!==handle&&el!==marker&&el!==ghost&&!el.closest?.('[data-editor-internal]')&&!src.contains(el));
   const zone=zoneFor(hovered,src,outer);if(!zone)return null;
-  const parts=children(zone).filter(el=>el!==src&&el.getBoundingClientRect().height>0);
+  const parts=children(zone).filter(el=>el!==src&&!el.matches('.breadcrumbs,.return-links')&&el.getBoundingClientRect().height>0);
   let near=null,position='bottom',side=false;
   if(parts.length){
    const closest=parts.map(el=>{
@@ -72,6 +72,7 @@
   const breadcrumb=zone.querySelector(':scope > .breadcrumbs');
   if(breadcrumb&&(before===breadcrumb||(near===breadcrumb&&position==='bottom')))before=breadcrumb.nextSibling;
   if(before?.parentElement!==zone)before=null;
+  if(!before&&zone.querySelector(':scope > .return-links'))before=zone.querySelector(':scope > .return-links');
   return {zone,near,position,side,before};
  }
  function draw(drop){
@@ -122,7 +123,7 @@
   if(animation)bridge.frame.contentWindow.cancelAnimationFrame(animation);animation=0;
   drag?.lastZone?.removeAttribute('data-fresuni-drop-zone');
   if(ghost)ghost.hidden=true;if(marker)marker.hidden=true;
-  if(handle){handle.classList.remove('is-dragging');handle.style.pointerEvents='';}
+  if(handle)handle.classList.remove('is-dragging');
   drag=null;positionHandle();
  }
  function finishDrop(src,drop){
@@ -187,7 +188,7 @@
    e.preventDefault();e.stopPropagation();
    drag={source,id:e.pointerId,drop:null,lastZone:null,x:e.clientX,y:e.clientY,outer:false};
    ghost.textContent=(source.textContent||source.tagName).trim().slice(0,95)||'Bloco selecionado';
-   handle.setPointerCapture(e.pointerId);handle.classList.add('is-dragging');handle.style.pointerEvents='none';
+   handle.setPointerCapture(e.pointerId);handle.classList.add('is-dragging');
    update(e.clientX,e.clientY,e.shiftKey);
    animation=win.requestAnimationFrame(scrollStep);
   });
