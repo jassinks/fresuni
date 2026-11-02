@@ -675,7 +675,54 @@ function serialize(){const d=siteDoc();if(!d)return state.html;
  return '<!doctype html>\n'+root.outerHTML;
 }
 function snapshot(){remember();dirty();}
+
+ // Aplicar formatos a conteúdo EXISTENTE, sem criar uma segunda caixa de texto.
+ function fsTextTransformTarget(){
+  const selected=state.selected;
+  if(!selected||!state.editable||selected.closest('.site-header,.site-footer,.breadcrumbs,[data-fresuni-page-meta]'))return null;
+  const page=selectedPage();if(!page||!page.contains(selected))return null;
+  const li=selected.closest('li');
+  if(li?.parentElement?.matches('ul,ol')&&!li.closest('.main-nav'))return li.parentElement;
+  return selected.closest('.fresuni-info-box,blockquote,[data-fresuni-block="shape"],p,h1,h2,h3,h4,h5,h6,ul,ol')||null;
+ }
+ function fsConvertSelected(type){
+  const old=fsTextTransformTarget();
+  if(!old)return false;
+  if(!['text','heading','quote','info-box','box','list'].includes(type))return false;
+  const doc=siteDoc(),replacement=doc.createElement(
+    type==='quote'?'blockquote':type==='info-box'?'aside':type==='heading'?'h2':type==='list'?'ul':type==='box'?'div':'p');
+  const content=old.matches('p,h1,h2,h3,h4,h5,h6')?old.innerHTML:old.innerHTML;
+  if(type==='quote'){
+   replacement.dataset.fresuniBlock='quote';
+   replacement.style.cssText='border-left:4px solid #8300ea;margin:25px 0;padding:10px 20px;max-width:100%;overflow-wrap:anywhere';
+   if(old.matches('p,h1,h2,h3,h4,h5,h6')){const p=doc.createElement('p');p.innerHTML=content;replacement.append(p);}
+   else replacement.innerHTML=content;
+  }else if(type==='info-box'||type==='box'){
+   replacement.dataset.fresuniBlock=type==='info-box'?'info-box':'shape';
+   if(type==='info-box'){replacement.className='fresuni-info-box';replacement.dataset.fresuniBoxTheme='accent';}
+   else{replacement.dataset.fresuniShape='box';replacement.style.cssText='box-sizing:border-box;width:100%;min-height:70px;padding:20px;border:2px solid #8300ea;background:#f4e8ff'}
+   if(old.matches('p,h1,h2,h3,h4,h5,h6')){const p=doc.createElement('p');p.innerHTML=content;replacement.append(p);}
+   else replacement.innerHTML=content;
+  }else if(type==='heading'){replacement.dataset.fresuniBlock='heading';replacement.innerHTML=old.matches('p,h1,h2,h3,h4,h5,h6')?content:old.textContent;replacement.style.cssText='font-family:Merriweather,serif;color:#8300ea';}
+  else if(type==='list'){
+   replacement.dataset.fresuniBlock='list';
+   if(old.matches('ul,ol'))replacement.innerHTML=old.innerHTML;
+   else {const li=doc.createElement('li');li.innerHTML=old.matches('p,h1,h2,h3,h4,h5,h6')?content:old.textContent;replacement.append(li);}
+  }else{replacement.dataset.fresuniBlock='text';replacement.innerHTML=old.matches('p,h1,h2,h3,h4,h5,h6')?content:old.textContent;}
+  for(const name of ['data-fresuni-motion','data-fresuni-flow-span','data-fresuni-h-align']){
+   if(old.hasAttribute(name))replacement.setAttribute(name,old.getAttribute(name));
+  }
+  if(old.style.getPropertyValue('--fresuni-flow-span'))replacement.style.setProperty('--fresuni-flow-span',old.style.getPropertyValue('--fresuni-flow-span'));
+  snapshot();old.replaceWith(replacement);
+  state.selected=null;setEditable(true);selectElement(replacement);dirty();
+  notify('Formato aplicado ao texto existente, sem duplicar seu conteúdo.');
+  return true;
+ }
+
 function insertionParent(){const p=selectedPage();if(!p)return null;const sel=state.selected;
+ const placement=$('#fs-insert-position')?.value||'after';
+ const flowDest=window.FRESUNI_FLOW_EDITOR?.insertionSpot?.(p,sel,placement);
+ if(flowDest?.parent)return flowDest;
  if(sel?.closest('.site-header')){const header=siteDoc().querySelector('.site-header');return {parent:header,before:null};}
  if(sel?.closest('.site-footer')){const footer=siteDoc().querySelector('.site-footer .footer-inner');return {parent:footer,before:null};}
  if(sel?.closest('.site-page')===p){
@@ -700,7 +747,10 @@ function insertHTML(html){if(!state.editable){notify('Volte ao modo de edição 
  dest.parent.insertBefore(tpl.content,dest.before);setEditable(true);if(first)selectElement(first);dirty();
  first?.scrollIntoView({behavior:'smooth',block:'center'});
 }
-function actionInsert(type){if(type==='google-forms'){fsOpenGoogleForms();return;}const types={
+function actionInsert(type){
+ if(type==='google-forms'){fsOpenGoogleForms();return;}
+ if($('#fs-insert-behavior')?.value!=='new'&&fsConvertSelected(type))return;
+ const types={
  text:'<p data-fresuni-block="text">Escreva seu texto aqui. Clique para editar.</p>',
  heading:'<h2 data-fresuni-block="heading" style="font-family:Merriweather,serif;color:#8300ea">Novo título</h2>',
  button:'<p data-fresuni-block="button"><a class="editor-public-button" href="#/filiacao" style="display:inline-block;background:#8300ea;color:white;padding:12px 20px;border-radius:7px;text-decoration:none;font-weight:600">Clique aqui</a></p>',
