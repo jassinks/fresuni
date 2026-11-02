@@ -681,7 +681,7 @@ function snapshot(){remember();dirty();}
   const selected=state.selected;
   if(!selected||!state.editable||selected.closest('.site-header,.site-footer,.breadcrumbs,[data-fresuni-page-meta]'))return null;
   const page=selectedPage();if(!page||!page.contains(selected))return null;
-  if(selected.closest('.content-card'))return null;
+  // Os textos de cartões existentes também podem receber novos formatos.
   const wrapper=selected.closest('.fresuni-info-box,blockquote,[data-fresuni-block="shape"]');
   if(wrapper)return wrapper;
   const li=selected.closest('li');
@@ -694,7 +694,7 @@ function snapshot(){remember();dirty();}
 
  // Transformar apenas a frase marcada em citação, preservando o restante do parágrafo.
  function fsQuoteSelection(old){
-  const r=activeTextRange();if(!r||!old.matches('p,h1,h2,h3,h4,h5,h6'))return false;
+  const r=activeTextRange();if(!r||!old.matches('p'))return false;
   const a=closestElement(r.startContainer),b=closestElement(r.endContainer);
   if(!old.contains(a)||!old.contains(b))return false;
   if(!String(r).trim()||String(r).trim()===old.textContent.trim())return false;
