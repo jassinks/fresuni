@@ -166,6 +166,7 @@
   return article?{parent:article,before:null}:{parent:root,before:null};
  }
  function bind(newDoc){
+  if(placeMode)endPlaceMode();
   doc=newDoc;handle=null;marker=null;ghost=null;drag=null;
   const style=doc.createElement('style');style.dataset.editorInternal='';
   style.textContent=
@@ -174,12 +175,22 @@
    '.fresuni-flow-drop-line{position:fixed;z-index:2147483001;background:#8300ea;box-shadow:0 0 0 2px #fff,0 0 0 4px #8300ea;pointer-events:none;border-radius:5px}' +
    '.fresuni-flow-drag-ghost{position:fixed;z-index:2147483002;width:190px;max-width:50vw;padding:9px 12px;border:1px solid #8300ea;border-radius:8px;background:#fff;color:#340050;font:600 12px/1.35 Prompt,Arial,sans-serif;box-shadow:0 7px 25px #23003935;pointer-events:none;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}' +
    '.fresuni-editor-flow-on [data-fresuni-drop-zone]{outline:3px dashed #8300ea!important;outline-offset:2px;background-image:repeating-linear-gradient(90deg,rgba(131,0,234,.07) 0,rgba(131,0,234,.07) 1px,transparent 1px,transparent 8.333%)!important}' +
-   '.fresuni-editor-flow-on .fresuni-flow-grid{background-image:repeating-linear-gradient(90deg,rgba(131,0,234,.04) 0,rgba(131,0,234,.04) 1px,transparent 1px,transparent 8.333%)}';
+   '.fresuni-editor-flow-on .fresuni-flow-grid{background-image:repeating-linear-gradient(90deg,rgba(131,0,234,.04) 0,rgba(131,0,234,.04) 1px,transparent 1px,transparent 8.333%)}' +
+   '.fresuni-place-picking{cursor:crosshair!important}.fresuni-place-picking *{cursor:crosshair!important}.fresuni-place-picking .fresuni-place-target{outline:3px dashed #8300ea!important;outline-offset:4px;background-color:rgba(131,0,234,.035)!important}';
   doc.head.append(style);
   handle=doc.createElement('button');handle.type='button';handle.dataset.editorInternal='';handle.className='fresuni-flow-handle';handle.textContent='✥ Arrastar';handle.hidden=true;handle.setAttribute('aria-label','Mover bloco selecionado para qualquer posição nesta página');
   marker=doc.createElement('div');marker.dataset.editorInternal='';marker.className='fresuni-flow-drop-line';marker.hidden=true;
   ghost=doc.createElement('div');ghost.dataset.editorInternal='';ghost.className='fresuni-flow-drag-ghost';ghost.hidden=true;
   doc.body.append(handle,marker,ghost);doc.body.classList.toggle('fresuni-editor-flow-on',enabled);
+  doc.addEventListener('pointerover',event=>{
+   if(!placeMode)return;
+   const target=sourceFor(event.target);
+   clearPlaceHover();
+   if(target&&target!==placeMode.source&&!target.contains(placeMode.source)&&!placeMode.source.contains(target)&&target.closest('.site-page')===placeMode.source.closest('.site-page')){
+    placeHover=target;target.classList.add('fresuni-place-target');
+   }
+  },true);
+  doc.addEventListener('click',chooseDestination,true);
   const win=bridge.frame.contentWindow;
   win.addEventListener('scroll',positionHandle,{passive:true});
   win.addEventListener('resize',positionHandle,{passive:true});
@@ -206,9 +217,54 @@
   handle.addEventListener('pointercancel',stop);
   positionHandle();
  }
+
+ // Reposicionamento em dois cliques: alternativa ao arraste para todas as áreas de conteúdo.
+ let placeMode=null,placeHover=null;
+ function clearPlaceHover(){
+  if(placeHover)placeHover.classList.remove('fresuni-place-target');
+  placeHover=null;
+ }
+ function endPlaceMode(message=''){
+  clearPlaceHover();placeMode=null;
+  if(doc?.body)doc.body.classList.remove('fresuni-place-picking');
+  $('#fs-place-start').hidden=false;$('#fs-place-cancel').hidden=true;
+  $('#fs-place-status').textContent=message;
+  positionHandle();
+ }
+ function startPlaceMode(){
+  if(!bridge.editable||!enabled){bridge.notify('Ative Organizar caixas e entre no modo de edição.');return;}
+  const source=sourceFor(bridge.selected);
+  if(!source){bridge.notify('Primeiro selecione o box ou texto que deseja mover.');return;}
+  placeMode={source};
+  doc.body.classList.add('fresuni-place-picking');
+  $('#fs-place-start').hidden=true;$('#fs-place-cancel').hidden=false;
+  $('#fs-place-status').textContent='Agora clique em um texto ou box da página para definir o destino. Escape cancela.';
+  bridge.notify('Clique no elemento de referência. A caixa selecionada será encaixada na posição escolhida.');
+  hide();
+ }
+ function chooseDestination(event){
+  if(!placeMode)return;
+  event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
+  const src=placeMode.source,target=sourceFor(event.target);
+  if(!src.isConnected){endPlaceMode('O bloco original não está mais disponível.');return;}
+  if(!target||target===src||src.contains(target)||target.contains(src)||target.closest('.site-page')!==src.closest('.site-page')){
+   bridge.notify('Escolha outro texto ou box da mesma página como referência.');return;
+  }
+  const preference=$('#fs-place-choice').value;
+  const zone=target.parentElement;if(!zone||src.contains(zone))return;
+  const side=preference==='left'||preference==='right';
+  const before=['above','left'].includes(preference)?target:target.nextSibling;
+  const applied=finishDrop(src,{zone,near:target,before,side,position:preference});
+  endPlaceMode(applied?'Caixa reposicionada. Os outros elementos foram acomodados.':'Escolha um outro elemento para reposicionar.');
+  if(applied)src.scrollIntoView({block:'center',behavior:'smooth'});
+ }
+ $('#fs-place-start')?.addEventListener('click',startPlaceMode);
+ $('#fs-place-cancel')?.addEventListener('click',()=>endPlaceMode('Movimentação cancelada.'));
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&placeMode)endPlaceMode('Movimentação cancelada.');});
+
  const toggle=$('#fs-flow-toggle');
  toggle?.addEventListener('click',()=>{
-  enabled=!enabled;
+  enabled=!enabled;if(!enabled&&placeMode)endPlaceMode('Movimentação cancelada.');
   toggle.classList.toggle('active',enabled);toggle.setAttribute('aria-pressed',String(enabled));
   toggle.textContent=enabled?'✥ Organizar caixas':'✥ Ativar organização';
   doc?.body?.classList.toggle('fresuni-editor-flow-on',enabled);
@@ -245,5 +301,5 @@
  }
  $('#fs-move-page-top')?.addEventListener('click',()=>moveEdge('top'));
  $('#fs-move-page-bottom')?.addEventListener('click',()=>moveEdge('bottom'));
- window.FRESUNI_FLOW_EDITOR={bind,insertionSpot,onSelect(el){sync(el);positionHandle();},onClear:hide,onRoute:positionHandle,onMode:positionHandle,sync};
+ window.FRESUNI_FLOW_EDITOR={bind,insertionSpot,onSelect(el){sync(el);positionHandle();},onClear(){hide();},onRoute(){if(placeMode)endPlaceMode();positionHandle();},onMode:positionHandle,sync};
 })();

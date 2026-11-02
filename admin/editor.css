@@ -217,3 +217,21 @@
 .fs-insert-options .hint{margin:0;color:#665676;font-size:12px;line-height:1.45}
 .fs-flow-edge-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:7px;margin:10px 0}
 .fs-flow-edge-actions .btn{white-space:normal;text-align:center;padding:10px}
+
+/* Posicionamento assistido: duas ações, sem arraste longo. */
+.fs-place-by-click{margin:12px 0;padding:13px;border:1px solid #dfcced;border-radius:10px;background:#faf7ff}
+.fs-place-by-click h5{font-size:13px;margin:0 0 7px;color:#6b00bf}
+.fs-place-by-click p{margin:5px 0 9px}
+.fs-place-by-click label{display:grid;gap:5px;font-size:12px;font-weight:600}
+.fs-place-by-click select{width:100%;min-height:42px;padding:8px;border-radius:8px;border:1px solid #c8b4d9;background:white;color:#222}
+.fs-place-controls{display:flex;flex-direction:column;gap:7px;margin:10px 0}
+.fs-place-by-click button{min-height:44px;white-space:normal;text-align:center}
+#fs-place-status{display:block;min-height:18px;font-size:12px;color:#644b78}
+.fs-menu-page-panel{margin:15px 0;padding:14px;background:#faf7ff;border:1px solid #e2d2ed;border-radius:11px}
+.fs-menu-page-panel h4{margin:0 0 7px}
+.fs-menu-page-panel label{display:grid;gap:5px}
+.fs-menu-page-panel select{width:100%;min-height:42px}
+.fs-menu-page-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:9px 0}
+.fs-menu-page-actions button{min-height:44px;white-space:normal;font-size:12px}
+#fs-main-menu-status{display:block;min-height:18px;color:#5f4b6c;font-size:12px}
+.fs-published-link{display:inline-flex;align-items:center;justify-content:center;min-height:40px;white-space:nowrap}
