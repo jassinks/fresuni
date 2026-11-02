@@ -752,11 +752,12 @@ function snapshot(){remember();dirty();}
  }
 
 function insertionParent(){const p=selectedPage();if(!p)return null;const sel=state.selected;
+ // Shared header and footer keep their dedicated editing routes.
+ if(sel?.closest('.site-header')){const header=siteDoc().querySelector('.site-header');return {parent:header,before:null};}
+ if(sel?.closest('.site-footer')){const footer=siteDoc().querySelector('.site-footer .footer-inner');return {parent:footer,before:null};}
  const placement=$('#fs-insert-position')?.value||'after';
  const flowDest=window.FRESUNI_FLOW_EDITOR?.insertionSpot?.(p,sel,placement);
  if(flowDest?.parent)return flowDest;
- if(sel?.closest('.site-header')){const header=siteDoc().querySelector('.site-header');return {parent:header,before:null};}
- if(sel?.closest('.site-footer')){const footer=siteDoc().querySelector('.site-footer .footer-inner');return {parent:footer,before:null};}
  if(sel?.closest('.site-page')===p){
   // The landing-page headings are labels in a two-column grid. New content belongs
   // inside the second column (.directory-links), never next to the row heading.
