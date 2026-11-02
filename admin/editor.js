@@ -1321,7 +1321,10 @@ function renderNav(){const d=siteDoc(),nav=$('#menu-principal',d);if(!nav)return
  const index=new Map(pageNodes().map((p,i)=>[p.dataset.route,i]));
  for(const group of ['inicio','manifesto','acoes']){
   const el=$('#sub-'+group,nav);if(!el)continue;
-  $$('a',el).forEach(a=>{if(a.hasAttribute('data-fresuni-manual-link'))return;const href=a.getAttribute('href')||'';if(!href.startsWith('#/'))return;const route=href.slice(1);if(route&&!pageFor(route))a.remove();});
+  $$('a',el).forEach(a=>{if(a.hasAttribute('data-fresuni-manual-link'))return;const href=a.getAttribute('href')||'';if(!href.startsWith('#/'))return;const route=href.slice(1);if(route&&!pageFor(route))a.remove();else if(route&&pageFor(route)&&groupFor(pageFor(route))!==group){
+    const fixed=group==='inicio'&&['/','/noticias','/artigos','/acessibilidade'].includes(route)||group==='manifesto'&&route==='/manifesto'||group==='acoes'&&route==='/acoes';
+    if(!fixed)a.remove();
+   }});
   for(const p of pageNodes()){
    if(fsNavMode(p)!=='auto'||groupFor(p)!==group||p.dataset.editorNav==='false'||p.dataset.route==='/'||['noticias','artigos'].includes(groupFor(p)))continue;
    const route=p.dataset.route;if(!$$('a',el).find(x=>x.getAttribute('href')==='#'+route)){
@@ -1465,7 +1468,7 @@ $('#new-page-form').addEventListener('submit',e=>{
  div.innerHTML=`<div class="container page-shell"><nav class="breadcrumbs" aria-label="Caminho de navegação">${crumbs}<span class="breadcrumb-sep" aria-hidden="true"> / </span><span aria-current="page">${escapeHTML(name)}</span></nav><div class="page-heading"><span class="eyebrow">FRESUNI Social</span><h1>${escapeHTML(name)}</h1><p class="page-lead">Escreva aqui uma apresentação da página.</p></div><article class="prose page-article"><p>Clique neste texto para começar a escrever.</p></article></div>`;
  main.append(div);if(!autoRegisterStory(div))attachChildLink(parentRoute,route,name);
  if($('#new-page-main-menu').checked)fsAddPageMainMenu(route,name);
- expandedPages.add(parentRoute);renderNav();$('#new-page-dialog').close();const result=serialize();reloadFrame(result,route);dirty();notify('Subpágina criada dentro de '+titleOf(pageFor(parentRoute))+'.');
+ expandedPages.add(parentRoute);renderNav();$('#new-page-dialog').close();const result=serialize();reloadFrame(result,route);dirty();notify($('#new-page-main-menu').checked?'Página independente criada no menu principal.':'Subpágina criada dentro de '+titleOf(pageFor(parentRoute))+'.');
 });
 function reorderCollectionCards(group){const grid=pageFor('/'+group)?.querySelector('.card-grid');if(!grid)return;
  const map=new Map([...grid.querySelectorAll('a.content-card')].map(a=>[a.getAttribute('href')?.slice(1),a]));for(const p of pageNodes())if(groupFor(p)===group&&p.dataset.route!=='/'+group){const a=map.get(p.dataset.route);if(a)grid.append(a);}}
