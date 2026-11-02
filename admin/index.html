@@ -6,7 +6,7 @@
 <title>Editor de conteúdo — FRESUNI Social</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&amp;family=Merriweather:ital,wght@0,300..900;1,300..900&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./editor.css?v=20261101r15">
+<link rel="stylesheet" href="./editor.css?v=20261102r16">
 </head>
 <body>
 <div id="login-screen" class="login-screen">
@@ -64,7 +64,7 @@
   <aside class="toolbox" aria-label="Ferramentas de edição">
     <div class="tabbar" role="tablist" aria-label="Seções do editor"><button class="active" role="tab" aria-selected="true" data-tab="insert">Inserir</button><button role="tab" aria-selected="false" data-tab="pages">Páginas</button><button role="tab" aria-selected="false" data-tab="theme">Temas</button><button role="tab" aria-selected="false" data-tab="structure">Cabeçalho e rodapé</button></div>
     <div class="toolbox-scroll">
-      <div data-panel="insert" class="tab-panel"><div id="editor-release" class="editor-release"><strong>Editor FRESUNI · edição livre v2026.11.9</strong><small>Publicação protegida, formulários Google, animações e salvamento automático</small><div class="editor-quick-actions"><button id="quick-google-form" type="button">▦ Google Formulários</button><button id="quick-effects" type="button">✦ Animações e efeitos</button><button id="quick-save-draft" type="button">◉ Salvar agora</button></div></div>
+      <div data-panel="insert" class="tab-panel"><div id="editor-release" class="editor-release"><strong>Editor FRESUNI · edição livre v2026.11.10</strong><small>Subpáginas, menu independente, publicação protegida e salvamento automático</small><div class="editor-quick-actions"><button id="quick-google-form" type="button">▦ Google Formulários</button><button id="quick-effects" type="button">✦ Animações e efeitos</button><button id="quick-save-draft" type="button">◉ Salvar agora</button></div></div>
         <p class="pane-intro">Clique em qualquer título, parágrafo ou link — inclusive na página inicial, cabeçalho e rodapé. Edite direto na prévia ou no campo “Editar texto selecionado” abaixo. Para remover, use “Apagar texto” ou “Excluir elemento”.</p>
         <div class="fs-insert-options"><label>Ao escolher um formato<select id="fs-insert-behavior"><option value="transform">Aplicar ao texto selecionado</option><option value="new">Criar novo elemento</option></select></label><label>Local para inserir novo<select id="fs-insert-position"><option value="after">Depois do selecionado</option><option value="before">Antes do selecionado</option><option value="top">No início da página</option><option value="bottom">No fim da página</option></select></label><p class="hint">Selecione um texto e clique em Citação, Título, Quadro ou Box: o formato será aplicado ao conteúdo atual. Para criar outro elemento, escolha Criar novo e o local desejado.</p></div><div class="insert-grid"><button data-insert="text"><span>▤</span>Caixa de texto</button><button data-insert="heading"><span>𝐓</span>Título</button><button data-insert="image"><span>▧</span>Imagem</button><button data-insert="button"><span>⊞</span>Botão</button><button data-insert="accordion"><span>▾</span>Grupo recolhível</button><button data-insert="more"><span>⋯</span>Leia mais</button><button data-insert="box"><span>▢</span>Quadro</button><button data-insert="info-box" title="Criar um box com texto, título, cores, bordas e dimensões editáveis"><span>▣</span>Box personalizado</button><button data-insert="circle"><span>◯</span>Círculo</button><button data-insert="pill"><span>▱</span>Etiqueta</button><button data-insert="divider"><span>─</span>Divisor</button><button data-insert="quote"><span>❞</span>Citação</button><button data-insert="embed"><span>⌘</span>Incorporar</button><button data-insert="google-forms" type="button" class="google-forms-tool" title="Adicionar formulário, abaixo-assinado ou pesquisa do Google Formulários"><span>▦</span>Google Formulários</button><button data-insert="list"><span>☷</span>Lista</button></div>
         <section id="home-quick-tools" class="home-quick-tools" aria-labelledby="home-quick-title">
@@ -152,7 +152,15 @@
       </div>
       <div data-panel="pages" class="tab-panel" hidden>
          <p class="pane-intro">Organize a navegação. Páginas e textos existentes são preservados até você alterar ou excluir.</p>
-         <h3>Configurações da página</h3><label>Nome da página<input id="page-title" placeholder="Título da página"></label><label>Grupo do menu<select id="page-group"><option value="inicio">Início</option><option value="manifesto">Manifesto</option><option value="acoes">Ações</option><option value="noticias">Notícias</option><option value="artigos">Artigos</option><option value="principal">Menu principal</option><option value="oculto">Não mostrar no menu</option></select></label><label class="check-label"><input id="page-show" type="checkbox" checked> Exibir na navegação</label><p class="hint">A ordem é alterada com as setas na coluna Páginas. Notícias e artigos podem ser criados nos grupos correspondentes. O endereço original é mantido para não quebrar links.</p>
+         <h3>Configurações da página</h3><label>Nome da página<input id="page-title" placeholder="Título da página"></label><label>Grupo do menu<select id="page-group"><option value="inicio">Início</option><option value="manifesto">Manifesto</option><option value="acoes">Ações</option><option value="noticias">Notícias</option><option value="artigos">Artigos</option><option value="principal">Menu principal</option><option value="oculto">Não mostrar no menu</option></select></label><label>Página-mãe (organização das subpáginas)<select id="page-parent"><option value="/">Início (sem página-mãe)</option></select></label>
+<p class="hint" id="page-parent-hint">Escolha outra página para colocar a atual dentro de sua estrutura, sem alterar o endereço.</p>
+<label>Posição no menu de navegação<select id="page-nav-mode">
+<option value="auto">Manter a posição original</option>
+<option value="root">Item independente no menu principal</option>
+<option value="child">Submenu da página-mãe</option>
+<option value="hidden">Não exibir no menu</option>
+</select></label>
+<label class="check-label"><input id="page-show" type="checkbox" checked> Exibir na navegação</label><p class="hint">Para mover uma página existente: escolha a Página-mãe e selecione Submenu da página-mãe. Para deixá-la independente, escolha Item independente no menu principal.</p><p class="hint">A ordem é alterada com as setas na coluna Páginas. Notícias e artigos podem ser criados nos grupos correspondentes. O endereço original é mantido para não quebrar links.</p>
          <div id="featured-article-controls" class="featured-controls" hidden><h3>Destacar na página inicial</h3><p class="hint">Mostre esta notícia ou artigo na seção correspondente da página inicial, criando um link para a matéria.</p><button id="feature-on-home" class="btn full" type="button">★ Destacar na página inicial</button><button id="unfeature-on-home" class="btn full" type="button">Retirar destaque</button></div><div class="sep"></div><h3>Nova página</h3><button id="add-page-secondary" class="btn full">+ Adicionar página</button>
       </div>
       <div data-panel="structure" class="tab-panel" hidden>
@@ -234,12 +242,12 @@
  <label>Título da página<input id="new-page-title" required maxlength="110" placeholder="Ex.: A inclusão começa com a escuta"></label>
  <label>Página-mãe<select id="new-page-parent" required></select></label>
  <label>Categoria<select id="new-page-group"><option value="inicio">Início</option><option value="noticias">Notícias</option><option value="artigos">Artigos</option><option value="acoes">Ações</option><option value="manifesto">Manifesto</option><option value="principal">Institucional</option><option value="oculto">Fora do menu</option></select></label>
- <label class="check-label"><input id="new-page-main-menu" type="checkbox"> Mostrar esta página no menu principal</label><p class="hint">Pode ser alterado depois em Cabeçalho e rodapé → Páginas no menu principal.</p>
+ <label class="check-label"><input id="new-page-main-menu" type="checkbox"> Exibir como item independente no menu principal</label><p class="hint">Você pode criar páginas independentes ou ligadas a qualquer página existente. Também é possível reorganizar depois em Páginas → Configurações da página.</p>
 <label>Endereço amigável (não mude após publicar links)<input id="new-page-slug" pattern="[a-z0-9-]+" placeholder="nome-da-pagina" required></label>
  <p class="hint">Exemplo: Notícias → Nova notícia → <code>#/noticias/nova-noticia</code>. Subpáginas podem ter suas próprias subpáginas.</p>
  <div class="modal-actions"><button type="button" class="btn" id="cancel-new">Cancelar</button><button class="primary" type="submit">Criar página</button></div>
  </form></dialog>
  <input id="upload-image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden><input id="upload-shared-logo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>
 </div>
-<script src="./config.js?v=20261101r15"></script><script src="./editor.js?v=20261101r15" defer></script><script src="./flow-editor.js?v=20261101r15" defer></script>
+<script src="./config.js?v=20261102r16"></script><script src="./editor.js?v=20261102r16" defer></script><script src="./flow-editor.js?v=20261102r16" defer></script>
 </body></html>
