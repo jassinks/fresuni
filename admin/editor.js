@@ -681,27 +681,59 @@ function snapshot(){remember();dirty();}
   const selected=state.selected;
   if(!selected||!state.editable||selected.closest('.site-header,.site-footer,.breadcrumbs,[data-fresuni-page-meta]'))return null;
   const page=selectedPage();if(!page||!page.contains(selected))return null;
+  if(selected.closest('.content-card'))return null;
+  const wrapper=selected.closest('.fresuni-info-box,blockquote,[data-fresuni-block="shape"]');
+  if(wrapper)return wrapper;
   const li=selected.closest('li');
   if(li?.parentElement?.matches('ul,ol')&&!li.closest('.main-nav'))return li.parentElement;
-  return selected.closest('.fresuni-info-box,blockquote,[data-fresuni-block="shape"],p,h1,h2,h3,h4,h5,h6,ul,ol')||null;
+  const text=selected.closest('p,h1,h2,h3,h4,h5,h6,ul,ol');
+  if(text)return text;
+  const link=selected.closest('a');
+  return link?.parentElement?.matches('.directory-links')?link:null;
  }
+
+ // Transformar apenas a frase marcada em citação, preservando o restante do parágrafo.
+ function fsQuoteSelection(old){
+  const r=activeTextRange();if(!r||!old.matches('p,h1,h2,h3,h4,h5,h6'))return false;
+  const a=closestElement(r.startContainer),b=closestElement(r.endContainer);
+  if(!old.contains(a)||!old.contains(b))return false;
+  if(!String(r).trim()||String(r).trim()===old.textContent.trim())return false;
+  const d=siteDoc(),prefix=d.createRange(),suffix=d.createRange();
+  prefix.selectNodeContents(old);prefix.setEnd(r.startContainer,r.startOffset);
+  suffix.selectNodeContents(old);suffix.setStart(r.endContainer,r.endOffset);
+  const before=old.cloneNode(false),after=old.cloneNode(false);
+  for(const node of [before,after]){node.removeAttribute('id');node.removeAttribute('data-fresuni-selected');}
+  before.append(prefix.cloneContents());after.append(suffix.cloneContents());
+  const quote=d.createElement('blockquote');quote.dataset.fresuniBlock='quote';
+  quote.style.cssText='border-left:4px solid #8300ea;margin:25px 0;padding:10px 20px;max-width:100%;overflow-wrap:anywhere';
+  const p=d.createElement('p');p.append(r.cloneContents());quote.append(p);
+  snapshot();
+  if(before.textContent.trim())old.before(before);
+  old.before(quote);if(after.textContent.trim())old.before(after);
+  old.remove();savedTextRange=null;
+  state.selected=null;setEditable(true);selectElement(quote);dirty();
+  notify('A frase selecionada virou citação. O restante do texto foi preservado.');
+  return true;
+ }
+
  function fsConvertSelected(type){
   const old=fsTextTransformTarget();
   if(!old)return false;
   if(!['text','heading','quote','info-box','box','list'].includes(type))return false;
+  if(type==='quote'&&fsQuoteSelection(old))return true;
   const doc=siteDoc(),replacement=doc.createElement(
     type==='quote'?'blockquote':type==='info-box'?'aside':type==='heading'?'h2':type==='list'?'ul':type==='box'?'div':'p');
   const content=old.matches('p,h1,h2,h3,h4,h5,h6')?old.innerHTML:old.innerHTML;
   if(type==='quote'){
    replacement.dataset.fresuniBlock='quote';
    replacement.style.cssText='border-left:4px solid #8300ea;margin:25px 0;padding:10px 20px;max-width:100%;overflow-wrap:anywhere';
-   if(old.matches('p,h1,h2,h3,h4,h5,h6')){const p=doc.createElement('p');p.innerHTML=content;replacement.append(p);}
+   if(old.matches('p,h1,h2,h3,h4,h5,h6,a')){const p=doc.createElement('p');if(old.matches('a'))p.append(old.cloneNode(true));else p.innerHTML=content;replacement.append(p);}
    else replacement.innerHTML=content;
   }else if(type==='info-box'||type==='box'){
    replacement.dataset.fresuniBlock=type==='info-box'?'info-box':'shape';
    if(type==='info-box'){replacement.className='fresuni-info-box';replacement.dataset.fresuniBoxTheme='accent';}
    else{replacement.dataset.fresuniShape='box';replacement.style.cssText='box-sizing:border-box;width:100%;min-height:70px;padding:20px;border:2px solid #8300ea;background:#f4e8ff'}
-   if(old.matches('p,h1,h2,h3,h4,h5,h6')){const p=doc.createElement('p');p.innerHTML=content;replacement.append(p);}
+   if(old.matches('p,h1,h2,h3,h4,h5,h6,a')){const p=doc.createElement('p');if(old.matches('a'))p.append(old.cloneNode(true));else p.innerHTML=content;replacement.append(p);}
    else replacement.innerHTML=content;
   }else if(type==='heading'){replacement.dataset.fresuniBlock='heading';replacement.innerHTML=old.matches('p,h1,h2,h3,h4,h5,h6')?content:old.textContent;replacement.style.cssText='font-family:Merriweather,serif;color:#8300ea';}
   else if(type==='list'){
