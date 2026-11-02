@@ -6,7 +6,7 @@
 <title>Editor de conteúdo — FRESUNI Social</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&amp;family=Merriweather:ital,wght@0,300..900;1,300..900&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./editor.css?v=20261102r16">
+<link rel="stylesheet" href="./editor.css?v=20261102r17">
 </head>
 <body>
 <div id="login-screen" class="login-screen">
@@ -64,9 +64,9 @@
   <aside class="toolbox" aria-label="Ferramentas de edição">
     <div class="tabbar" role="tablist" aria-label="Seções do editor"><button class="active" role="tab" aria-selected="true" data-tab="insert">Inserir</button><button role="tab" aria-selected="false" data-tab="pages">Páginas</button><button role="tab" aria-selected="false" data-tab="theme">Temas</button><button role="tab" aria-selected="false" data-tab="structure">Cabeçalho e rodapé</button></div>
     <div class="toolbox-scroll">
-      <div data-panel="insert" class="tab-panel"><div id="editor-release" class="editor-release"><strong>Editor FRESUNI · edição livre v2026.11.10</strong><small>Subpáginas, menu independente, publicação protegida e salvamento automático</small><div class="editor-quick-actions"><button id="quick-google-form" type="button">▦ Google Formulários</button><button id="quick-effects" type="button">✦ Animações e efeitos</button><button id="quick-save-draft" type="button">◉ Salvar agora</button></div></div>
+      <div data-panel="insert" class="tab-panel"><div id="editor-release" class="editor-release"><strong>Editor FRESUNI · edição livre v2026.11.11</strong><small>Galeria de fotos, banners, subpáginas e publicação protegida</small><div class="editor-quick-actions"><button id="quick-google-form" type="button">▦ Google Formulários</button><button id="quick-effects" type="button">✦ Animações e efeitos</button><button id="quick-save-draft" type="button">◉ Salvar agora</button></div></div>
         <p class="pane-intro">Clique em qualquer título, parágrafo ou link — inclusive na página inicial, cabeçalho e rodapé. Edite direto na prévia ou no campo “Editar texto selecionado” abaixo. Para remover, use “Apagar texto” ou “Excluir elemento”.</p>
-        <div class="fs-insert-options"><label>Ao escolher um formato<select id="fs-insert-behavior"><option value="transform">Aplicar ao texto selecionado</option><option value="new">Criar novo elemento</option></select></label><label>Local para inserir novo<select id="fs-insert-position"><option value="after">Depois do selecionado</option><option value="before">Antes do selecionado</option><option value="top">No início da página</option><option value="bottom">No fim da página</option></select></label><p class="hint">Selecione um texto e clique em Citação, Título, Quadro ou Box: o formato será aplicado ao conteúdo atual. Para criar outro elemento, escolha Criar novo e o local desejado.</p></div><div class="insert-grid"><button data-insert="text"><span>▤</span>Caixa de texto</button><button data-insert="heading"><span>𝐓</span>Título</button><button data-insert="image"><span>▧</span>Imagem</button><button data-insert="button"><span>⊞</span>Botão</button><button data-insert="accordion"><span>▾</span>Grupo recolhível</button><button data-insert="more"><span>⋯</span>Leia mais</button><button data-insert="box"><span>▢</span>Quadro</button><button data-insert="info-box" title="Criar um box com texto, título, cores, bordas e dimensões editáveis"><span>▣</span>Box personalizado</button><button data-insert="circle"><span>◯</span>Círculo</button><button data-insert="pill"><span>▱</span>Etiqueta</button><button data-insert="divider"><span>─</span>Divisor</button><button data-insert="quote"><span>❞</span>Citação</button><button data-insert="embed"><span>⌘</span>Incorporar</button><button data-insert="google-forms" type="button" class="google-forms-tool" title="Adicionar formulário, abaixo-assinado ou pesquisa do Google Formulários"><span>▦</span>Google Formulários</button><button data-insert="list"><span>☷</span>Lista</button></div>
+        <div class="fs-insert-options"><label>Ao escolher um formato<select id="fs-insert-behavior"><option value="transform">Aplicar ao texto selecionado</option><option value="new">Criar novo elemento</option></select></label><label>Local para inserir novo<select id="fs-insert-position"><option value="after">Depois do selecionado</option><option value="before">Antes do selecionado</option><option value="top">No início da página</option><option value="bottom">No fim da página</option></select></label><p class="hint">Selecione um texto e clique em Citação, Título, Quadro ou Box: o formato será aplicado ao conteúdo atual. Para criar outro elemento, escolha Criar novo e o local desejado.</p></div><div class="insert-grid"><button data-insert="text"><span>▤</span>Caixa de texto</button><button data-insert="heading"><span>𝐓</span>Título</button><button data-insert="image"><span>▧</span>Imagem</button><button data-insert="gallery" type="button" title="Enviar e organizar diversas fotos"><span>▦</span>Galeria de fotos</button><button data-insert="banner" type="button" title="Adicionar um banner com imagem e link"><span>▰</span>Banner</button><button data-insert="button"><span>⊞</span>Botão</button><button data-insert="accordion"><span>▾</span>Grupo recolhível</button><button data-insert="more"><span>⋯</span>Leia mais</button><button data-insert="box"><span>▢</span>Quadro</button><button data-insert="info-box" title="Criar um box com texto, título, cores, bordas e dimensões editáveis"><span>▣</span>Box personalizado</button><button data-insert="circle"><span>◯</span>Círculo</button><button data-insert="pill"><span>▱</span>Etiqueta</button><button data-insert="divider"><span>─</span>Divisor</button><button data-insert="quote"><span>❞</span>Citação</button><button data-insert="embed"><span>⌘</span>Incorporar</button><button data-insert="google-forms" type="button" class="google-forms-tool" title="Adicionar formulário, abaixo-assinado ou pesquisa do Google Formulários"><span>▦</span>Google Formulários</button><button data-insert="list"><span>☷</span>Lista</button></div>
         <section id="home-quick-tools" class="home-quick-tools" aria-labelledby="home-quick-title">
           <h3 id="home-quick-title">+ Guias rápidos da página inicial</h3>
           <p class="hint">Adicione um link ou texto ao lado de CONHEÇA, NOTÍCIAS, ARTIGOS ou PALESTRAS. Os itens se acomodam automaticamente na grade sem sobreposição.</p>
@@ -85,7 +85,7 @@
 <div class="fs-date-actions"><button type="button" id="fs-date-add" class="btn full">＋ Adicionar bloco de datas</button>
 <button type="button" id="fs-date-remove" class="btn full">− Remover bloco desta página</button>
 <button type="button" id="fs-date-restore" class="btn full">↶ Restaurar datas publicadas</button></div><small id="fs-date-status" role="status">Atualiza ao publicar modificações nesta página.</small></section><section id="fs-news-publication" class="props-section" hidden><h3>Publicação original da notícia</h3><p class="hint">O arquivo por ano é definido pela data original, e não pela última edição. Ao criar uma notícia nova, o mês atual é sugerido automaticamente.</p><label>Mês e ano de publicação <input id="fs-news-month" type="month"></label><small id="fs-news-month-status" role="status"></small></section><div class="sep"></div><h3>Elemento selecionado</h3><p id="selection-name" class="selection-empty">Selecione um texto, uma imagem ou um bloco na página.</p>
-        <p id="selection-instructions" class="hint">Clique em qualquer texto do site, inclusive em notícias, artigos, botões e rodapé. Depois use os controles de animação e disposição que aparecem aqui.</p><div id="selection-props" hidden><section id="selected-text-panel" class="selected-text-panel" hidden>
+        <p id="selection-instructions" class="hint">Clique em qualquer texto do site, inclusive em notícias, artigos, botões e rodapé. Depois use os controles de animação e disposição que aparecem aqui.</p><div id="selection-props" hidden><section id="fs-selected-media" class="fs-media-selected" hidden><h4 id="fs-selected-media-title">Galeria ou banner</h4><button type="button" id="fs-edit-selected-media" class="btn full">Editar imagens, legendas e opções</button></section><section id="selected-text-panel" class="selected-text-panel" hidden>
           <h4>Editar texto selecionado</h4>
           <p class="hint">Edite textos de qualquer página — início, notícias, artigos, ações, menus e rodapé. O rascunho é salvo automaticamente no navegador; para atualizar o site público, use Publicar alterações.</p>
           <label for="selected-text-content">Texto</label>
@@ -207,7 +207,35 @@
   </aside>
  </div>
  <div class="toast" id="toast" role="status" aria-live="polite"></div>
- <dialog id="google-forms-dialog" class="modal google-forms-dialog" aria-labelledby="google-forms-heading">
+ 
+<dialog id="fs-gallery-dialog" class="modal fs-media-dialog" aria-labelledby="fs-gallery-heading">
+ <form id="fs-gallery-form">
+  <h2 id="fs-gallery-heading">Galeria de fotos</h2>
+  <p class="hint">Envie até 12 fotos por galeria. JPG, PNG ou WebP de até 5 MB por imagem. O editor comprime cada foto para até 200 KB antes de inseri-la.</p>
+  <label>Título da galeria <input id="fs-gallery-title" type="text" maxlength="110" placeholder="Momentos do FRESUNI"></label>
+  <label>Adicionar fotografias <input id="fs-gallery-files" type="file" accept="image/jpeg,image/png,image/webp" multiple></label>
+  <p class="hint">As fotos ficam dentro da página; use legendas e descrições para acessibilidade. Clique em ↑ ou ↓ para organizar. O limite total do HTML publicado é de 6 MB.</p>
+  <p id="fs-gallery-status" role="status" aria-live="polite" class="fs-media-status"></p>
+  <div id="fs-gallery-items" class="fs-gallery-items" aria-label="Fotografias adicionadas"></div>
+  <div class="modal-actions"><button type="button" id="fs-gallery-cancel" class="btn">Cancelar</button><button type="submit" class="primary" id="fs-gallery-save">Inserir galeria</button></div>
+ </form>
+</dialog>
+<dialog id="fs-banner-dialog" class="modal fs-media-dialog" aria-labelledby="fs-banner-heading">
+ <form id="fs-banner-form">
+  <h2 id="fs-banner-heading">Banner do site</h2>
+  <p class="hint">Imagem JPG, PNG ou WebP de até 5 MB. A compactação reduz para até 300 KB. O banner se ajusta a computadores e celulares.</p>
+  <label>Selecionar imagem <input id="fs-banner-file" type="file" accept="image/jpeg,image/png,image/webp"></label>
+  <img id="fs-banner-preview" class="fs-banner-preview" alt="Prévia do banner" hidden>
+  <label>Descrição acessível da imagem <input id="fs-banner-alt" maxlength="180" placeholder="Descreva o que aparece na imagem"></label>
+  <label>Título do banner (opcional) <input id="fs-banner-title" maxlength="110" placeholder="Nossa luta por inclusão"></label>
+  <label>Texto de apoio (opcional) <textarea id="fs-banner-description" rows="2" maxlength="300" placeholder="Mensagem curta sobre o banner"></textarea></label>
+  <label>Link do banner (opcional) <input id="fs-banner-link" inputmode="url" placeholder="#/filiacao ou https://..."></label>
+  <label>Proporção do banner <select id="fs-banner-ratio"><option value="wide">Panorâmico</option><option value="standard">Padrão (16:9)</option></select></label>
+  <p id="fs-banner-status" role="status" aria-live="polite" class="fs-media-status"></p>
+  <div class="modal-actions"><button type="button" id="fs-banner-cancel" class="btn">Cancelar</button><button type="submit" class="primary" id="fs-banner-save">Inserir banner</button></div>
+ </form>
+</dialog>
+<dialog id="google-forms-dialog" class="modal google-forms-dialog" aria-labelledby="google-forms-heading">
   <form id="google-forms-form">
    <div class="google-forms-dialog-header"><span aria-hidden="true">▦</span><div><h2 id="google-forms-heading">Integrar Google Formulários</h2><p class="hint">Inclua inscrições, pesquisas, abaixo-assinados e sugestões na página selecionada do FRESUNI.</p></div></div>
    <label for="google-forms-url">Link público ou código de incorporação do Google Formulários</label>
@@ -249,5 +277,5 @@
  </form></dialog>
  <input id="upload-image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden><input id="upload-shared-logo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>
 </div>
-<script src="./config.js?v=20261102r16"></script><script src="./editor.js?v=20261102r16" defer></script><script src="./flow-editor.js?v=20261102r16" defer></script>
+<script src="./config.js?v=20261102r17"></script><script src="./editor.js?v=20261102r17" defer></script><script src="./flow-editor.js?v=20261102r17" defer></script>
 </body></html>
