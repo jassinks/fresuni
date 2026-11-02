@@ -42,7 +42,7 @@
    <button class="btn" id="preview" aria-pressed="false">◉ Pré-visualizar</button>
    <button class="btn" id="backup">↓ Backup</button>
    <button class="btn" id="export">↓ Exportar HTML</button>
-   <button class="primary" id="publish">Publicar alterações</button>
+   <a class="btn fs-published-link" id="view-published-site" href="../index.html" target="_blank" rel="noopener noreferrer" title="Ver o site público em outra aba">↗ Ver site publicado</a><button class="primary" id="publish">Publicar alterações</button>
    <button class="icon-action" id="logout" title="Sair do editor" aria-label="Sair do editor">⏻</button>
   </div>
  </header>
@@ -160,6 +160,10 @@
         <div class="sep"></div><h3>Links do menu</h3>
         <p class="hint">Renomeie destinos e reorganize links. Os submenus existentes continuam funcionando. Use uma página interna (ex.: #/noticias) ou uma URL completa.</p>
         <div id="structure-menu-links" class="structure-links"></div>
+<section class="fs-menu-page-panel"><h4>Páginas no menu principal</h4><p class="hint">Escolha uma página já existente para mostrá-la ou retirá-la do menu, sem excluir seu conteúdo.</p>
+<label>Página do site<select id="fs-main-menu-page"><option value="">Escolher página</option></select></label>
+<div class="fs-menu-page-actions"><button id="fs-main-menu-add" type="button" class="btn">＋ Adicionar ao menu</button><button id="fs-main-menu-remove" type="button" class="btn">− Retirar do menu</button></div>
+<small id="fs-main-menu-status" role="status"></small></section>
         <label>Adicionar link em <select id="structure-menu-place"><option value="main">Menu principal</option><option value="sub-inicio">Submenu Início</option><option value="sub-manifesto">Submenu Manifesto</option><option value="sub-acoes">Submenu Ações</option></select></label>
         <label>Nome do novo link <input id="structure-menu-label" placeholder="Ex.: Projetos"></label>
         <label>Destino <input id="structure-menu-href" placeholder="#/acoes ou https://"></label>
@@ -223,7 +227,8 @@
  <label>Título da página<input id="new-page-title" required maxlength="110" placeholder="Ex.: A inclusão começa com a escuta"></label>
  <label>Página-mãe<select id="new-page-parent" required></select></label>
  <label>Categoria<select id="new-page-group"><option value="inicio">Início</option><option value="noticias">Notícias</option><option value="artigos">Artigos</option><option value="acoes">Ações</option><option value="manifesto">Manifesto</option><option value="principal">Institucional</option><option value="oculto">Fora do menu</option></select></label>
- <label>Endereço amigável (não mude após publicar links)<input id="new-page-slug" pattern="[a-z0-9-]+" placeholder="nome-da-pagina" required></label>
+ <label class="check-label"><input id="new-page-main-menu" type="checkbox"> Mostrar esta página no menu principal</label><p class="hint">Pode ser alterado depois em Cabeçalho e rodapé → Páginas no menu principal.</p>
+<label>Endereço amigável (não mude após publicar links)<input id="new-page-slug" pattern="[a-z0-9-]+" placeholder="nome-da-pagina" required></label>
  <p class="hint">Exemplo: Notícias → Nova notícia → <code>#/noticias/nova-noticia</code>. Subpáginas podem ter suas próprias subpáginas.</p>
  <div class="modal-actions"><button type="button" class="btn" id="cancel-new">Cancelar</button><button class="primary" type="submit">Criar página</button></div>
  </form></dialog>

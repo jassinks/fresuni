@@ -1230,9 +1230,9 @@ function openNewPage(parentHint){
  }
  const chosen=parentHint||state.route||'/';select.value=pageFor(chosen)?chosen:'/';
  const group=groupFor(pageFor(select.value)||pageFor('/'));$('#new-page-group').value=group==='oculto'?'inicio':group;
- $('#new-page-slug').value='';$('#new-page-dialog').showModal();$('#new-page-title').focus();
+ $('#new-page-slug').value='';$('#new-page-main-menu').checked=select.value==='/'&&['principal','inicio'].includes($('#new-page-group').value);$('#new-page-dialog').showModal();$('#new-page-title').focus();
 }
-$('#new-page-parent').addEventListener('change',e=>{const p=pageFor(e.target.value);if(p){const g=groupFor(p);$('#new-page-group').value=g==='oculto'?'inicio':g;}});
+$('#new-page-parent').addEventListener('change',e=>{const p=pageFor(e.target.value);if(p){const g=groupFor(p);$('#new-page-group').value=g==='oculto'?'inicio':g;$('#new-page-main-menu').checked=e.target.value==='/';}});
 $('#new-page-title').addEventListener('input',e=>{$('#new-page-slug').value=slug(e.target.value);});
 $('#cancel-new').addEventListener('click',()=>$('#new-page-dialog').close());
 $('#add-page').addEventListener('click',()=>openNewPage('/'));
@@ -1265,7 +1265,9 @@ $('#new-page-form').addEventListener('submit',e=>{
  const ancestors=[];let walk=parentRoute;for(let i=0;walk&&walk!=='/'&&i<12;i++){const p=pageFor(walk);if(!p)break;ancestors.unshift({route:walk,title:titleOf(p)});walk=parentRouteOf(p);}
  const crumbs='<a href="#/">Início</a>'+ancestors.map(x=>'<span class="breadcrumb-sep" aria-hidden="true"> / </span><a href="#'+escapeHTML(x.route)+'">'+escapeHTML(x.title)+'</a>').join('');
  div.innerHTML=`<div class="container page-shell"><nav class="breadcrumbs" aria-label="Caminho de navegação">${crumbs}<span class="breadcrumb-sep" aria-hidden="true"> / </span><span aria-current="page">${escapeHTML(name)}</span></nav><div class="page-heading"><span class="eyebrow">FRESUNI Social</span><h1>${escapeHTML(name)}</h1><p class="page-lead">Escreva aqui uma apresentação da página.</p></div><article class="prose page-article"><p>Clique neste texto para começar a escrever.</p></article></div>`;
- main.append(div);if(!autoRegisterStory(div))attachChildLink(parentRoute,route,name);expandedPages.add(parentRoute);renderNav();$('#new-page-dialog').close();const result=serialize();reloadFrame(result,route);dirty();notify('Subpágina criada dentro de '+titleOf(pageFor(parentRoute))+'.');
+ main.append(div);if(!autoRegisterStory(div))attachChildLink(parentRoute,route,name);
+ if($('#new-page-main-menu').checked)fsAddPageMainMenu(route,name);
+ expandedPages.add(parentRoute);renderNav();$('#new-page-dialog').close();const result=serialize();reloadFrame(result,route);dirty();notify('Subpágina criada dentro de '+titleOf(pageFor(parentRoute))+'.');
 });
 function reorderCollectionCards(group){const grid=pageFor('/'+group)?.querySelector('.card-grid');if(!grid)return;
  const map=new Map([...grid.querySelectorAll('a.content-card')].map(a=>[a.getAttribute('href')?.slice(1),a]));for(const p of pageNodes())if(groupFor(p)===group&&p.dataset.route!=='/'+group){const a=map.get(p.dataset.route);if(a)grid.append(a);}}
@@ -1336,6 +1338,48 @@ function sharedLink(link,target){
  return true;
 }
 function structureInput(id,value){const el=$('#'+id);if(el && document.activeElement!==el)el.value=value;}
+
+ // Gerenciamento facilitado de páginas existentes no menu, sem excluir as páginas.
+ function fsMainMenuLink(route){
+  const nav=sharedEl('header')?.querySelector('.main-nav');
+  return [...(nav?.querySelectorAll(':scope > a.nav-root[href]')||[])].find(a=>a.getAttribute('href')==='#'+route)||null;
+ }
+ function fsSyncMainMenuControls(){
+  const route=$('#fs-main-menu-page').value,listed=route&&!!fsMainMenuLink(route);
+  $('#fs-main-menu-add').disabled=!route||listed;
+  $('#fs-main-menu-remove').disabled=!route||!listed;
+  $('#fs-main-menu-status').textContent=route?(listed?'A página já está no menu principal.':'Esta página ainda não está no menu principal.'):'';
+ }
+ function fsMainMenuOptions(){
+  const select=$('#fs-main-menu-page'),current=select.value;
+  select.replaceChildren(new Option('Escolher página',''));
+  const pages=pageNodes().filter(p=>p.dataset.route!=='/'&&!p.hasAttribute('data-fresuni-news-archive'));
+  pages.sort((a,b)=>titleOf(a).localeCompare(titleOf(b),'pt-BR'));
+  for(const p of pages)select.add(new Option(titleOf(p)+' (#'+p.dataset.route+')',p.dataset.route));
+  if(pages.some(p=>p.dataset.route===current))select.value=current;
+  fsSyncMainMenuControls();
+ }
+ function fsAddPageMainMenu(route,name){
+  const nav=sharedEl('header')?.querySelector('.main-nav');
+  if(!nav||!pageFor(route)||fsMainMenuLink(route))return false;
+  const a=siteDoc().createElement('a');
+  a.textContent=name||titleOf(pageFor(route));a.href='#'+route;a.className='nav-root solo';a.dataset.fresuniMenuPage='true';
+  const last=nav.querySelector(':scope > a[href="#/estatuto"]');
+  if(last)nav.insertBefore(a,last);else nav.append(a);
+  pageFor(route).dataset.editorNav='true';return true;
+ }
+ $('#fs-main-menu-page').addEventListener('change',fsSyncMainMenuControls);
+ $('#fs-main-menu-add').addEventListener('click',()=>{
+  const route=$('#fs-main-menu-page').value;if(!pageFor(route)||fsMainMenuLink(route))return;
+  snapshot();fsAddPageMainMenu(route);dirty();renderStructurePanel();
+  notify('Página adicionada ao menu principal no rascunho. Publique para disponibilizar.');
+ });
+ $('#fs-main-menu-remove').addEventListener('click',()=>{
+  const route=$('#fs-main-menu-page').value,link=fsMainMenuLink(route);if(!link)return;
+  snapshot();link.remove();pageFor(route).dataset.editorNav='false';dirty();renderStructurePanel();
+  notify('Link retirado do menu principal. A página continua existindo.');
+ });
+
 function sharedMenuLinks(){return Array.from(siteDoc()?.querySelectorAll('.site-header .main-nav a[href]')||[]);}
 function sharedFooterLinks(){return Array.from(siteDoc()?.querySelectorAll('.site-footer nav a[href]')||[]);}
 function sharedRow(parent,link,type){
@@ -1384,6 +1428,7 @@ function renderStructurePanel(){const header=sharedEl('header'),footer=sharedEl(
  structureInput('structure-footer-legal',footer.querySelector('.footer-inner > small')?.textContent.trim()||'');
  const m=$('#structure-menu-links'),f=$('#structure-footer-links');if(!m||!f)return;m.replaceChildren();f.replaceChildren();
  sharedMenuLinks().forEach(link=>sharedRow(m,link,'header'));
+ fsMainMenuOptions();
  sharedFooterLinks().forEach(link=>sharedRow(f,link,'footer'));
 }
 function selectSharedArea(type){const el=sharedEl(type);if(!el)return;const container=type==='header'?el:el.querySelector('.footer-inner')||el;
