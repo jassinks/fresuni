@@ -107,3 +107,19 @@ A página inicial também deve apresentar **Conheça as Ações FRESUNI**, levan
 **Proteção:** o editor não deve recriar automaticamente todos os programas ou projetos no submenu quando o usuário edita títulos, textos, categorias ou outras páginas. O documento publicado é a referência do submenu marcado com `data-fresuni-menu-policy`; sua configuração é preservada em publicações comuns. O proprietário poderá alterar o submenu **intencionalmente** pelos controles específicos de **Cabeçalho e rodapé → Links do menu**.
 
 As demais iniciativas não foram excluídas: continuam acessíveis em `#/acoes` e por seus respectivos links. A árvore de páginas do editor e a organização dos sete programas permanecem intactas.
+
+## Navegação acessível, Frentes e Ações — revisão de 03/11/2026
+
+As páginas **Frentes** (`#/manifesto/frentes`) e **Ações** (`#/acoes`) são independentes, porém estão conectadas por links de acesso em ambos os sentidos.
+
+- **Frentes:** preserva as oito áreas institucionais e apresenta projetos relacionados diretamente abaixo da descrição de cada frente, sem criar novas páginas para o mesmo assunto.
+- **Ações:** mantém os sete programas integradores, mas volta a apresentar as 22 iniciativas por **cartões individuais acessíveis**, com títulos e descrições curtas. Possui pesquisa local por palavra-chave e acesso direto a todas as páginas dos projetos.
+- **Início:** possui uma área de três destaques com apresentação visual, navegação manual e reprodução automática **somente por decisão do visitante**; respeita redução de movimento. As imagens podem ser substituídas no editor, com limite de upload e compactação.
+- **Notícias e artigos:** a seção inicial inclui links explícitos para ver as respectivas listagens completas.
+- **Identidade visual:** manter as cores, logotipo e tipografia institucional do FRESUNI; não copiar elementos gráficos ou imagens de outros sites.
+
+### Proteção de publicação
+
+O editor v2026.11.14 mantém a organização das Ações, os cartões dos projetos, os vínculos com Frentes, os controles da apresentação inicial e seus estilos/scripts durante edições de outras páginas. Mudanças deliberadas continuam possíveis pelas ferramentas adequadas do editor. A referência da versão anterior está no branch `SITE-FRESUNI-VERSAO-03-11-2026`, que não deve ser alterado durante desenvolvimentos futuros.
+
+A inclusão de novos projetos requer informar seu estado real de desenvolvimento; a presença no site não significa execução ou disponibilidade de serviço.
