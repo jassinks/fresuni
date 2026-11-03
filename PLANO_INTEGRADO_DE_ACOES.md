@@ -123,3 +123,19 @@ As páginas **Frentes** (`#/manifesto/frentes`) e **Ações** (`#/acoes`) são i
 O editor v2026.11.14 mantém a organização das Ações, os cartões dos projetos, os vínculos com Frentes, os controles da apresentação inicial e seus estilos/scripts durante edições de outras páginas. Mudanças deliberadas continuam possíveis pelas ferramentas adequadas do editor. A referência da versão anterior está no branch `SITE-FRESUNI-VERSAO-03-11-2026`, que não deve ser alterado durante desenvolvimentos futuros.
 
 A inclusão de novos projetos requer informar seu estado real de desenvolvimento; a presença no site não significa execução ou disponibilidade de serviço.
+
+## Identidade cromática institucional — azul FRESUNI (03/11/2026)
+
+A cor **principal e oficial utilizada no site é o azul `#214ECF`**, conforme orientação expressa da associação. O roxo, vermelho, ciano, verde e amarelo da logomarca são **acentos visuais de apoio**, não substitutos do azul.
+
+Diretrizes de aplicação:
+- Usar **azul `#214ECF`** nas principais chamadas, links, títulos, botões, navegação, destaques e no fundo do rodapé.
+- Utilizar tons mais escuros de azul para textos e superfícies que precisem cumprir requisitos de contraste.
+- Aplicar o **roxo e o vermelho** em detalhes selecionados, e **ciano, verde e amarelo** principalmente em pequenos acentos da marca e divisórias cromáticas.
+- Preservar o logotipo, as fontes e toda a estrutura anterior do FRESUNI. As cores adicionais não devem parecer uma mistura desordenada.
+- Usar fundos suavemente azulados, alternâncias discretas, cartões e bordas coloridas para reduzir grandes regiões brancas, mantendo a legibilidade.
+- Manter o rodapé com base azul institucional e faixa de pequenas cores da logomarca.
+- Usar movimentos leves na abertura, transições do carrossel, cartões e áreas expansíveis, respeitando `prefers-reduced-motion`, modo simplificado e escolha manual de redução de animações.
+- O CSS da composição está identificado por `#fresuni-blue-brand-2026`; o editor v2026.11.15 preserva esse recurso e adota `#214ECF` nos componentes novos e na opção Restaurar cores oficiais.
+
+**Pontos de recuperação anteriores:** `SITE-FRESUNI-VERSAO-03-11-2026` e `backup-antes-cores-e-animacoes-2026-11-03`. A restauração somente deve ocorrer quando solicitada, não automaticamente.
