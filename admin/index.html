@@ -6,7 +6,7 @@
 <title>Editor de conteúdo — FRESUNI Social</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&amp;family=Merriweather:ital,wght@0,300..900;1,300..900&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./editor.css?v=20261103r23">
+<link rel="stylesheet" href="./editor.css?v=20261103r24">
 </head>
 <body>
 <div id="login-screen" class="login-screen">
@@ -130,7 +130,21 @@
           <textarea id="selected-text-content" rows="5" spellcheck="true" placeholder="Escreva seu texto"></textarea>
           <p id="text-inspector-warning" class="hint" hidden>Este bloco contém formatação ou links internos. A substituição por texto simples removerá essa formatação; você será avisado antes.</p>
           <div class="selected-text-actions"><button class="btn" id="selected-text-apply" type="button">Aplicar texto</button><button class="btn" id="selected-text-clear" type="button">Apagar texto</button></div>
-         </section><div class="link-editor-card"><h4>Links do elemento</h4><p class="hint">Selecione uma palavra, título, imagem ou forma para criar um link interno ou externo.</p><button class="btn full" type="button" id="element-add-link">🔗 Vincular página ou endereço</button><button class="btn full" type="button" id="element-remove-link">Remover link</button><label>Link atual (somente leitura)<input id="element-url" placeholder="Nenhum link" readonly></label></div><label>Texto alternativo (imagens) <input id="element-alt" placeholder="Descreva a imagem"></label><label>Cor de fundo <input id="background-color" type="color" value="#ffffff"></label>
+         </section>
+        <section id="fs-text-own-color-panel" class="props-section fs-text-own-color-panel" hidden aria-label="Cor individual do texto selecionado">
+          <h4>Cor individual deste texto</h4>
+          <p class="hint">Escolha uma cor apenas para o título, parágrafo, legenda, botão ou texto selecionado. Outros elementos e as cores gerais do site não serão modificados. Para colorir só algumas palavras, selecione-as e use Cor na barra superior.</p>
+          <div class="fs-text-color-fields">
+            <label>Escolher cor <input id="fs-text-own-picker" type="color" value="#214ecf"></label>
+            <label>Código hexadecimal <input id="fs-text-own-hex" type="text" inputmode="text" maxlength="7" value="#214ECF" placeholder="#214ECF"></label>
+          </div>
+          <div class="selected-text-actions">
+            <button id="fs-text-own-apply" class="btn" type="button">Aplicar só neste texto</button>
+            <button id="fs-text-own-reset" class="btn" type="button">Restaurar cor original</button>
+          </div>
+          <p class="hint" id="fs-text-own-status" role="status" aria-live="polite">Selecione um texto na prévia para personalizar sua cor.</p>
+        </section>
+        <div class="link-editor-card"><h4>Links do elemento</h4><p class="hint">Selecione uma palavra, título, imagem ou forma para criar um link interno ou externo.</p><button class="btn full" type="button" id="element-add-link">🔗 Vincular página ou endereço</button><button class="btn full" type="button" id="element-remove-link">Remover link</button><label>Link atual (somente leitura)<input id="element-url" placeholder="Nenhum link" readonly></label></div><label>Texto alternativo (imagens) <input id="element-alt" placeholder="Descreva a imagem"></label><label>Cor de fundo <input id="background-color" type="color" value="#ffffff"></label>
         <div class="props-section"><h4>Dimensões e disposição</h4><div class="fields-2"><label>Largura (%)<input id="element-width" type="number" min="10" max="100" value="100" step="1"></label><label>Altura mínima (px)<input id="element-height" type="number" min="0" max="1800" value="0" step="5"></label></div>
          <p class="hint"><b>Redimensionamento livre:</b> selecione um texto e arraste a alça roxa no canto inferior direito. A altura se ajusta ao conteúdo; outros blocos são empurrados para baixo, sem sobreposição.</p><label class="dimension-reset"><button id="reset-dimensions" type="button" class="btn">Restaurar tamanho automático</button></label></div>
         <div class="props-section" id="fresuni-layout-advanced"><h4>✥ Grade, posição e tipografia</h4>
@@ -221,6 +235,25 @@
         <label>Nome do novo link <input id="structure-menu-label" placeholder="Ex.: Projetos"></label>
         <label>Destino <input id="structure-menu-href" placeholder="#/acoes ou https://"></label>
         <button class="btn full" id="structure-menu-add" type="button">+ Adicionar link ao menu</button>
+        <section id="fs-brand-logo-panel" class="props-section fs-brand-logo-panel" aria-labelledby="fs-brand-logo-title">
+          <h3 id="fs-brand-logo-title">Logomarca por área</h3>
+          <p class="hint">Controle separadamente a marca do cabeçalho, do menu de navegação e do rodapé. Você pode adicionar, substituir, remover, reposicionar e ajustar o tamanho. A proporção original será preservada em qualquer tela.</p>
+          <label>Local da marca<select id="fs-brand-logo-area">
+            <option value="header">Cabeçalho (marca principal)</option>
+            <option value="menu">Menu de navegação</option>
+            <option value="footer">Rodapé</option>
+          </select></label>
+          <img id="fs-brand-logo-preview" class="fs-brand-logo-preview" alt="Prévia da logomarca selecionada" hidden>
+          <label>Posição no local<select id="fs-brand-logo-position"></select></label>
+          <label>Largura máxima da marca (px)<input id="fs-brand-logo-width" type="number" min="40" max="260" step="5" value="125"></label>
+          <label>Descrição da imagem<input id="fs-brand-logo-alt" type="text" maxlength="160" value="FRESUNI Social"></label>
+          <div class="fs-brand-logo-actions">
+            <button id="fs-brand-logo-upload" type="button" class="btn">Adicionar ou trocar imagem</button>
+            <button id="fs-brand-logo-original" type="button" class="btn">Usar marca institucional</button>
+            <button id="fs-brand-logo-remove" type="button" class="btn">Remover desta área</button>
+          </div>
+          <p class="hint" id="fs-brand-logo-status" role="status" aria-live="polite">Escolha um local para editar a logomarca sem afetar as outras áreas.</p>
+        </section>
         <div class="sep"></div><h3>Rodapé</h3>
         <label>Cor de fundo <input id="structure-footer-bg" type="color" value="#ffffff"></label>
         <label>Cor dos textos e links <input id="structure-footer-text" type="color" value="#000000"></label>
@@ -315,5 +348,5 @@
  </form></dialog>
  <input id="upload-image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden><input id="upload-shared-logo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>
 </div>
-<script src="./config.js?v=20261103r21"></script><script src="./editor.js?v=20261103r23" defer></script><script src="./flow-editor.js?v=20261103r21" defer></script>
+<script src="./config.js?v=20261103r21"></script><script src="./editor.js?v=20261103r24" defer></script><script src="./flow-editor.js?v=20261103r21" defer></script>
 </body></html>
