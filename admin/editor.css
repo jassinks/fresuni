@@ -284,3 +284,29 @@
 .fs-home-banner-editor .fs-home-showcase-buttons button{min-height:43px}
 #fs-home-banner-delete{color:#8b2635}
 #fs-home-banner-status{overflow-wrap:anywhere;min-height:25px}
+
+/* Cores autônomas e logomarcas acessíveis por área — Editor 2026.11.16 */
+.fs-text-own-color-panel{border:1px solid #CFDCF7;background:#F8FAFF;border-radius:11px;padding:13px;margin:12px 0}
+.fs-text-own-color-panel h4{color:#173B9E;margin:0 0 8px}
+.fs-text-color-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fs-text-color-fields label{display:grid;gap:7px;min-width:0;font-size:.83rem;font-weight:600}
+.fs-text-color-fields input{width:100%;box-sizing:border-box;min-width:0;min-height:40px;border:1px solid #BBCDEF;border-radius:7px;padding:7px;background:#fff;color:#162C56;font:inherit}
+.fs-text-color-fields input[type=color]{cursor:pointer;padding:3px}
+.fs-text-own-color-panel button{min-height:43px}
+.fs-text-own-color-panel button:focus-visible,.fs-text-color-fields input:focus-visible{
+ outline:3px solid #214ECF;outline-offset:2px
+}
+#fs-text-own-status{font-size:12px;line-height:1.5}
+.fs-brand-logo-panel{border:1px solid #C9D8F8;border-radius:11px;padding:15px 12px;background:#F8FAFF;margin:18px 0}
+.fs-brand-logo-panel h3{color:#173B9E;margin:0 0 8px}
+.fs-brand-logo-panel label{display:grid;gap:6px;min-width:0;font-size:13px;font-weight:600}
+.fs-brand-logo-panel label input,.fs-brand-logo-panel label select{width:100%;min-width:0;border:1px solid #BBD0F5;border-radius:7px;background:#fff;color:#1F3152;padding:9px;min-height:40px;box-sizing:border-box}
+.fs-brand-logo-panel [hidden]{display:none!important}
+.fs-brand-logo-preview{display:block;box-sizing:border-box;max-width:100%;width:auto;max-height:130px;height:auto;object-fit:contain;margin:12px auto;padding:10px;background:#fff;border:1px solid #D8E3FA;border-radius:8px}
+.fs-brand-logo-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.fs-brand-logo-actions button{min-height:45px;white-space:normal;overflow-wrap:anywhere}
+#fs-brand-logo-remove{color:#842E41}
+#fs-brand-logo-status{line-height:1.6;min-height:22px}
+.fs-brand-logo-panel select:focus-visible,.fs-brand-logo-panel input:focus-visible,
+.fs-brand-logo-panel button:focus-visible{outline:3px solid #214ECF;outline-offset:2px}
+@media(max-width:420px){.fs-brand-logo-actions,.fs-text-color-fields{grid-template-columns:1fr}}
