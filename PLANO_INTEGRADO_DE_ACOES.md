@@ -93,3 +93,17 @@ Iniciativa integrada:
 - Manter recursos do editor como galerias, banners, formulários Google, acessibilidade, publicação segura e mídias compactadas.
 
 **Este plano é organizativo. A implementação e as decisões operacionais exigem responsáveis, avaliações e deliberação institucional.**
+
+## Menu de Ações — atalhos públicos (03/11/2026)
+O submenu **Ações** deve mostrar somente quatro acessos diretos, nesta ordem:
+
+1. **Conheça as Ações FRESUNI** — `#/acoes` (reúne os sete programas e todas as iniciativas).
+2. **PMIT** — `#/acoes/pmit`.
+3. **Pais que Acolhem e Escutam** — `#/acoes/pais-que-lutam-e-incluem` (endereço legado mantido para preservar links anteriores).
+4. **Escuta Estudantil** — `#/acoes/escuta-estudantil`.
+
+A página inicial também deve apresentar **Conheça as Ações FRESUNI**, levando à página de todas as iniciativas.
+
+**Proteção:** o editor não deve recriar automaticamente todos os programas ou projetos no submenu quando o usuário edita títulos, textos, categorias ou outras páginas. O documento publicado é a referência do submenu marcado com `data-fresuni-menu-policy`; sua configuração é preservada em publicações comuns. O proprietário poderá alterar o submenu **intencionalmente** pelos controles específicos de **Cabeçalho e rodapé → Links do menu**.
+
+As demais iniciativas não foram excluídas: continuam acessíveis em `#/acoes` e por seus respectivos links. A árvore de páginas do editor e a organização dos sete programas permanecem intactas.
