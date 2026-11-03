@@ -684,6 +684,26 @@ function fsPrepareSafePublish(html){
  }
 
 
+
+ // Migração suave de rascunhos antigos: corrige apenas o título original "PALESTRAS",
+ // sem alterar títulos ou conteúdos que o administrador tenha personalizado.
+ const schoolSection=next.querySelector('.site-page[data-route="/"] #palestras-label');
+ if(schoolSection?.textContent.trim()==='PALESTRAS')
+  schoolSection.textContent='AÇÕES NAS COMUNIDADES ESCOLARES';
+
+ // Preserva ícones sociais mesmo após uma edição textual no painel,
+ // sem reconstruir links removidos intencionalmente nem substituir seus textos.
+ for(const originalLink of published.querySelectorAll('.site-footer nav a.fresuni-social-link[href]')){
+  const href=originalLink.getAttribute('href');
+  const draftLink=[...next.querySelectorAll('.site-footer nav a[href]')]
+   .find(a=>a.getAttribute('href')===href);
+  const icon=originalLink.querySelector('svg.fresuni-social-icon');
+  if(draftLink&&icon&&!draftLink.querySelector('svg.fresuni-social-icon')){
+   draftLink.classList.add('fresuni-social-link');
+   draftLink.prepend(icon.cloneNode(true));
+  }
+ }
+
  // Atalhos escolhidos no submenu Ações devem sobreviver a edições comuns
  // de páginas (inclusive textos, títulos e mudança de categoria).
  // A edição deliberada do menu no painel é a única exceção.
@@ -1962,7 +1982,7 @@ $('#delete-page').addEventListener('click',()=>{const p=selectedPage();if(!p||p.
  if(pageNodes().some(x=>parentRouteOf(x)===p.dataset.route)){notify('Esta página possui subpáginas. Exclua ou mova as subpáginas antes de excluí-la.');return;}
  snapshot();removeChildLink(p.dataset.route);p.remove();renderNav();reloadFrame(serialize(),'/');dirty();notify('Página removida do rascunho.');});
 // -------- Guias rápidos: inclusões e reordenação dentro da grade original --------
-const homeQuickSections={conheca:'CONHEÇA',noticias:'NOTÍCIAS',artigos:'ARTIGOS',palestras:'PALESTRAS'};
+const homeQuickSections={conheca:'CONHEÇA',noticias:'NOTÍCIAS',artigos:'ARTIGOS',palestras:'AÇÕES NAS COMUNIDADES ESCOLARES'}; // chave interna histórica mantida para preservar itens do Editor
 function homeQuickRow(key){const p=pageFor('/');return p?.querySelector('.directory-row[aria-labelledby="'+key+'-label"]')||null;}
 function updateHomeQuickTargets(){const input=$('#home-quick-target');if(!input)return;const previous=input.value;input.replaceChildren();
  for(const [value,label] of [['__plain','Somente texto, sem link'],['__external','Outro endereço (URL)']]){const op=document.createElement('option');op.value=value;op.textContent=label;input.append(op);}
@@ -2082,7 +2102,15 @@ function sharedRow(parent,link,type){
    dirty();renderStructurePanel();
   });actions.append(b);
  }
- name.addEventListener('change',()=>{const val=name.value.trim();if(!val){name.value=link.textContent.trim();return;}snapshot();link.textContent=val;
+ name.addEventListener('change',()=>{const val=name.value.trim();if(!val){name.value=link.textContent.trim();return;}snapshot();
+  // Links sociais mantêm ícone acessível mesmo quando o título é editado.
+  const socialIcon=type==='footer'&&link.classList.contains('fresuni-social-link')
+   ?link.querySelector('svg.fresuni-social-icon')?.cloneNode(true):null;
+  if(socialIcon){
+   const caption=link.ownerDocument.createElement('span');caption.textContent=val;
+   link.replaceChildren(socialIcon,caption);
+   link.setAttribute('aria-label',val+' (abre em nova aba)');
+  }else link.textContent=val;
   if(link.matches('.nav-root')&&link.closest('.nav-group')){const button=link.closest('.nav-group').querySelector('.nav-drop');if(button)button.setAttribute('aria-label','Abrir submenu '+val);}
   if(link.closest('#sub-acoes'))fsActionsMenuExplicitEdit=true;
   dirty();renderStructurePanel();
