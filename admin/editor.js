@@ -455,16 +455,16 @@ function reloadFrame(html,route=state.route){
   const style=d.createElement('style');style.id='fresuni-editor-overlay';style.textContent=`
    [data-fresuni-editable="true"]{cursor:text;min-width:10px;min-height:1em;border-radius:2px;outline:1px solid transparent;outline-offset:3px;}
    [data-fresuni-editable="true"]:hover{outline:1px dashed #af65ed}
-   [data-fresuni-selected]{outline:3px solid #8300ea!important;outline-offset:4px;position:relative}
+   [data-fresuni-selected]{outline:3px solid #214ECF!important;outline-offset:4px;position:relative}
    [data-fresuni-selected]::selection{background:#e2bbff}
-   .fresuni-resize-grip{position:absolute;z-index:99999;width:19px;height:19px;border-radius:6px;background:#8300ea;border:3px solid white;box-shadow:0 0 0 2px #8300ea,0 2px 9px #3335;cursor:nwse-resize;touch-action:none}
+   .fresuni-resize-grip{position:absolute;z-index:99999;width:19px;height:19px;border-radius:6px;background:#214ECF;border:3px solid white;box-shadow:0 0 0 2px #214ECF,0 2px 9px #3335;cursor:nwse-resize;touch-action:none}
    .fresuni-resize-grip:focus-visible{outline:3px solid #333;outline-offset:4px}
    .fresuni-resize-label{position:absolute;z-index:99998;background:#2d0c4f;color:white;font:12px Prompt,Arial,sans-serif;padding:3px 8px;border-radius:5px;pointer-events:none}
    body{scroll-behavior:auto!important}
    [data-reveal]:not(.fresuni-previewing){opacity:1!important;transform:none!important;visibility:visible!important}
    @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}`;
   style.textContent+=`
-.fresuni-quick-add{font:600 13px Prompt,Arial,sans-serif!important;color:#8300ea!important;background:#fbf7ff!important;border:1px dashed #9c3bdf!important;padding:12px!important;border-radius:8px!important;cursor:pointer!important;min-height:44px!important;text-align:left!important;max-width:100%!important;min-width:0!important}.fresuni-quick-add:hover,.fresuni-quick-add:focus-visible{background:#f0ddff!important;outline:2px solid #8300ea!important}`;
+.fresuni-quick-add{font:600 13px Prompt,Arial,sans-serif!important;color:#214ECF!important;background:#fbf7ff!important;border:1px dashed #9c3bdf!important;padding:12px!important;border-radius:8px!important;cursor:pointer!important;min-height:44px!important;text-align:left!important;max-width:100%!important;min-width:0!important}.fresuni-quick-add:hover,.fresuni-quick-add:focus-visible{background:#f0ddff!important;outline:2px solid #214ECF!important}`;
   d.head.append(style);
   for(const p of pageNodes())p.dataset.editorGroup=groupFor(p);
   d.addEventListener('click',clickSite,true);
@@ -557,7 +557,7 @@ function selectElement(el){if(state.selected===el)return;clearSelection();state.
  const cs=frame.contentWindow.getComputedStyle(el);$('#font-family').value=cs.fontFamily.toLowerCase().includes('merriweather')?'Merriweather':'Prompt';setWeightOptions($('#font-family').value,Math.round(parseInt(cs.fontWeight)||400));$('#text-preset').value='custom';
  $('#element-width').value=Math.max(10,Math.min(100,Math.round(100*el.getBoundingClientRect().width/(el.parentElement?.getBoundingClientRect().width||el.getBoundingClientRect().width))));
  $('#element-height').value=parseInt(el.style.minHeight)||0;$('#corner-radius').value=parseInt(el.style.borderRadius)||0;$('#border-size').value=parseInt(el.style.borderWidth)||0;
- $('#border-color').value=toHex(cs.borderTopColor,'#8300ea');$('#block-motion').value=el.dataset.fresuniMotion||'none';$('#motion-time').value=parseInt(el.style.getPropertyValue('--fresuni-motion-duration'))||650;
+ $('#border-color').value=toHex(cs.borderTopColor,'#214ECF');$('#block-motion').value=el.dataset.fresuniMotion||'none';$('#motion-time').value=parseInt(el.style.getPropertyValue('--fresuni-motion-duration'))||650;
  $('#shape-kind').value=el.dataset.fresuniShape||'box';
  fsSyncControls(el);fsSyncInfoBox();fsMediaRefreshSelected(el);
  const gridItem=fsWholeGridItem(el);
@@ -667,10 +667,18 @@ function fsPrepareSafePublish(html){
   'fresuni-interactive-effects-2026','fresuni-interactive-effects-runtime-2026',
   'fresuni-flow-grid-style','fresuni-page-meta-style','fresuni-archive-styles',
   'fresuni-layout-polish-v2','fresuni-custom-box-style',
-  'fresuni-mobile-pdf-and-navigation-2026','fresuni-media-styles','fresuni-media-runtime','fresuni-program-integration-style','fresuni-ux-navigation-2026','fresuni-ux-navigation-runtime'];
+  'fresuni-mobile-pdf-and-navigation-2026','fresuni-media-styles','fresuni-media-runtime','fresuni-program-integration-style','fresuni-ux-navigation-2026','fresuni-ux-navigation-runtime','fresuni-blue-brand-2026'];
  for(const id of requiredAssets){
   const source=published.getElementById(id);
-  if(!source||next.getElementById(id))continue;
+  if(!source)continue;
+  const existing=next.getElementById(id);
+  if(existing){
+   // A identidade técnica azul de 03/11 é restaurada em rascunhos antigos.
+   // Mudanças deliberadas nas cores do editor continuam no tema personalizado.
+   if(id==='fresuni-blue-brand-2026'&&existing.textContent!==source.textContent)
+    existing.textContent=source.textContent;
+   continue;
+  }
   const destination=source.tagName==='SCRIPT'&&source.closest('body')?next.body:next.head;
   destination?.append(source.cloneNode(true));
  }
@@ -930,7 +938,7 @@ function snapshot(){remember();dirty();}
   for(const node of [before,after]){node.removeAttribute('id');node.removeAttribute('data-fresuni-selected');}
   before.append(prefix.cloneContents());after.append(suffix.cloneContents());
   const quote=d.createElement('blockquote');quote.dataset.fresuniBlock='quote';
-  quote.style.cssText='border-left:4px solid #8300ea;margin:25px 0;padding:10px 20px;max-width:100%;overflow-wrap:anywhere';
+  quote.style.cssText='border-left:4px solid #214ECF;margin:25px 0;padding:10px 20px;max-width:100%;overflow-wrap:anywhere';
   const p=d.createElement('p');p.append(r.cloneContents());quote.append(p);
   snapshot();
   if(before.textContent.trim())old.before(before);
@@ -951,16 +959,16 @@ function snapshot(){remember();dirty();}
   const content=old.matches('p,h1,h2,h3,h4,h5,h6')?old.innerHTML:old.innerHTML;
   if(type==='quote'){
    replacement.dataset.fresuniBlock='quote';
-   replacement.style.cssText='border-left:4px solid #8300ea;margin:25px 0;padding:10px 20px;max-width:100%;overflow-wrap:anywhere';
+   replacement.style.cssText='border-left:4px solid #214ECF;margin:25px 0;padding:10px 20px;max-width:100%;overflow-wrap:anywhere';
    if(old.matches('p,h1,h2,h3,h4,h5,h6,a')){const p=doc.createElement('p');if(old.matches('a'))p.append(old.cloneNode(true));else p.innerHTML=content;replacement.append(p);}
    else replacement.innerHTML=content;
   }else if(type==='info-box'||type==='box'){
    replacement.dataset.fresuniBlock=type==='info-box'?'info-box':'shape';
    if(type==='info-box'){replacement.className='fresuni-info-box';replacement.dataset.fresuniBoxTheme='accent';}
-   else{replacement.dataset.fresuniShape='box';replacement.style.cssText='box-sizing:border-box;width:100%;min-height:70px;padding:20px;border:2px solid #8300ea;background:#f4e8ff'}
+   else{replacement.dataset.fresuniShape='box';replacement.style.cssText='box-sizing:border-box;width:100%;min-height:70px;padding:20px;border:2px solid #214ECF;background:#EAF0FF'}
    if(old.matches('p,h1,h2,h3,h4,h5,h6,a')){const p=doc.createElement('p');if(old.matches('a'))p.append(old.cloneNode(true));else p.innerHTML=content;replacement.append(p);}
    else replacement.innerHTML=content;
-  }else if(type==='heading'){replacement.dataset.fresuniBlock='heading';replacement.innerHTML=old.matches('p,h1,h2,h3,h4,h5,h6')?content:old.textContent;replacement.style.cssText='font-family:Merriweather,serif;color:#8300ea';}
+  }else if(type==='heading'){replacement.dataset.fresuniBlock='heading';replacement.innerHTML=old.matches('p,h1,h2,h3,h4,h5,h6')?content:old.textContent;replacement.style.cssText='font-family:Merriweather,serif;color:#214ECF';}
   else if(type==='list'){
    replacement.dataset.fresuniBlock='list';
    if(old.matches('ul,ol'))replacement.innerHTML=old.innerHTML;
@@ -1012,16 +1020,16 @@ function actionInsert(type){
  if($('#fs-insert-behavior')?.value!=='new'&&fsConvertSelected(type))return;
  const types={
  text:'<p data-fresuni-block="text">Escreva seu texto aqui. Clique para editar.</p>',
- heading:'<h2 data-fresuni-block="heading" style="font-family:Merriweather,serif;color:#8300ea">Novo título</h2>',
- button:'<p data-fresuni-block="button"><a class="editor-public-button" href="#/filiacao" style="display:inline-block;background:#8300ea;color:white;padding:12px 20px;border-radius:7px;text-decoration:none;font-weight:600">Clique aqui</a></p>',
- accordion:'<details data-fresuni-block="accordion" style="border-bottom:1px solid #ddd;padding:15px 0"><summary style="font-weight:700;cursor:pointer;color:#8300ea">Título do conteúdo recolhível</summary><p>Escreva o conteúdo que será mostrado ao abrir.</p></details>',
- more:'<details data-fresuni-block="more" style="margin:20px 0"><summary style="color:#8300ea;font-weight:600;cursor:pointer;list-style-position:inside">Leia mais…</summary><div style="padding:12px 15px"><p>Conteúdo completo. Clique para editar.</p></div></details>',
+ heading:'<h2 data-fresuni-block="heading" style="font-family:Merriweather,serif;color:#214ECF">Novo título</h2>',
+ button:'<p data-fresuni-block="button"><a class="editor-public-button" href="#/filiacao" style="display:inline-block;background:#214ECF;color:white;padding:12px 20px;border-radius:7px;text-decoration:none;font-weight:600">Clique aqui</a></p>',
+ accordion:'<details data-fresuni-block="accordion" style="border-bottom:1px solid #ddd;padding:15px 0"><summary style="font-weight:700;cursor:pointer;color:#214ECF">Título do conteúdo recolhível</summary><p>Escreva o conteúdo que será mostrado ao abrir.</p></details>',
+ more:'<details data-fresuni-block="more" style="margin:20px 0"><summary style="color:#214ECF;font-weight:600;cursor:pointer;list-style-position:inside">Leia mais…</summary><div style="padding:12px 15px"><p>Conteúdo completo. Clique para editar.</p></div></details>',
  'info-box':'<aside class="fresuni-info-box" data-fresuni-block="info-box" data-fresuni-box-theme="soft"><h3>Título do box</h3><p>Escreva seu texto aqui. Altere livremente o conteúdo, as cores, o tamanho, a borda e o formato.</p></aside>',
- box:'<div data-fresuni-block="shape" data-fresuni-shape="box" style="display:block;box-sizing:border-box;max-width:100%;width:100%;min-height:110px;padding:24px;border:2px solid #8300ea;background:#f4e8ff;border-radius:0"><h3 style="color:#8300ea">Título do quadro</h3><p>Texto dentro da forma, que pode ser editado.</p></div>',
- circle:'<div data-fresuni-block="shape" data-fresuni-shape="circle" style="box-sizing:border-box;max-width:100%;width:260px;min-height:260px;aspect-ratio:1;border-radius:50%;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:34px;background:#e9d4ff;border:2px solid #8300ea;overflow-wrap:anywhere"><p>Seu texto dentro do círculo</p></div>',
- pill:'<div data-fresuni-block="shape" data-fresuni-shape="pill" style="box-sizing:border-box;max-width:100%;width:60%;min-height:60px;border-radius:100px;background:#8300ea;color:#fff;text-align:center;padding:16px 24px"><p style="color:inherit">Texto da etiqueta</p></div>',
+ box:'<div data-fresuni-block="shape" data-fresuni-shape="box" style="display:block;box-sizing:border-box;max-width:100%;width:100%;min-height:110px;padding:24px;border:2px solid #214ECF;background:#EAF0FF;border-radius:0"><h3 style="color:#214ECF">Título do quadro</h3><p>Texto dentro da forma, que pode ser editado.</p></div>',
+ circle:'<div data-fresuni-block="shape" data-fresuni-shape="circle" style="box-sizing:border-box;max-width:100%;width:260px;min-height:260px;aspect-ratio:1;border-radius:50%;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:34px;background:#DCE8FF;border:2px solid #214ECF;overflow-wrap:anywhere"><p>Seu texto dentro do círculo</p></div>',
+ pill:'<div data-fresuni-block="shape" data-fresuni-shape="pill" style="box-sizing:border-box;max-width:100%;width:60%;min-height:60px;border-radius:100px;background:#214ECF;color:#fff;text-align:center;padding:16px 24px"><p style="color:inherit">Texto da etiqueta</p></div>',
  divider:'<hr data-fresuni-block="divider" style="border:0;border-top:1px solid #dfd3ec;margin:26px 0">',
- quote:'<blockquote data-fresuni-block="quote" style="border-left:4px solid #8300ea;margin:25px 0;padding:7px 18px"><p>Uma frase que representa o FRESUNI.</p></blockquote>',
+ quote:'<blockquote data-fresuni-block="quote" style="border-left:4px solid #214ECF;margin:25px 0;padding:7px 18px"><p>Uma frase que representa o FRESUNI.</p></blockquote>',
  list:'<ul data-fresuni-block="list"><li>Primeiro item</li><li>Segundo item</li></ul>',
  image:'',embed:''};
  if(type==='image'){$('#upload-image').click();return;}
@@ -1365,8 +1373,8 @@ function fsParseGoogleForm(raw,mode){
 function fsGoogleFormBlock({url,title,height,mode}){
  const name=String(title||'Formulário do FRESUNI').trim().slice(0,120)||'Formulário do FRESUNI';
  const safeTitle=escapeHTML(name),safeUrlText=escapeHTML(url);
- const label='<h2 class="fresuni-google-forms-title" style="font-family:Merriweather,Georgia,serif;font-size:1.4rem;line-height:1.4;color:var(--purple,#8300ea);margin:0 0 14px">'+safeTitle+'</h2>';
- const link='<a href="'+safeUrlText+'" target="_blank" rel="noopener noreferrer" class="fresuni-google-form-link" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:11px 18px;border:1px solid var(--purple,#8300ea);border-radius:8px;color:var(--purple,#8300ea);font-family:Prompt,Arial,sans-serif;font-weight:600;text-decoration:none;overflow-wrap:anywhere">Abrir formulário em outra aba ↗</a>';
+ const label='<h2 class="fresuni-google-forms-title" style="font-family:Merriweather,Georgia,serif;font-size:1.4rem;line-height:1.4;color:var(--purple,#214ECF);margin:0 0 14px">'+safeTitle+'</h2>';
+ const link='<a href="'+safeUrlText+'" target="_blank" rel="noopener noreferrer" class="fresuni-google-form-link" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:11px 18px;border:1px solid var(--purple,#214ECF);border-radius:8px;color:var(--purple,#214ECF);font-family:Prompt,Arial,sans-serif;font-weight:600;text-decoration:none;overflow-wrap:anywhere">Abrir formulário em outra aba ↗</a>';
  const iframe=mode==='embed'?'<iframe title="'+safeTitle+'" src="'+safeUrlText+'" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" sandbox="allow-forms allow-scripts allow-same-origin allow-popups" style="display:block;width:100%;height:'+height+'px;border:1px solid #e4d7eb;border-radius:10px;background:#fff;max-width:100%" allow="clipboard-write"></iframe>':'';
  const content=label+iframe+'<div style="margin-top:12px">'+link+'</div>';
  return '<section data-fresuni-block="google-forms" data-fresuni-google-forms-mode="'+mode+'" class="fresuni-google-forms" style="box-sizing:border-box;grid-column:1 / -1;width:100%;max-width:960px;min-width:0;margin:28px auto;padding:0;overflow-wrap:anywhere">'+content+'</section>';
@@ -1456,7 +1464,7 @@ function fsEnsureGoogleFormHandle(section){
  if(!section||section.querySelector('[data-fresuni-google-edit]'))return;
  const d=section.ownerDocument;
  const button=d.createElement('button');button.type='button';button.className='fresuni-google-edit';button.textContent='✎ Editar Google Formulários';button.dataset.editorInternal='';button.dataset.fresuniGoogleEdit='';
- button.style.cssText='display:block;margin:0 0 12px;padding:9px 14px;border:1px dashed #8300ea;border-radius:8px;color:#6500a8;background:#faf5ff;font:600 13px Prompt,Arial,sans-serif;cursor:pointer';
+ button.style.cssText='display:block;margin:0 0 12px;padding:9px 14px;border:1px dashed #214ECF;border-radius:8px;color:#6500a8;background:#faf5ff;font:600 13px Prompt,Arial,sans-serif;cursor:pointer';
  button.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();state.selected=null;selectElement(section);fsOpenGoogleForms(section);});
  section.insertBefore(button,section.firstChild);
 }
@@ -1559,7 +1567,7 @@ function applyLink(url,label,blank){const d=siteDoc(),range=activeTextRange(),el
  if(existing){snapshot();decorateLink(existing,url,blank);if(label&&existing.children.length===0)existing.textContent=label;dirty();return;}
  // Whole text content, headings, list entries and buttons: link the element contents.
  if(el.matches('p,h1,h2,h3,h4,h5,h6,li,summary,blockquote,span,cite')&& !el.querySelector('a[href]')){
-  snapshot();const a=d.createElement('a');decorateLink(a,url,blank);a.style.color='inherit';a.style.textDecoration='underline';a.style.textDecorationColor='#8300ea';
+  snapshot();const a=d.createElement('a');decorateLink(a,url,blank);a.style.color='inherit';a.style.textDecoration='underline';a.style.textDecorationColor='#214ECF';
   if(label) a.textContent=label;else while(el.firstChild)a.append(el.firstChild);
   if(label)el.replaceChildren(a);else el.append(a);dirty();return;
  }
@@ -1601,7 +1609,7 @@ function positionFloatingToolbar(){if(!floatBar||!state.editable||!state.selecte
 }
 function setupFloatingToolbar(d){
  floatBar=d.createElement('div');floatBar.className='fresuni-float-toolbar';floatBar.hidden=true;floatBar.dataset.editorInternal='';floatBar.setAttribute('role','toolbar');floatBar.setAttribute('aria-label','Barra de formatação flutuante');
- floatBar.innerHTML='<select aria-label="Estilo do texto" data-float="style"><option value="custom">Texto normal</option><option value="heading-xl">Título grande</option><option value="heading-md">Título médio</option><option value="heading-sm">Título pequeno</option><option value="body-xl">Texto grande</option><option value="body-md">Texto médio</option><option value="body-sm">Texto pequeno</option></select><select aria-label="Fonte" data-float="family"><option>Prompt</option><option>Merriweather</option></select><select aria-label="Peso" data-float="weight"></select><input type="number" min="10" max="180" value="16" data-float="size" aria-label="Tamanho em pixels"><button type="button" data-float-format="bold" title="Negrito"><b>B</b></button><button type="button" data-float-format="italic" title="Itálico"><i>I</i></button><button type="button" data-float-format="underline" title="Sublinhado"><u>U</u></button><input type="color" data-float="color" value="#8300ea" aria-label="Cor do texto"><input type="color" data-float="mark" value="#fff59d" aria-label="Marca-texto"><button type="button" data-float-format="insertOrderedList" title="Lista numerada">1.</button><button type="button" data-float-format="insertUnorderedList" title="Lista com marcadores">☷</button><button type="button" data-float-action="link" title="Inserir link">🔗</button><button type="button" data-float-action="clone" title="Duplicar bloco">▣</button><button type="button" data-float-action="delete" title="Excluir bloco">⌫</button>';
+ floatBar.innerHTML='<select aria-label="Estilo do texto" data-float="style"><option value="custom">Texto normal</option><option value="heading-xl">Título grande</option><option value="heading-md">Título médio</option><option value="heading-sm">Título pequeno</option><option value="body-xl">Texto grande</option><option value="body-md">Texto médio</option><option value="body-sm">Texto pequeno</option></select><select aria-label="Fonte" data-float="family"><option>Prompt</option><option>Merriweather</option></select><select aria-label="Peso" data-float="weight"></select><input type="number" min="10" max="180" value="16" data-float="size" aria-label="Tamanho em pixels"><button type="button" data-float-format="bold" title="Negrito"><b>B</b></button><button type="button" data-float-format="italic" title="Itálico"><i>I</i></button><button type="button" data-float-format="underline" title="Sublinhado"><u>U</u></button><input type="color" data-float="color" value="#214ECF" aria-label="Cor do texto"><input type="color" data-float="mark" value="#fff59d" aria-label="Marca-texto"><button type="button" data-float-format="insertOrderedList" title="Lista numerada">1.</button><button type="button" data-float-format="insertUnorderedList" title="Lista com marcadores">☷</button><button type="button" data-float-action="link" title="Inserir link">🔗</button><button type="button" data-float-action="clone" title="Duplicar bloco">▣</button><button type="button" data-float-action="delete" title="Excluir bloco">⌫</button>';
  d.body.append(floatBar);
  const fw=floatBar.querySelector('[data-float="weight"]');const fillWeights=()=>{const f=floatBar.querySelector('[data-float="family"]').value;fw.replaceChildren();for(const w of FONT_WEIGHTS[f]){const opt=d.createElement('option');opt.value=w;opt.textContent=weightLabels[w]+' · '+w;fw.append(opt);}};
  fillWeights();
@@ -2316,11 +2324,11 @@ $('#fs-motion-preview').addEventListener('click',()=>{
 
 // Tema: usa variáveis CSS do site sem remover as regras existentes.
 function themeEl(doc){let el=$('#fresuni-custom-theme',doc);if(!el){el=doc.createElement('style');el.id='fresuni-custom-theme';doc.head.append(el);}return el;}
-const theme={primary:'#8300ea',text:'#000000',background:'#ffffff',font:'Prompt'};
+const theme={primary:'#214ECF',text:'#000000',background:'#ffffff',font:'Prompt'};
 function applyTheme(){const d=siteDoc();if(!d)return;themeEl(d).textContent=`:root{--primary:${theme.primary};--purple:${theme.primary};--accent:${theme.primary};--ink:${theme.text};--background:${theme.background};--bg:${theme.background}} body{background:${theme.background};color:${theme.text};font-family:${theme.font},Arial,sans-serif} .page-heading h1,.prose h2,.value-section summary{color:${theme.primary}} .brand:focus-visible{outline-color:${theme.primary}}`;
  dirty();}
 for(const [id,key] of [['#theme-primary','primary'],['#theme-text','text'],['#theme-bg','background'],['#theme-font','font']])$(id).addEventListener('change',e=>{snapshot();theme[key]=e.target.value;applyTheme();});
-$('#reset-theme').addEventListener('click',()=>{snapshot();Object.assign(theme,{primary:'#8300ea',text:'#000000',background:'#ffffff',font:'Prompt'});$$('[id^="theme-"]').forEach(e=>{const key={'theme-primary':'primary','theme-text':'text','theme-bg':'background','theme-font':'font'}[e.id];if(key)e.value=theme[key];});themeEl(siteDoc()).remove();dirty();});
+$('#reset-theme').addEventListener('click',()=>{snapshot();Object.assign(theme,{primary:'#214ECF',text:'#000000',background:'#ffffff',font:'Prompt'});$$('[id^="theme-"]').forEach(e=>{const key={'theme-primary':'primary','theme-text':'text','theme-bg':'background','theme-font':'font'}[e.id];if(key)e.value=theme[key];});themeEl(siteDoc()).remove();dirty();});
 $$('[data-tab]').forEach(b=>b.addEventListener('click',()=>{$$('[data-tab]').forEach(x=>{x.classList.toggle('active',x===b);x.setAttribute('aria-selected',String(x===b));});$$('[data-panel]').forEach(x=>x.hidden=x.dataset.panel!==b.dataset.tab);updatePageSidebar();if(b.dataset.tab==='structure')renderStructurePanel();}));
 $('#view-desktop').addEventListener('click',()=>{ $('#canvas').classList.remove('mobile');$('#view-desktop').classList.add('active');$('#view-mobile').classList.remove('active');$('#view-desktop').setAttribute('aria-pressed','true');$('#view-mobile').setAttribute('aria-pressed','false');});
 $('#view-mobile').addEventListener('click',()=>{ $('#canvas').classList.add('mobile');$('#view-mobile').classList.add('active');$('#view-desktop').classList.remove('active');$('#view-desktop').setAttribute('aria-pressed','false');$('#view-mobile').setAttribute('aria-pressed','true');});
