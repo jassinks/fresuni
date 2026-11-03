@@ -1904,6 +1904,7 @@ function sharedRow(parent,link,type){
   const b=document.createElement('button');b.type='button';b.className='btn';b.textContent=symbol;b.title=title;b.setAttribute('aria-label',title+' '+link.textContent.trim());
   b.addEventListener('click',()=>{
    if(!link.isConnected)return;
+   const wasActionsShortcut=!!link.closest('#sub-acoes');
    if(action===0){if(!confirm('Remover este link? A ação não será publicada até você clicar em Publicar.'))return;
     snapshot();if(link.matches('.nav-root')&&link.closest('.nav-group'))link.closest('.nav-group').remove();else link.remove();
    }else{
@@ -1912,7 +1913,7 @@ function sharedRow(parent,link,type){
     if(!sibling)return;
     snapshot();item.parentNode.insertBefore(item,action<0?sibling:sibling.nextSibling);
    }
-   if(link.closest('#sub-acoes'))fsActionsMenuExplicitEdit=true;
+   if(wasActionsShortcut)fsActionsMenuExplicitEdit=true;
    dirty();renderStructurePanel();
   });actions.append(b);
  }
