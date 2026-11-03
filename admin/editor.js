@@ -667,12 +667,72 @@ function fsPrepareSafePublish(html){
   'fresuni-interactive-effects-2026','fresuni-interactive-effects-runtime-2026',
   'fresuni-flow-grid-style','fresuni-page-meta-style','fresuni-archive-styles',
   'fresuni-layout-polish-v2','fresuni-custom-box-style',
-  'fresuni-mobile-pdf-and-navigation-2026','fresuni-media-styles','fresuni-media-runtime'];
+  'fresuni-mobile-pdf-and-navigation-2026','fresuni-media-styles','fresuni-media-runtime','fresuni-program-integration-style'];
  for(const id of requiredAssets){
   const source=published.getElementById(id);
   if(!source||next.getElementById(id))continue;
   const destination=source.tagName==='SCRIPT'&&source.closest('body')?next.body:next.head;
   destination?.append(source.cloneNode(true));
+ }
+
+ // Proteção da organização de iniciativas: editar outra página não pode recriar
+ // o antigo catálogo fragmentado nem apagar as relações entre os programas.
+ const oldActions=published.querySelector('.site-page[data-route="/acoes"]');
+ const newActions=next.querySelector('.site-page[data-route="/acoes"]');
+ const oldFramework=oldActions?.querySelector('#fresuni-initiative-framework[data-fresuni-initiative-framework]');
+ if(oldActions&&newActions&&oldFramework){
+  let framework=newActions.querySelector('#fresuni-initiative-framework');
+  if(!framework){
+   const shell=newActions.querySelector('.page-shell');
+   if(!shell)throw Error('A página Ações perdeu sua estrutura. Publicação interrompida para evitar perda dos programas.');
+   framework=oldFramework.cloneNode(true);shell.append(framework);
+  }else{
+   const grid=framework.querySelector('.fresuni-programs');
+   if(!grid)throw Error('A grade de programas integrados foi alterada. Confira a página Ações antes de publicar.');
+   for(const oldGroup of oldFramework.querySelectorAll('[data-fresuni-program]')){
+    const id=oldGroup.getAttribute('data-fresuni-program');
+    let group=[...grid.querySelectorAll('[data-fresuni-program]')].find(g=>g.getAttribute('data-fresuni-program')===id);
+    if(!group){grid.append(oldGroup.cloneNode(true));continue;}
+    const oldLinks=[...oldGroup.querySelectorAll('a[href^="#/acoes/"]')];
+    const actual=new Set([...group.querySelectorAll('a[href]')].map(a=>a.getAttribute('href')));
+    for(const a of oldLinks){
+     const href=a.getAttribute('href');if(actual.has(href))continue;
+     const oldLi=a.closest('li');
+     if(oldLi){
+      let ul=group.querySelector('ul');if(!ul){ul=next.createElement('ul');group.append(ul);}
+      ul.append(oldLi.cloneNode(true));
+     }else if(a.classList.contains('fresuni-program-lead')){
+      group.insertBefore(a.cloneNode(true),group.querySelector('ul')||null);
+     }
+     actual.add(href);
+    }
+   }
+  }
+  const oldNotice=oldActions.querySelector('[data-fresuni-long-term-notice]');
+  if(oldNotice&&!newActions.querySelector('[data-fresuni-long-term-notice]'))
+   framework.before(oldNotice.cloneNode(true));
+  // Quando um submenu é reprocessado, preservar os destinos dos programas.
+  const oldMenu=published.getElementById('sub-acoes'),newMenu=next.getElementById('sub-acoes');
+  if(oldMenu&&newMenu){
+   const known=new Set([...newMenu.querySelectorAll('a[href]')].map(a=>a.getAttribute('href')));
+   for(const a of oldMenu.querySelectorAll('a[href^="#/acoes"]')){
+    if(!known.has(a.getAttribute('href'))){newMenu.append(a.cloneNode(true));known.add(a.getAttribute('href'));}
+   }
+  }
+  for(const oldPage of published.querySelectorAll('main > .site-page[data-fresuni-program-role],main > .site-page[data-fresuni-program-member]')){
+   const route=oldPage.dataset.route;
+   const page=[...next.querySelectorAll('main > .site-page[data-route]')].find(p=>p.dataset.route===route);
+   if(!page)continue;
+   for(const key of ['fresuniProgramRole','fresuniProgramMember','editorParent','editorNav']){
+    if(oldPage.dataset[key]&&!page.dataset[key])page.dataset[key]=oldPage.dataset[key];
+   }
+   const oldOverview=oldPage.querySelector('[data-fresuni-program-overview]');
+   if(oldOverview&&!page.querySelector('[data-fresuni-program-overview]'))
+    (page.querySelector('.page-shell')||page).append(oldOverview.cloneNode(true));
+   const oldMembership=oldPage.querySelector('[data-fresuni-program-membership]');
+   if(oldMembership&&!page.querySelector('[data-fresuni-program-membership]'))
+    (page.querySelector('.page-article')||page.querySelector('.page-shell')||page).prepend(oldMembership.cloneNode(true));
+  }
  }
  // O Estatuto deve sempre apontar para o PDF real, jamais ao antigo base64 incorporado.
  const sourceStat=published.querySelector('.site-page[data-route="/estatuto"]');
@@ -720,6 +780,13 @@ function fsPublicationWarnings(html){
  const oldForms=before.querySelectorAll('.fresuni-google-forms').length;
  const newForms=after.querySelectorAll('.fresuni-google-forms').length;
  if(newForms<oldForms)warnings.push('Formulários Google removidos: '+(oldForms-newForms));
+ const oldFramework=before.querySelector('#fresuni-initiative-framework');
+ const newFramework=after.querySelector('#fresuni-initiative-framework');
+ if(oldFramework&&!newFramework)warnings.push('Organização de programas não encontrada na nova versão.');
+ const oldIntegrated=[...before.querySelectorAll('main > .site-page[data-fresuni-program-role],main > .site-page[data-fresuni-program-member]')];
+ const nextPages=new Map([...after.querySelectorAll('main > .site-page[data-route]')].map(p=>[p.dataset.route,p]));
+ const moved=oldIntegrated.filter(p=>{const nextPage=nextPages.get(p.dataset.route);return nextPage&&p.dataset.editorParent!==nextPage.dataset.editorParent;});
+ if(moved.length)warnings.push('Páginas de programas com hierarquia alterada: '+moved.map(p=>p.dataset.title||p.dataset.route).slice(0,9).join(', '));
  return warnings;
 }
 
