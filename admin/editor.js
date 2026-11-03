@@ -675,6 +675,28 @@ function fsPrepareSafePublish(html){
   destination?.append(source.cloneNode(true));
  }
 
+
+ // Atalhos escolhidos no submenu Ações devem sobreviver a edições comuns
+ // de páginas (inclusive textos, títulos e mudança de categoria).
+ // A edição deliberada do menu no painel é a única exceção.
+ const originalShortcuts=published.querySelector('#sub-acoes[data-fresuni-menu-policy]');
+ const draftShortcuts=next.getElementById('sub-acoes');
+ if(originalShortcuts&&!fsActionsMenuExplicitEdit){
+  if(draftShortcuts)draftShortcuts.replaceWith(originalShortcuts.cloneNode(true));
+  else{
+   const root=next.querySelector('#menu-principal .nav-group > a.nav-root[href="#/acoes"]');
+   if(!root)throw Error('O submenu de Ações desapareceu. Publicação bloqueada para preservar os atalhos.');
+   root.closest('.nav-group')?.append(originalShortcuts.cloneNode(true));
+  }
+ }
+ const originalActionsButton=published.querySelector('[data-fresuni-action-directory]');
+ const draftActionsButton=next.querySelector('[data-fresuni-action-directory]');
+ if(originalActionsButton&&!draftActionsButton){
+  const target=next.querySelector('.site-page[data-route="/"] .directory-row[aria-labelledby="conheca-label"] .directory-links');
+  if(target)target.prepend(originalActionsButton.cloneNode(true));
+  else throw Error('O atalho da página inicial para todas as ações desapareceu. Publicação interrompida.');
+ }
+
  // Proteção da organização de iniciativas: editar outra página não pode recriar
  // o antigo catálogo fragmentado nem apagar as relações entre os programas.
  const oldActions=published.querySelector('.site-page[data-route="/acoes"]');
@@ -713,7 +735,7 @@ function fsPrepareSafePublish(html){
    framework.before(oldNotice.cloneNode(true));
   // Quando um submenu é reprocessado, preservar os destinos dos programas.
   const oldMenu=published.getElementById('sub-acoes'),newMenu=next.getElementById('sub-acoes');
-  if(oldMenu&&newMenu){
+  if(oldMenu&&newMenu&&!fsActionsMenuExplicitEdit){
    const known=new Set([...newMenu.querySelectorAll('a[href]')].map(a=>a.getAttribute('href')));
    for(const a of oldMenu.querySelectorAll('a[href^="#/acoes"]')){
     if(!known.has(a.getAttribute('href'))){newMenu.append(a.cloneNode(true));known.add(a.getAttribute('href'));}
@@ -1592,11 +1614,26 @@ $('#page-nav-mode').addEventListener('change',e=>{
  notify('Posição da página na navegação alterada. Publique quando estiver tudo certo.');
 });
 
+
+// Atalhos de Ações: a navegação é independente da hierarquia dos 43 conteúdos.
+// Edições nas páginas não modificam os atalhos; ações conscientes em
+// Cabeçalho e rodapé podem alterar o submenu sem exigir alterações no código.
+let fsActionsMenuExplicitEdit=false;
+function fsRestoreActionsMenuPreview(){
+ if(fsActionsMenuExplicitEdit||!state.html)return;
+ const current=siteDoc()?.getElementById('sub-acoes');
+ const canonical=new DOMParser().parseFromString(state.html,'text/html')
+  .querySelector('#sub-acoes[data-fresuni-menu-policy]');
+ if(!current||!canonical)return;
+ if(current.outerHTML!==canonical.outerHTML)current.replaceWith(siteDoc().importNode(canonical,true));
+}
+
 function renderNav(){const d=siteDoc(),nav=$('#menu-principal',d);if(!nav)return;
  // Only edit known menus, preserving the original markup and drop-down behaviour.
  const index=new Map(pageNodes().map((p,i)=>[p.dataset.route,i]));
  for(const group of ['inicio','manifesto','acoes']){
   const el=$('#sub-'+group,nav);if(!el)continue;
+  if(group==='acoes'&&el.hasAttribute('data-fresuni-menu-policy'))continue; // Evita inserir todos os projetos automaticamente.
   $$('a',el).forEach(a=>{if(a.hasAttribute('data-fresuni-manual-link'))return;const href=a.getAttribute('href')||'';if(!href.startsWith('#/'))return;const route=href.slice(1);if(route&&!pageFor(route))a.remove();else if(route&&pageFor(route)&&groupFor(pageFor(route))!==group){
     const fixed=group==='inicio'&&['/','/noticias','/artigos','/acessibilidade'].includes(route)||group==='manifesto'&&route==='/manifesto'||group==='acoes'&&route==='/acoes';
     if(!fixed)a.remove();
@@ -1621,6 +1658,7 @@ function renderNav(){const d=siteDoc(),nav=$('#menu-principal',d);if(!nav)return
   if(p.dataset.editorNav==='false')$('a[href="#'+CSS.escape(p.dataset.route)+'"]',nav).filter(a=>a.dataset.fresuniNavCustom===undefined&&a.classList.contains('nav-root')===false).forEach(a=>a.remove());
  }
  fsApplyPageNavigation();
+ fsRestoreActionsMenuPreview();
 }
 $('#page-title').addEventListener('change',e=>{const p=selectedPage();const name=e.target.value.trim();if(!p||!name)return;snapshot();p.dataset.title=name;const heading=$('h1:not(.sr-only)',p);if(heading)heading.textContent=name;$$('.breadcrumbs [aria-current="page"]',p).forEach(x=>x.textContent=name);
  $$('a[href="#'+p.dataset.route+'"]',siteDoc()).forEach(a=>{if(a.closest('.site-header'))a.textContent=name;});
@@ -1874,15 +1912,17 @@ function sharedRow(parent,link,type){
     if(!sibling)return;
     snapshot();item.parentNode.insertBefore(item,action<0?sibling:sibling.nextSibling);
    }
+   if(link.closest('#sub-acoes'))fsActionsMenuExplicitEdit=true;
    dirty();renderStructurePanel();
   });actions.append(b);
  }
  name.addEventListener('change',()=>{const val=name.value.trim();if(!val){name.value=link.textContent.trim();return;}snapshot();link.textContent=val;
   if(link.matches('.nav-root')&&link.closest('.nav-group')){const button=link.closest('.nav-group').querySelector('.nav-drop');if(button)button.setAttribute('aria-label','Abrir submenu '+val);}
+  if(link.closest('#sub-acoes'))fsActionsMenuExplicitEdit=true;
   dirty();renderStructurePanel();
  });
  url.addEventListener('change',()=>{const val=url.value.trim();if(!safeUrl(val)){url.value=link.getAttribute('href')||'';notify('Destino inválido. Use #/caminho ou https://');return;}
-  snapshot();sharedLink(link,val);dirty();renderStructurePanel();
+  snapshot();sharedLink(link,val);if(link.closest('#sub-acoes'))fsActionsMenuExplicitEdit=true;dirty();renderStructurePanel();
  });
  row.append(badges,name,url,actions);parent.append(row);
 }
@@ -1939,7 +1979,7 @@ $('#structure-menu-add').addEventListener('click',()=>{const label=$('#structure
  const nav=sharedEl('header')?.querySelector('.main-nav');if(!nav)return;
  const place=$('#structure-menu-place').value;const parent=place==='main'?nav:nav.querySelector('#'+place);
  if(!parent){notify('Submenu não encontrado.');return;}
- snapshot();const a=siteDoc().createElement('a');a.textContent=label;a.dataset.fresuniManualLink='';if(place==='main')a.className='nav-root solo';sharedLink(a,href);parent.append(a);
+ snapshot();const a=siteDoc().createElement('a');a.textContent=label;a.dataset.fresuniManualLink='';if(place==='main')a.className='nav-root solo';sharedLink(a,href);parent.append(a);if(place==='sub-acoes')fsActionsMenuExplicitEdit=true;
  dirty();renderStructurePanel();$('#structure-menu-label').value='';$('#structure-menu-href').value='';setEditable(true);notify('Link adicionado ao cabeçalho.');
 });
 $('#structure-footer-add').addEventListener('click',()=>{const label=$('#structure-footer-label').value.trim(),href=$('#structure-footer-href').value.trim();
@@ -2169,7 +2209,7 @@ $('#publish').addEventListener('click',async()=>{
  $('#publish-error').hidden=true;
  if(!confirm('Publicar agora todas as alterações no seu repositório do GitHub?'))return;
  const b=$('#publish');b.disabled=true;b.textContent='Publicando…';setStatus('Publicando no GitHub…');
- try{const r=await api('/publish',{method:'POST',body:JSON.stringify({html,expectedSha:state.sha})});if(!r.ok||!r.sha)throw Error('O servidor não confirmou o envio ao GitHub.');state.sha=r.sha;state.html=html;state.undo=[];state.redo=[];state.dirty=false;clearTimeout(draftTimer);fsLastSavedRevision=fsDraftRevision;await fsSaveQueue.catch(()=>{});await draftAction('delete').catch(()=>{});fsAutosaveStatus('✓ Publicação enviada ao GitHub','ok');setStatus('Publicado no GitHub');reloadFrame(html,state.route);notify('Alterações enviadas ao GitHub! O Pages pode demorar a atualizar o site.');}
+ try{const r=await api('/publish',{method:'POST',body:JSON.stringify({html,expectedSha:state.sha})});if(!r.ok||!r.sha)throw Error('O servidor não confirmou o envio ao GitHub.');state.sha=r.sha;state.html=html;fsActionsMenuExplicitEdit=false;state.undo=[];state.redo=[];state.dirty=false;clearTimeout(draftTimer);fsLastSavedRevision=fsDraftRevision;await fsSaveQueue.catch(()=>{});await draftAction('delete').catch(()=>{});fsAutosaveStatus('✓ Publicação enviada ao GitHub','ok');setStatus('Publicado no GitHub');reloadFrame(html,state.route);notify('Alterações enviadas ao GitHub! O Pages pode demorar a atualizar o site.');}
  catch(e){dirty();showPublishError(e);notify('Publicação não concluída. Veja a mensagem com os detalhes abaixo da prévia.');}
  finally{b.disabled=false;b.textContent='Publicar alterações';}
 });
