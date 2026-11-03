@@ -667,7 +667,7 @@ function fsPrepareSafePublish(html){
   'fresuni-interactive-effects-2026','fresuni-interactive-effects-runtime-2026',
   'fresuni-flow-grid-style','fresuni-page-meta-style','fresuni-archive-styles',
   'fresuni-layout-polish-v2','fresuni-custom-box-style',
-  'fresuni-mobile-pdf-and-navigation-2026','fresuni-media-styles','fresuni-media-runtime','fresuni-program-integration-style','fresuni-ux-navigation-2026','fresuni-ux-navigation-runtime','fresuni-blue-brand-2026'];
+  'fresuni-mobile-pdf-and-navigation-2026','fresuni-media-styles','fresuni-media-runtime','fresuni-program-integration-style','fresuni-ux-navigation-2026','fresuni-ux-navigation-runtime','fresuni-blue-brand-2026','fresuni-home-banner-style-2026'];
  for(const id of requiredAssets){
   const source=published.getElementById(id);
   if(!source)continue;
@@ -702,6 +702,15 @@ function fsPrepareSafePublish(html){
    draftLink.classList.add('fresuni-social-link');
    draftLink.prepend(icon.cloneNode(true));
   }
+ }
+
+ // Preservar região de banners ao publicar um rascunho criado antes desta ferramenta.
+ // Alterações feitas no gerenciador de banners seguem normalmente o rascunho.
+ const publishedBanners=published.getElementById('fresuni-home-banner-list');
+ if(publishedBanners&&!next.getElementById('fresuni-home-banner-list')){
+  const home=next.querySelector('.site-page[data-route="/"] .home-wrap');
+  if(!home)throw Error('Não foi possível recuperar a região dos banners da página inicial.');
+  home.insertBefore(publishedBanners.cloneNode(true),home.querySelector('.home-directory')||null);
  }
 
  // Atalhos escolhidos no submenu Ações devem sobreviver a edições comuns
@@ -1096,6 +1105,13 @@ function fsValidateMediaPublish(html){
   if(!img||!fsMediaSrcAllowed(img.getAttribute('src')||''))throw Error('Banner sem imagem válida.');
   const href=banner.querySelector('.fresuni-banner-image a')?.getAttribute('href')||'';
   if(!fsMediaLinkAllowed(href))throw Error('Link inválido em um banner.');
+  if(banner.hasAttribute('data-fresuni-home-banner')){
+   if(!href)throw Error('Um banner da página inicial precisa apontar para uma página interna ou HTTPS.');
+   if(href.startsWith('#/')&&!doc.querySelector('.site-page[data-route="'+href.slice(1)+'"]'))
+    throw Error('Banner apontando para página interna inexistente.');
+   if(!img.getAttribute('alt')?.trim())throw Error('Descreva o banner para leitores de tela.');
+   if(banner.querySelector('.fresuni-banner-text'))throw Error('Banner integral não deve conter legenda sobreposta.');
+  }
  }
 }
 async function fsCompressMedia(file,kind){
@@ -1139,7 +1155,11 @@ function fsMediaRefreshSelected(el){
 $('#fs-edit-selected-media').addEventListener('click',()=>{
  const selected=state.selected?.closest?.('[data-fresuni-block="gallery"],[data-fresuni-block="banner"]');
  if(!selected)return;
- if(selected.dataset.fresuniBlock==='banner')fsOpenBanner(selected);else fsOpenGallery(selected);
+ if(selected.hasAttribute('data-fresuni-home-banner')){
+  $('#fs-home-banner-choice').value=selected.dataset.fresuniHomeBanner;
+  fsHomeBannerRead(selected.dataset.fresuniHomeBanner);
+  $('#fs-home-banner-editor').scrollIntoView({block:'start',behavior:'smooth'});
+ }else if(selected.dataset.fresuniBlock==='banner')fsOpenBanner(selected);else fsOpenGallery(selected);
 });
 function fsMediaApply(markup,existing){
  fsMediaCheckBudget(markup,existing);
@@ -1164,6 +1184,46 @@ function fsHomeShowcaseCurrent(){
 function fsHomeShowcaseStatus(msg){
  const label=$('#fs-home-showcase-status');if(label)label.textContent=msg;
 }
+
+/* Links dos destaques e banners: todas as páginas reais do site, inclusive
+   notícias, artigos, subpáginas, Estatuto, Filiação e projetos. */
+function fsInternalPageSelect(id,preferred=''){
+ const input=$('#'+id);if(!input)return;
+ const current=preferred||input.value,items=pageNodes();
+ input.replaceChildren();
+ for(const page of items){
+  const route=page.dataset.route;if(!route)continue;
+  const option=document.createElement('option');option.value='#'+route;
+  option.textContent=labelPath(page);
+  input.append(option);
+ }
+ if([...input.options].some(x=>x.value===current))input.value=current;
+ else if(input.options.length)input.selectedIndex=0;
+}
+function fsHomeLinkToggle(prefix){
+ const external=$('#'+prefix+'-link-mode')?.value==='external';
+ $('#'+prefix+'-internal-wrap').hidden=external;
+ $('#'+prefix+'-external-wrap').hidden=!external;
+}
+function fsHomeLinkRead(prefix,href){
+ const internal=String(href||'').startsWith('#/');
+ $('#'+prefix+'-link-mode').value=internal?'internal':'external';
+ fsInternalPageSelect(prefix+'-internal',internal?href:'#/');
+ $('#'+prefix+'-external').value=internal?'':String(href||'');
+ fsHomeLinkToggle(prefix);
+}
+function fsHomeLinkValue(prefix){
+ return $('#'+prefix+'-link-mode').value==='external'
+  ?$('#'+prefix+'-external').value.trim()
+  :$('#'+prefix+'-internal').value.trim();
+}
+for(const prefix of ['fs-home-showcase','fs-home-banner']){
+ $('#'+prefix+'-link-mode')?.addEventListener('change',()=>fsHomeLinkToggle(prefix));
+ $('#'+prefix+'-internal')?.addEventListener('focus',()=>{
+  const input=$('#'+prefix+'-internal');fsInternalPageSelect(prefix+'-internal',input.value);
+ });
+}
+
 function fsHomeShowcaseRead(){
  const slide=fsHomeShowcaseCurrent();if(!slide){
   fsHomeShowcaseStatus('Abra o site no editor para carregar os destaques da página inicial.');return;
@@ -1174,7 +1234,7 @@ function fsHomeShowcaseRead(){
  $('#fs-home-showcase-description').value=get('.fresuni-highlight-content p');
  const link=slide.querySelector('.fresuni-highlight-link');
  $('#fs-home-showcase-cta').value=link?.firstChild?.textContent?.trim()||'';
- $('#fs-home-showcase-link').value=link?.getAttribute('href')||'';
+ fsHomeLinkRead('fs-home-showcase',link?.getAttribute('href')||'#/');
  const picture=slide.querySelector('.fresuni-highlight-picture img');
  $('#fs-home-showcase-alt').value=picture?.getAttribute('alt')||'';
  $('#fs-home-showcase-image').src=picture?.getAttribute('src')||FS_HOME_SHOWCASE_LOGO;
@@ -1211,7 +1271,7 @@ $('#fs-home-showcase-save')?.addEventListener('click',async()=>{
  const title=$('#fs-home-showcase-headline').value.trim();
  const description=$('#fs-home-showcase-description').value.trim();
  const label=$('#fs-home-showcase-cta').value.trim();
- const href=$('#fs-home-showcase-link').value.trim();
+ const href=fsHomeLinkValue('fs-home-showcase');
  const alt=$('#fs-home-showcase-alt').value.trim();
  if(!title||!label||!href){fsHomeShowcaseStatus('Preencha título, texto do botão e página de destino.');return;}
  if(!fsMediaLinkAllowed(href)||(href.startsWith('#/')&&!pageFor(href.slice(1)))){
@@ -1232,6 +1292,8 @@ $('#fs-home-showcase-save')?.addEventListener('click',async()=>{
   clone.querySelector('.fresuni-highlight-content p').textContent=description;
   const anchor=clone.querySelector('.fresuni-highlight-link');
   anchor.setAttribute('href',href);
+  if(/^https:\/\//i.test(href)){anchor.target='_blank';anchor.rel='noopener noreferrer';}
+  else{anchor.removeAttribute('target');anchor.removeAttribute('rel');}
   anchor.replaceChildren(siteDoc().createTextNode(label+' '));
   const arrow=siteDoc().createElement('span');arrow.setAttribute('aria-hidden','true');arrow.textContent='↗';anchor.append(arrow);
   const img=clone.querySelector('.fresuni-highlight-picture img');
@@ -1251,6 +1313,150 @@ $('#fs-home-showcase-save')?.addEventListener('click',async()=>{
   if(preview.dataset.fsObjectUrl){URL.revokeObjectURL(preview.dataset.fsObjectUrl);delete preview.dataset.fsObjectUrl;}
  }
 });
+
+
+/* Gerenciador de banners inteiros da página inicial.
+   Nenhuma frase é desenhada por cima da imagem. */
+let fsHomeBannerSaving=false,fsHomeBannerPendingSelection=null;
+function fsHomeBannerHost(create=false){
+ const home=pageFor('/')?.querySelector('.home-wrap');if(!home)return null;
+ let host=home.querySelector('#fresuni-home-banner-list');
+ if(!host&&create){
+  host=home.ownerDocument.createElement('section');
+  host.id='fresuni-home-banner-list';
+  host.setAttribute('aria-label','Banners informativos do FRESUNI');
+  home.insertBefore(host,home.querySelector('.home-directory')||null);
+ }
+ return host;
+}
+function fsHomeBannerItems(){
+ return Array.from(fsHomeBannerHost()?.querySelectorAll('[data-fresuni-home-banner]')||[]);
+}
+function fsHomeBannerCurrent(){
+ const id=$('#fs-home-banner-choice')?.value||'new';
+ return id==='new'?null:fsHomeBannerItems().find(b=>b.dataset.fresuniHomeBanner===id)||null;
+}
+function fsHomeBannerStatus(message){
+ fsMediaStatus('fs-home-banner-status',message);
+}
+function fsHomeBannerPreviewClear(){
+ const img=$('#fs-home-banner-preview');if(!img)return;
+ if(img.dataset.fsObjectUrl)URL.revokeObjectURL(img.dataset.fsObjectUrl);
+ delete img.dataset.fsObjectUrl;
+}
+function fsHomeBannerRead(preferred=''){
+ const select=$('#fs-home-banner-choice');if(!select)return;
+ const chosen=preferred||select.value||'new';
+ select.replaceChildren();
+ const option=document.createElement('option');option.value='new';option.textContent='＋ Criar um novo banner';select.append(option);
+ const banners=fsHomeBannerItems();
+ banners.forEach((item,i)=>{
+  const opt=document.createElement('option');
+  opt.value=item.dataset.fresuniHomeBanner;
+  const alt=item.querySelector('img')?.getAttribute('alt')||'Banner informativo';
+  opt.textContent=String(i+1)+' · '+alt.slice(0,58);
+  select.append(opt);
+ });
+ select.value=[...select.options].some(x=>x.value===chosen)?chosen:'new';
+ const banner=fsHomeBannerCurrent(),img=banner?.querySelector('.fresuni-banner-image img');
+ const src=img?.getAttribute('src')||'';
+ const preview=$('#fs-home-banner-preview');
+ fsHomeBannerPreviewClear();
+ if(src){preview.src=src;preview.hidden=false;}
+ else{preview.hidden=true;preview.removeAttribute('src');}
+ $('#fs-home-banner-file').value='';
+ $('#fs-home-banner-alt').value=img?.getAttribute('alt')||'';
+ fsHomeLinkRead('fs-home-banner',banner?.querySelector('.fresuni-banner-image a')?.getAttribute('href')||'#/');
+ $('#fs-home-banner-save').textContent=banner?'Atualizar banner':'Adicionar banner';
+ $('#fs-home-banner-delete').hidden=!banner;
+ const index=banners.indexOf(banner);
+ $('#fs-home-banner-up').hidden=!banner||index<=0;
+ $('#fs-home-banner-down').hidden=!banner||index>=banners.length-1;
+ fsHomeBannerStatus(banner?
+  'Banner carregado. É possível atualizar a imagem, o destino e a descrição, ou alterar a ordem.':
+  'Novo banner: envie uma imagem, escolha o destino e clique em Adicionar banner.');
+}
+$('#fs-home-banner-choice')?.addEventListener('change',()=>fsHomeBannerRead());
+frame.addEventListener('load',()=>{
+ fsHomeBannerRead(fsHomeBannerPendingSelection||'');
+ fsHomeBannerPendingSelection=null;
+});
+$('#fs-home-banner-file')?.addEventListener('change',e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ if(!FS_MEDIA_TYPES.includes(file.type)||!file.size||file.size>FS_MEDIA_INPUT_LIMIT){
+  e.target.value='';fsHomeBannerStatus('Arquivo recusado: use JPG, PNG ou WebP de até 5 MB.');return;
+ }
+ const preview=$('#fs-home-banner-preview');fsHomeBannerPreviewClear();
+ const url=URL.createObjectURL(file);
+ preview.dataset.fsObjectUrl=url;preview.src=url;preview.hidden=false;
+ fsHomeBannerStatus('Imagem selecionada. Será compactada ao clicar em Adicionar ou Atualizar.');
+});
+$('#fs-home-banner-save')?.addEventListener('click',async()=>{
+ if(fsHomeBannerSaving)return;
+ if(!state.editable){fsHomeBannerStatus('Ative o modo de edição antes de alterar o banner.');return;}
+ const home=pageFor('/')?.querySelector('.home-wrap');
+ if(!home){fsHomeBannerStatus('A página inicial não foi carregada.');return;}
+ const previous=fsHomeBannerCurrent(),file=$('#fs-home-banner-file').files?.[0];
+ const alt=$('#fs-home-banner-alt').value.trim();
+ const href=fsHomeLinkValue('fs-home-banner');
+ if(!alt){fsHomeBannerStatus('É obrigatório descrever a imagem e o destino para leitores de tela.');return;}
+ if(!href||!fsMediaLinkAllowed(href)||(href.startsWith('#/')&&!pageFor(href.slice(1)))){
+  fsHomeBannerStatus('Escolha uma página existente ou um endereço HTTPS válido.');return;
+ }
+ if(!previous&&!file){fsHomeBannerStatus('Escolha uma imagem para o novo banner.');return;}
+ const save=$('#fs-home-banner-save');fsHomeBannerSaving=true;save.disabled=true;
+ fsHomeBannerStatus('Preparando e compactando banner…');
+ try{
+  const source=file?await fsCompressMedia(file,'banner'):null;
+  const src=source?.src||previous?.querySelector('.fresuni-banner-image img')?.getAttribute('src')||'';
+  if(!fsMediaSrcAllowed(src))throw Error('Imagem inválida. Selecione uma imagem JPG, PNG ou WebP.');
+  const id=previous?.dataset.fresuniHomeBanner||
+   'banner-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7);
+  const original=previous?.querySelector('.fresuni-banner-image img');
+  const width=source?.width||Number(original?.getAttribute('width'))||0;
+  const height=source?.height||Number(original?.getAttribute('height'))||0;
+  const dimensions=width&&height?' width="'+width+'" height="'+height+'"':'';
+  const external=/^https:\/\//i.test(href);
+  const img='<img src="'+escapeHTML(src)+'" alt="'+escapeHTML(alt)+'"'+dimensions+' decoding="async" loading="lazy">';
+  const anchor='<a href="'+escapeHTML(href)+'" aria-label="'+escapeHTML(alt+(external?' (abre em nova aba)':''))+'"'+
+   (external?' target="_blank" rel="noopener noreferrer"':'')+'>'+img+'</a>';
+  const markup='<section class="fresuni-site-banner fresuni-home-banner" data-fresuni-block="banner" data-fresuni-home-banner="'+
+   escapeHTML(id)+'"><div class="fresuni-banner-image">'+anchor+'</div></section>';
+  fsMediaCheckBudget(markup,previous);
+  snapshot();
+  const holder=fsHomeBannerHost(true);
+  const template=siteDoc().createElement('template');template.innerHTML=markup;
+  const element=template.content.firstElementChild;
+  if(previous)previous.replaceWith(element);
+  else holder.append(element);
+  fsHomeBannerPreviewClear();
+  $('#fs-home-banner-file').value='';
+  fsHomeBannerPendingSelection=id;
+  const updated=serialize();reloadFrame(updated,'/');dirty();
+  fsHomeBannerStatus('Banner aplicado ao rascunho. Clique em Publicar alterações para atualizar o site.');
+  notify('Banner '+(previous?'atualizado':'adicionado')+' na página inicial.');
+ }catch(err){fsHomeBannerStatus('Não foi possível aplicar: '+fsMediaErrorText(err));}
+ finally{fsHomeBannerSaving=false;save.disabled=false;}
+});
+$('#fs-home-banner-delete')?.addEventListener('click',()=>{
+ const block=fsHomeBannerCurrent();if(!block||!state.editable)return;
+ if(!confirm('Excluir este banner do rascunho? A exclusão só chega ao site após publicar.'))return;
+ snapshot();block.remove();fsHomeBannerPreviewClear();
+ fsHomeBannerPendingSelection='new';
+ reloadFrame(serialize(),'/');dirty();notify('Banner excluído do rascunho.');
+});
+for(const [button,direction] of [['fs-home-banner-up',-1],['fs-home-banner-down',1]]){
+ $('#'+button)?.addEventListener('click',()=>{
+  const block=fsHomeBannerCurrent();if(!block||!state.editable)return;
+  const list=fsHomeBannerItems(),index=list.indexOf(block),target=list[index+direction];
+  if(!target)return;
+  snapshot();
+  if(direction<0)block.parentElement.insertBefore(block,target);
+  else block.parentElement.insertBefore(target,block);
+  dirty();fsHomeBannerRead(block.dataset.fresuniHomeBanner);
+  notify('Ordem dos banners alterada no rascunho.');
+ });
+}
 
 function fsOpenGallery(edit=null){
  if(!state.editable){notify('Volte ao modo de edição para inserir uma galeria.');return;}
