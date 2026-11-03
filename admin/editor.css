@@ -269,3 +269,18 @@
 .fs-home-showcase-buttons{display:flex;flex-wrap:wrap;gap:9px;margin:10px 0}
 .fs-home-showcase-buttons button{flex:1 1 145px}
 #fs-home-showcase-status{min-height:25px}
+
+/* Segunda ferramenta da página inicial: banner só com imagem e links acessíveis. */
+.fs-home-banner-editor{background:#f7f9ff;border-color:#ccdaf9;margin-top:13px}
+.fs-home-banner-editor>h3{color:#214ECF}
+.fs-home-banner-editor input,.fs-home-banner-editor select{border-color:#b9c9e9}
+.fs-home-banner-editor input:focus-visible,.fs-home-banner-editor select:focus-visible,
+.fs-home-showcase-editor input:focus-visible,.fs-home-showcase-editor select:focus-visible{
+ outline:3px solid #214ECF;outline-offset:2px
+}
+.fs-home-banner-editor [hidden],.fs-home-showcase-editor [hidden]{display:none!important}
+.fs-home-banner-preview{display:block;width:100%;height:auto;max-height:280px;object-fit:contain;background:#fff;
+ border:1px solid #dce5f9;border-radius:9px;margin:10px auto;padding:4px}
+.fs-home-banner-editor .fs-home-showcase-buttons button{min-height:43px}
+#fs-home-banner-delete{color:#8b2635}
+#fs-home-banner-status{overflow-wrap:anywhere;min-height:25px}
