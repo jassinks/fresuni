@@ -86,12 +86,34 @@
           <label>Título<input id="fs-home-showcase-headline" maxlength="120"></label>
           <label>Descrição<input id="fs-home-showcase-description" maxlength="300"></label>
           <label>Texto do botão<input id="fs-home-showcase-cta" maxlength="75"></label>
-          <label>Página de destino ou link HTTPS<input id="fs-home-showcase-link" placeholder="#/acoes"></label>
+          <label>Tipo de destino<select id="fs-home-showcase-link-mode"><option value="internal">Página interna do FRESUNI</option><option value="external">Link externo (HTTPS)</option></select></label>
+          <label id="fs-home-showcase-internal-wrap">Página interna de destino<select id="fs-home-showcase-internal" aria-label="Escolha qualquer página do FRESUNI"></select></label>
+          <label id="fs-home-showcase-external-wrap" hidden>Endereço externo<input id="fs-home-showcase-external" type="url" inputmode="url" placeholder="https://exemplo.com"></label>
+          <p class="hint">Todas as páginas existentes do site aparecem na lista, inclusive notícias, artigos, projetos e subpáginas.</p>
           <label>Descrição da imagem para leitores de tela<input id="fs-home-showcase-alt" maxlength="200"></label>
           <label>Substituir a imagem (JPG, PNG, WebP, até 5 MB)<input id="fs-home-showcase-file" type="file" accept="image/jpeg,image/png,image/webp"></label>
           <img id="fs-home-showcase-image" class="fs-home-showcase-preview" src="../admin/logo.png" alt="Prévia da imagem em destaque">
           <div class="fs-home-showcase-buttons"><button id="fs-home-showcase-default" type="button" class="btn">Usar marca original</button><button id="fs-home-showcase-save" type="button" class="primary">Aplicar ao destaque</button></div>
           <p class="hint" id="fs-home-showcase-status" role="status" aria-live="polite">Selecione um destaque para editar. As mudanças só aparecem ao público depois de publicar.</p>
+        </section>
+        <section id="fs-home-banner-editor" class="home-quick-tools fs-home-showcase-editor fs-home-banner-editor" aria-labelledby="fs-home-banner-title">
+          <h3 id="fs-home-banner-title">▧ Banners inteiros em imagem</h3>
+          <p class="hint">Adicione um banner independente logo abaixo dos destaques, usando somente a imagem, sem títulos ou textos sobre ela. A imagem inteira será exibida, inclusive no celular. Você pode criar vários, editar, reordenar ou excluir.</p>
+          <label>Escolha o banner<select id="fs-home-banner-choice"><option value="new">＋ Criar um novo banner</option></select></label>
+          <label>Imagem do banner (JPG, PNG ou WebP, até 5 MB)<input id="fs-home-banner-file" type="file" accept="image/jpeg,image/png,image/webp"></label>
+          <img id="fs-home-banner-preview" class="fs-home-banner-preview" alt="Prévia do banner selecionado" hidden>
+          <label>Descrição acessível da imagem e do destino<input id="fs-home-banner-alt" maxlength="240" placeholder="Ex.: Conheça o programa de inclusão nas escolas"></label>
+          <p class="hint">Obrigatória: serve de nome ao link para quem utiliza leitor de tela. Descreva claramente o que a pessoa encontrará ao tocar no banner.</p>
+          <label>Tipo de destino<select id="fs-home-banner-link-mode"><option value="internal">Página interna do FRESUNI</option><option value="external">Link externo (HTTPS)</option></select></label>
+          <label id="fs-home-banner-internal-wrap">Página interna de destino<select id="fs-home-banner-internal"></select></label>
+          <label id="fs-home-banner-external-wrap" hidden>Endereço externo<input id="fs-home-banner-external" type="url" inputmode="url" placeholder="https://exemplo.com"></label>
+          <div class="fs-home-showcase-buttons">
+            <button id="fs-home-banner-save" type="button" class="primary">Adicionar banner</button>
+            <button id="fs-home-banner-delete" type="button" class="btn" hidden>Excluir banner</button>
+            <button id="fs-home-banner-up" type="button" class="btn" hidden>↑ Subir</button>
+            <button id="fs-home-banner-down" type="button" class="btn" hidden>↓ Descer</button>
+          </div>
+          <p class="hint" id="fs-home-banner-status" role="status" aria-live="polite">Envie uma imagem e escolha uma página interna ou endereço externo. Para colocar no ar, publique depois.</p>
         </section>
         <div class="sep"></div><section id="fs-date-editor" class="props-section" aria-label="Datas da página">
 <h3>◷ Criação e atualização</h3><p class="hint">Você pode corrigir as datas manualmente. O horário é de Brasília; alterações só aparecem para visitantes depois de publicar.</p>
@@ -293,5 +315,5 @@
  </form></dialog>
  <input id="upload-image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden><input id="upload-shared-logo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>
 </div>
-<script src="./config.js?v=20261103r21"></script><script src="./editor.js?v=20261103r22" defer></script><script src="./flow-editor.js?v=20261103r21" defer></script>
+<script src="./config.js?v=20261103r21"></script><script src="./editor.js?v=20261103r23" defer></script><script src="./flow-editor.js?v=20261103r21" defer></script>
 </body></html>
