@@ -597,7 +597,58 @@ html.simple-mode *,html.simple-mode *::before,html.simple-mode *::after{
  #fresuni-home-banner-list *::after{animation:none!important;transition:none!important}
 }
 @media print{#fresuni-home-banner-list .fresuni-banner-image img{max-width:100%;height:auto}}
-</style><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&amp;family=Merriweather:ital,wght@0,300..900;1,300..900&amp;display=swap"><style id="fresuni-extra-effects">.directory-links > [data-fresuni-block="quick-item"],.directory-links > [data-fresuni-block="text"]{min-width:0;max-width:100%;overflow-wrap:anywhere} @media(prefers-reduced-motion:no-preference){.js-motion [data-fresuni-motion]:not([data-fresuni-motion="none"]):not(.is-visible){opacity:0}.js-motion [data-fresuni-motion="slide"]:not(.is-visible){transform:translateY(24px)}.js-motion [data-fresuni-motion="zoom"]:not(.is-visible){transform:scale(.96)}.js-motion [data-fresuni-motion="left"]:not(.is-visible){transform:translateX(-24px)}.js-motion [data-fresuni-motion="right"]:not(.is-visible){transform:translateX(24px)}.js-motion [data-fresuni-motion]:not([data-fresuni-motion="none"]){transition:opacity var(--fresuni-motion-duration,650ms) ease,transform var(--fresuni-motion-duration,650ms) ease}.js-motion [data-fresuni-motion].is-visible{opacity:1;transform:none}}@media(prefers-reduced-motion:reduce){[data-fresuni-motion]{opacity:1!important;transform:none!important;transition:none!important}}</style></head>
+</style><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&amp;family=Merriweather:ital,wght@0,300..900;1,300..900&amp;display=swap"><style id="fresuni-extra-effects">.directory-links > [data-fresuni-block="quick-item"],.directory-links > [data-fresuni-block="text"]{min-width:0;max-width:100%;overflow-wrap:anywhere} @media(prefers-reduced-motion:no-preference){.js-motion [data-fresuni-motion]:not([data-fresuni-motion="none"]):not(.is-visible){opacity:0}.js-motion [data-fresuni-motion="slide"]:not(.is-visible){transform:translateY(24px)}.js-motion [data-fresuni-motion="zoom"]:not(.is-visible){transform:scale(.96)}.js-motion [data-fresuni-motion="left"]:not(.is-visible){transform:translateX(-24px)}.js-motion [data-fresuni-motion="right"]:not(.is-visible){transform:translateX(24px)}.js-motion [data-fresuni-motion]:not([data-fresuni-motion="none"]){transition:opacity var(--fresuni-motion-duration,650ms) ease,transform var(--fresuni-motion-duration,650ms) ease}.js-motion [data-fresuni-motion].is-visible{opacity:1;transform:none}}@media(prefers-reduced-motion:reduce){[data-fresuni-motion]{opacity:1!important;transform:none!important;transition:none!important}}</style><style id="fresuni-logo-layout-style-2026">
+/* As marcas são opcionais e independentes. A altura nunca é esticada. */
+.site-header .header-inner>.brand,.site-header .main-nav>.fresuni-menu-logo,
+.site-footer .footer-inner>.footer-logo{
+ box-sizing:border-box;max-width:100%;min-width:0;align-items:center;justify-content:center;
+}
+.site-header .header-inner>.brand img,
+.site-header .main-nav>.fresuni-menu-logo img,
+.site-footer .footer-inner>.footer-logo img{
+ display:block;width:var(--fresuni-logo-width,125px)!important;
+ max-width:100%!important;height:auto!important;max-height:115px;
+ aspect-ratio:auto;object-fit:contain;box-sizing:border-box;
+}
+.site-header .header-inner>.brand{order:0;flex:0 0 auto}
+.site-header .header-inner>.main-nav{order:1}
+.site-header .header-inner>.header-actions{order:2}
+.site-header .header-inner>.brand[data-fresuni-logo-position="right"]{
+ order:3;margin-left:clamp(8px,1.2vw,16px);margin-right:0
+}
+.site-header .main-nav>.fresuni-menu-logo{
+ display:inline-flex;flex:0 0 auto;order:-1;
+ max-width:125px;max-height:58px;padding:2px 4px;
+ border-radius:6px;text-decoration:none;
+}
+.site-header .main-nav>.fresuni-menu-logo img{max-height:54px}
+.site-header .main-nav>.fresuni-menu-logo[data-fresuni-logo-position="end"]{order:999;margin-left:auto}
+.site-footer .footer-inner>.footer-logo{max-width:100%;width:max-content;margin-inline:auto}
+.site-footer .footer-inner>.footer-logo[data-fresuni-logo-position="left"]{
+ display:flex;margin-left:0;margin-right:auto
+}
+.site-footer .footer-inner>.footer-logo[data-fresuni-logo-position="right"]{
+ display:flex;margin-left:auto;margin-right:0
+}
+.site-footer .footer-inner>.footer-logo img{max-height:180px}
+.site-header .main-nav>.fresuni-menu-logo:focus-visible,
+.site-header .header-inner>.brand:focus-visible,
+.site-footer .footer-inner>.footer-logo:focus-visible{
+ outline:3px solid #214ECF;outline-offset:4px
+}
+@media(max-width:1230px){
+ .site-header .main-nav>.fresuni-menu-logo{max-width:100%;justify-content:flex-start;padding:8px}
+ .site-header .main-nav>.fresuni-menu-logo img{max-height:64px}
+ .site-header .main-nav>.fresuni-menu-logo[data-fresuni-logo-position="end"]{margin-left:0}
+}
+@media(max-width:570px){
+ .site-header .header-inner>.brand img{max-height:68px}
+ .site-footer .footer-inner>.footer-logo img{max-height:125px}
+}
+@media print{
+ .site-header .header-inner>.brand img,.site-footer .footer-inner>.footer-logo img{height:auto!important}
+}
+</style></head>
 <body class="homepage">
 <a class="skip-link" href="#conteudo">Pular para o conteúdo principal</a>
 <header class="site-header" id="topo">
