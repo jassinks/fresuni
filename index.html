@@ -416,7 +416,7 @@ body{background:#F8FAFF}
 #fresuni-home-highlights{margin-block:clamp(34px,5vw,60px)}
 .fresuni-highlights-header h2,.fresuni-highlights-eyebrow{color:var(--fresuni-brand)}
 .fresuni-highlights-header > a{color:var(--fresuni-brand-dark)}
-.fresuni-highlights-track{background:var(--fresuni-brand-navy);box-shadow:0 14px 35px #142D7525;border:1px solid #E3E9FC}
+.fresuni-highlights-track{position:relative;background:var(--fresuni-brand-navy);box-shadow:0 14px 35px #142D7525;border:1px solid #E3E9FC}
 .fresuni-highlight[data-fresuni-theme="violet"]{
  background:linear-gradient(112deg,#173D9C 0%,#214ECF 61%,#5142B8 100%)
 }
@@ -556,23 +556,23 @@ body{background:#F8FAFF}
  .site-footer .footer-inner nav a{flex:1 1 135px;max-width:230px;font-size:.91rem}
 }
 html.dark-mode body,html.dark-mode .site-page{background:#151B2A;color:#F3F6FF}
-html.dark-mode .home-opening,html.dark-mode .home-directory,html.dark-mode .directory-row,
+html.dark-mode .site-page[data-route="/"] .home-opening,html.dark-mode .home-directory,html.dark-mode .directory-row,
 html.dark-mode .home-values .value-section,html.dark-mode .page-shell > .page-heading,
 html.dark-mode .fresuni-program-card,html.dark-mode .fresuni-action-tile,
 html.dark-mode .fresuni-action-find,html.dark-mode .fresuni-areas-bridge,
 html.dark-mode .fresuni-long-term-notice,html.dark-mode .fresuni-program-steps{
  background:#211C30;color:#F3F6FF;border-color:#665A82}
-html.dark-mode .home-opening .opening-intro,html.dark-mode .home-opening blockquote p,
+html.dark-mode .site-page[data-route="/"] .home-opening .opening-intro,html.dark-mode .site-page[data-route="/"] .home-opening blockquote p,
 html.dark-mode .home-directory .directory-row h2,html.dark-mode .page-shell > .page-heading h1,
 html.dark-mode .page-shell > .page-heading .page-lead,html.dark-mode .fresuni-action-tile strong,
 html.dark-mode .fresuni-action-tile-summary,html.dark-mode .fresuni-program-card .fresuni-program-card-heading h3,
 html.dark-mode .fresuni-areas-bridge,html.dark-mode .fresuni-long-term-notice{
  color:#F3F6FF}
-html.dark-mode .home-opening > blockquote,html.dark-mode .directory-links a{background:#2D2640;color:#F3F6FF}
+html.dark-mode .site-page[data-route="/"] .home-opening > blockquote,html.dark-mode .home-directory .directory-links a{background:#2D2640;color:#F3F6FF}
 html.dark-mode .site-footer{background:linear-gradient(112deg,#13265C,#193A8E)!important}
 html.high-contrast .site-footer{background:#000!important;color:#FFF!important}
 html.high-contrast .site-footer::before{background:#FFF}
-html.high-contrast .home-opening,html.high-contrast .home-directory,html.high-contrast .directory-row,
+html.high-contrast .site-page[data-route="/"] .home-opening,html.high-contrast .home-directory,html.high-contrast .directory-row,
 html.high-contrast .fresuni-program-card,html.high-contrast .fresuni-action-tile,
 html.high-contrast .home-values .value-section{background:#FFF;color:#000;border-color:#000}
 html.high-contrast .home-directory .directory-links a{background:#FFF;color:#000;border-color:#000;text-decoration:underline}
