@@ -6,7 +6,7 @@
 <title>Editor de conteúdo — FRESUNI Social</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&amp;family=Merriweather:ital,wght@0,300..900;1,300..900&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./editor.css?v=20261103r19">
+<link rel="stylesheet" href="./editor.css?v=20261103r20">
 </head>
 <body>
 <div id="login-screen" class="login-screen">
@@ -64,7 +64,7 @@
   <aside class="toolbox" aria-label="Ferramentas de edição">
     <div class="tabbar" role="tablist" aria-label="Seções do editor"><button class="active" role="tab" aria-selected="true" data-tab="insert">Inserir</button><button role="tab" aria-selected="false" data-tab="pages">Páginas</button><button role="tab" aria-selected="false" data-tab="theme">Temas</button><button role="tab" aria-selected="false" data-tab="structure">Cabeçalho e rodapé</button></div>
     <div class="toolbox-scroll">
-      <div data-panel="insert" class="tab-panel"><div id="editor-release" class="editor-release"><strong>Editor FRESUNI · edição livre v2026.11.13</strong><small>Atalhos de Ações preservados, projetos integrados e publicação protegida</small><div class="editor-quick-actions"><button id="quick-google-form" type="button">▦ Google Formulários</button><button id="quick-effects" type="button">✦ Animações e efeitos</button><button id="quick-save-draft" type="button">◉ Salvar agora</button></div></div>
+      <div data-panel="insert" class="tab-panel"><div id="editor-release" class="editor-release"><strong>Editor FRESUNI · edição livre v2026.11.14</strong><small>Destaques editáveis, Ações simplificadas, Frentes integradas e publicação protegida</small><div class="editor-quick-actions"><button id="quick-google-form" type="button">▦ Google Formulários</button><button id="quick-effects" type="button">✦ Animações e efeitos</button><button id="quick-save-draft" type="button">◉ Salvar agora</button></div></div>
         <p class="pane-intro">Clique em qualquer título, parágrafo ou link — inclusive na página inicial, cabeçalho e rodapé. Edite direto na prévia ou no campo “Editar texto selecionado” abaixo. Para remover, use “Apagar texto” ou “Excluir elemento”.</p>
         <div class="fs-insert-options"><label>Ao escolher um formato<select id="fs-insert-behavior"><option value="transform">Aplicar ao texto selecionado</option><option value="new">Criar novo elemento</option></select></label><label>Local para inserir novo<select id="fs-insert-position"><option value="after">Depois do selecionado</option><option value="before">Antes do selecionado</option><option value="top">No início da página</option><option value="bottom">No fim da página</option></select></label><p class="hint">Selecione um texto e clique em Citação, Título, Quadro ou Box: o formato será aplicado ao conteúdo atual. Para criar outro elemento, escolha Criar novo e o local desejado.</p></div><div class="insert-grid"><button data-insert="text"><span>▤</span>Caixa de texto</button><button data-insert="heading"><span>𝐓</span>Título</button><button data-insert="image"><span>▧</span>Imagem</button><button data-insert="gallery" type="button" title="Enviar e organizar diversas fotos"><span>▦</span>Galeria de fotos</button><button data-insert="banner" type="button" title="Adicionar um banner com imagem e link"><span>▰</span>Banner</button><button data-insert="button"><span>⊞</span>Botão</button><button data-insert="accordion"><span>▾</span>Grupo recolhível</button><button data-insert="more"><span>⋯</span>Leia mais</button><button data-insert="box"><span>▢</span>Quadro</button><button data-insert="info-box" title="Criar um box com texto, título, cores, bordas e dimensões editáveis"><span>▣</span>Box personalizado</button><button data-insert="circle"><span>◯</span>Círculo</button><button data-insert="pill"><span>▱</span>Etiqueta</button><button data-insert="divider"><span>─</span>Divisor</button><button data-insert="quote"><span>❞</span>Citação</button><button data-insert="embed"><span>⌘</span>Incorporar</button><button data-insert="google-forms" type="button" class="google-forms-tool" title="Adicionar formulário, abaixo-assinado ou pesquisa do Google Formulários"><span>▦</span>Google Formulários</button><button data-insert="list"><span>☷</span>Lista</button></div>
         <section id="home-quick-tools" class="home-quick-tools" aria-labelledby="home-quick-title">
@@ -76,6 +76,22 @@
           <label id="home-quick-external-wrap" hidden>Endereço externo<input id="home-quick-external" type="url" placeholder="https://exemplo.com"></label>
           <button id="home-quick-add" class="primary full" type="button">+ Adicionar na grade</button>
           <p class="hint">Você pode duplicar, redimensionar ou mover os itens existentes com as setas ← →. O site só muda para os visitantes depois de publicar.</p>
+        </section>
+
+        <section id="fs-home-showcase-editor" class="home-quick-tools fs-home-showcase-editor" aria-labelledby="fs-home-showcase-title">
+          <h3 id="fs-home-showcase-title">▧ Destaques visuais da página inicial</h3>
+          <p class="hint">Escolha um dos três destaques, altere texto e destino ou envie uma fotografia própria. As fotos originais são limitadas a 5 MB e comprimidas antes da publicação. Não é necessário alterar código.</p>
+          <label>Qual destaque editar?<select id="fs-home-showcase-select"><option value="acoes">1 · Ações</option><option value="frentes">2 · Frentes</option><option value="escuta">3 · Escuta e acolhimento</option></select></label>
+          <label>Chamada curta<input id="fs-home-showcase-kicker" maxlength="100" placeholder="Ex.: Participação e inclusão"></label>
+          <label>Título<input id="fs-home-showcase-headline" maxlength="120"></label>
+          <label>Descrição<input id="fs-home-showcase-description" maxlength="300"></label>
+          <label>Texto do botão<input id="fs-home-showcase-cta" maxlength="75"></label>
+          <label>Página de destino ou link HTTPS<input id="fs-home-showcase-link" placeholder="#/acoes"></label>
+          <label>Descrição da imagem para leitores de tela<input id="fs-home-showcase-alt" maxlength="200"></label>
+          <label>Substituir a imagem (JPG, PNG, WebP, até 5 MB)<input id="fs-home-showcase-file" type="file" accept="image/jpeg,image/png,image/webp"></label>
+          <img id="fs-home-showcase-image" class="fs-home-showcase-preview" src="../admin/logo.png" alt="Prévia da imagem em destaque">
+          <div class="fs-home-showcase-buttons"><button id="fs-home-showcase-default" type="button" class="btn">Usar marca original</button><button id="fs-home-showcase-save" type="button" class="primary">Aplicar ao destaque</button></div>
+          <p class="hint" id="fs-home-showcase-status" role="status" aria-live="polite">Selecione um destaque para editar. As mudanças só aparecem ao público depois de publicar.</p>
         </section>
         <div class="sep"></div><section id="fs-date-editor" class="props-section" aria-label="Datas da página">
 <h3>◷ Criação e atualização</h3><p class="hint">Você pode corrigir as datas manualmente. O horário é de Brasília; alterações só aparecem para visitantes depois de publicar.</p>
@@ -277,5 +293,5 @@
  </form></dialog>
  <input id="upload-image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden><input id="upload-shared-logo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden>
 </div>
-<script src="./config.js?v=20261103r19"></script><script src="./editor.js?v=20261103r19" defer></script><script src="./flow-editor.js?v=20261103r19" defer></script>
+<script src="./config.js?v=20261103r20"></script><script src="./editor.js?v=20261103r20" defer></script><script src="./flow-editor.js?v=20261103r20" defer></script>
 </body></html>
