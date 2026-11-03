@@ -494,6 +494,9 @@ function editableTextElement(el){
  if(!el?.closest?.('.site-page,.site-header,.site-footer'))return false;
  if(el.closest('script,style,svg,iframe,.access-panel,.header-actions,.breadcrumbs,[data-editor-internal],.fresuni-quick-add,[data-fresuni-page-meta]'))return false;
  if(!el.matches(editTextSelectors))return false;
+ // O título dentro de <summary> é um texto independente: não transformar seu
+ // contêiner em editor de texto, pois isso capturava o clique e impedia a cor do h2.
+ if(el.matches('summary')&&el.querySelector('h1,h2,h3,h4,h5,h6'))return false;
  if(el.matches('div,section,article')){
   if(el.matches('.site-page,.page-shell,.container,.home-wrap,.directory-row,.directory-links,.card-grid,.site-header,.site-footer,[data-fresuni-block="google-forms"]'))return false;
   if(el.querySelector('p,h1,h2,h3,h4,h5,h6,a,button,img,iframe,svg,div,section,article'))return false;
@@ -530,11 +533,16 @@ function clickSite(e){
  if(!target||target.closest('[data-editor-internal]'))return;
  if(target.closest('a,button,summary'))e.preventDefault();
  const summary=target.closest('summary');
- if(summary&&summary.parentElement?.tagName==='DETAILS')summary.parentElement.open=!summary.parentElement.open;
+ const accordionHeading=summary?.querySelector('h1,h2,h3,h4,h5,h6')||null;
+ const clickOnHeading=!!target.closest('h1,h2,h3,h4,h5,h6');
+ // No modo Editor, tocar nas letras seleciona o título para formatá-lo.
+ // Tocar na seta ou no restante da linha continua expandindo/recolhendo.
+ if(summary&&summary.parentElement?.tagName==='DETAILS'&&!clickOnHeading)
+  summary.parentElement.open=!summary.parentElement.open;
  if(target.closest('.access-panel,.header-actions'))return;
   const pageDates=target.closest('[data-fresuni-page-meta]');if(pageDates){selectElement(pageDates);$('#fs-date-editor')?.scrollIntoView({block:'nearest'});return;}
  const currentEditable=target.closest('[data-fresuni-editable]');
- let el=currentEditable||target.closest('p,h1,h2,h3,h4,h5,h6,li,summary,blockquote,cite,figcaption,dt,dd,th,td,small,label,button,img,iframe,a,figure,details,hr,span,strong,em,b,i,mark,code,div,section,article,[data-fresuni-block]');
+ let el=accordionHeading||currentEditable||target.closest('p,h1,h2,h3,h4,h5,h6,li,summary,blockquote,cite,figcaption,dt,dd,th,td,small,label,button,img,iframe,a,figure,details,hr,span,strong,em,b,i,mark,code,div,section,article,[data-fresuni-block]');
  if(!el||!el.closest('.site-page,.site-header,.site-footer')){
   const area=target.closest('.site-header,.site-footer');if(area)selectElement(area);return;
  }
