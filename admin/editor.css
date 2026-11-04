@@ -310,3 +310,16 @@
 .fs-brand-logo-panel select:focus-visible,.fs-brand-logo-panel input:focus-visible,
 .fs-brand-logo-panel button:focus-visible{outline:3px solid #214ECF;outline-offset:2px}
 @media(max-width:420px){.fs-brand-logo-actions,.fs-text-color-fields{grid-template-columns:1fr}}
+
+/* Navegação e organização por teclado — azul institucional, foco visível */
+.fs-keyboard-shortcuts{border:1px solid #c9daf8;background:#f6f9ff;border-radius:10px;
+ padding:13px 14px;margin:10px 0 18px;color:#233858}
+.fs-keyboard-shortcuts h3{font-size:14px;color:#173b9e;margin:0 0 7px}
+.fs-keyboard-shortcuts p{font-size:12px;line-height:1.65;margin:7px 0}
+.fs-keyboard-shortcuts kbd{font-family:ui-monospace,Consolas,monospace;font-size:11px;
+ display:inline-block;border:1px solid #acbee6;border-bottom-width:2px;border-radius:5px;
+ background:#fff;color:#173b9e;padding:1px 5px;white-space:nowrap}
+#fs-keyboard-status{font-weight:600;color:#173b9e;min-height:18px}
+#fs-keyboard-mode{min-height:44px}
+#fs-keyboard-mode[aria-pressed="true"]{background:#214ecf;color:#fff;border-color:#173b9e}
+#fs-keyboard-mode:focus-visible{outline:3px solid #214ecf;outline-offset:3px}
