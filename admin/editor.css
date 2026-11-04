@@ -323,3 +323,15 @@
 #fs-keyboard-mode{min-height:44px}
 #fs-keyboard-mode[aria-pressed="true"]{background:#214ecf;color:#fff;border-color:#173b9e}
 #fs-keyboard-mode:focus-visible{outline:3px solid #214ecf;outline-offset:3px}
+
+/* Editor seguro: mover, duplicar e excluir sem perder conteúdos. */
+.fs-element-actions{margin:15px 0;padding:14px;background:#f6f9ff;border:1px solid #ccdaf8;border-radius:12px}
+.fs-element-actions h3{color:#173b9e;font-size:14px;margin:0 0 9px}
+.fs-element-actions>.hint{font-size:12px;line-height:1.6;margin:6px 0 11px}
+.fs-element-actions-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.fs-element-actions-grid button{min-height:44px;min-width:0;white-space:normal;line-height:1.35;overflow-wrap:anywhere}
+.fs-element-actions-grid button:disabled{opacity:.52;cursor:not-allowed}
+.fs-element-actions-grid button:focus-visible{outline:3px solid #214ecf;outline-offset:3px}
+.fs-element-actions-grid .fs-element-delete{grid-column:1/-1;color:#95293c;background:#fff;border-color:#cb9aa5}
+.fs-element-actions-grid .fs-element-delete:enabled:hover{background:#fff1f3}
+#fs-element-actions-status{font-weight:500;color:#193b86}
