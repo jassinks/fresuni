@@ -159,6 +159,16 @@
   if(src.parentElement===zone&&(before===src||before===src.nextSibling)&&!side)return false;
   bridge.snapshot();
   zone.insertBefore(src,before===src?src.nextSibling:before);
+  // Aplicar também o alinhamento da marca ao mudar sua posição na estrutura.
+  if(src.matches('.site-header .header-inner > .brand')){
+   const siblings=Array.from(zone.children);
+   const nav=siblings.find(item=>item.classList.contains('main-nav'));
+   if(nav)src.dataset.fresuniLogoPosition=siblings.indexOf(src)>siblings.indexOf(nav)?'right':'left';
+  }
+  if(src.matches('.site-header .main-nav > .fresuni-menu-logo')){
+   const siblings=Array.from(zone.children);
+   src.dataset.fresuniLogoPosition=siblings.indexOf(src)>Math.floor((siblings.length-1)/2)?'end':'start';
+  }
   if(!srcShared){
    makeGrid(zone);
    if(side&&near&&near!==src&&near.parentElement===zone){span(src,6);span(near,6);}
