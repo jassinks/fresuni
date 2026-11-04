@@ -6,7 +6,7 @@
 <title>Editor de conteúdo — FRESUNI Social</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&amp;family=Merriweather:ital,wght@0,300..900;1,300..900&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./editor.css?v=20261104r1">
+<link rel="stylesheet" href="./editor.css?v=20261104r3">
 </head>
 <body>
 <div id="login-screen" class="login-screen">
@@ -268,6 +268,9 @@
           <label>Posição no local<select id="fs-brand-logo-position"></select></label>
           <label>Largura máxima da marca (px)<input id="fs-brand-logo-width" type="number" min="40" max="260" step="5" value="125"></label>
           <label>Descrição da imagem<input id="fs-brand-logo-alt" type="text" maxlength="160" value="FRESUNI Social"></label>
+          <label>Fundo atrás da logomarca<select id="fs-brand-logo-background"><option value="transparent">Sem fundo (transparente)</option><option value="custom">Com cor personalizada</option></select></label>
+          <label id="fs-brand-logo-background-color-wrap" hidden>Cor de fundo<input id="fs-brand-logo-background-color" type="color" value="#ffffff"></label>
+          <p class="hint">Esta opção remove a caixa branca criada pelo site. Se o branco fizer parte da própria imagem, envie uma versão PNG transparente.</p>
           <div class="fs-brand-logo-actions">
             <button id="fs-brand-logo-upload" type="button" class="btn">Adicionar ou trocar imagem</button>
             <button id="fs-brand-logo-original" type="button" class="btn">Usar marca institucional</button>
@@ -369,5 +372,5 @@
  </form></dialog>
  <input id="upload-image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden><input id="upload-shared-logo" type="file" accept="image/png,image/jpeg,image/webp" hidden>
 </div>
-<script src="./config.js?v=20261103r21"></script><script src="./editor.js?v=20261104r2" defer></script><script src="./flow-editor.js?v=20261104r2" defer></script>
+<script src="./config.js?v=20261103r21"></script><script src="./editor.js?v=20261104r3" defer></script><script src="./flow-editor.js?v=20261104r2" defer></script>
 </body></html>
