@@ -2,8 +2,8 @@
 (()=>{'use strict';
  const bridge=window.FRESUNI_EDITOR_BRIDGE;if(!bridge)return;
  const $=s=>document.querySelector(s);
- const ZONES='.directory-links,.card-grid,.home-opening,.home-directory,.home-values,.value-section,.page-heading,.prose,.page-article,.reading-layout,.directory-row,.page-shell,.home-wrap,[data-fresuni-flow-grid]';
- const LOCKED='[data-editor-internal],.breadcrumbs,.sr-only,.site-header,.site-footer,.fresuni-quick-add';
+ const ZONES='.directory-links,.card-grid,.home-opening,.home-directory,.home-values,.value-section,.page-heading,.prose,.page-article,.reading-layout,.directory-row,.page-shell,.home-wrap,[data-fresuni-flow-grid],.site-header .header-inner,.site-header .main-nav,.site-footer .footer-inner,.site-footer nav';
+ const LOCKED='[data-editor-internal],.breadcrumbs,.sr-only,.access-panel,.header-actions,.mobile-toggle,.fresuni-quick-add,[data-fresuni-page-meta]';
  let enabled=true,doc=null,handle=null,marker=null,ghost=null,drag=null,animation=0;
  const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
  const visiblePage=()=>doc?.querySelector('main > .site-page:not([hidden])');
@@ -11,8 +11,23 @@
  const children=parent=>[...parent.children].filter(el=>!el.matches('[data-editor-internal],.fresuni-quick-add,.sr-only'));
  function sourceFor(el){
   const page=visiblePage();
-  if(!el?.isConnected||!page?.contains(el)||el.closest(LOCKED))return null;
-  const metadata=el.closest('[data-fresuni-page-meta]');if(metadata)return metadata;
+  if(!el?.isConnected||el.closest(LOCKED))return null;
+  const shared=el.closest('.site-header,.site-footer');
+  if(shared){
+   // Movimentar apenas itens internos das áreas compartilhadas.
+   // O contêiner do rodapé, o menu e as opções de acessibilidade são protegidos.
+   const zone=shared.classList.contains('site-footer')
+    ?el.closest('.site-footer nav')||el.closest('.site-footer .footer-inner')
+    :el.closest('.site-header .main-nav')||el.closest('.site-header .header-inner');
+   if(!zone)return null;
+   let item=el;while(item.parentElement&&item.parentElement!==zone)item=item.parentElement;
+   if(item.parentElement!==zone||item===zone||item.matches('.main-nav,.header-actions,nav,.subnav,.accessibility,.mobile-toggle'))return null;
+   return item;
+  }
+  if(!page?.contains(el))return null;
+  const accordion=el.closest('.home-values .value-section');
+  if(accordion&&page.contains(accordion))return accordion;
+  if(el.closest('.page-heading')&&el.matches('h1'))return null;
   const whole=el.closest('[data-fresuni-block],.fresuni-info-box,.content-card');
   if(whole&&page.contains(whole)&&!whole.closest(LOCKED))return whole;
   const zone=el.closest(ZONES);if(!zone)return null;
@@ -20,6 +35,14 @@
   return block.parentElement===zone&&!block.matches(LOCKED)?block:null;
  }
  function zoneFor(hovered,src,outer){
+  const shared=src?.closest('.site-header,.site-footer');
+  if(shared){
+   if(!hovered||!shared.contains(hovered))return null;
+   // Rodapé e menu admitem reordenação dentro da própria área;
+   // nenhum item pode ser solto em outra região do site.
+   const parent=src.parentElement;
+   return parent&&parent!==shared&&shared.contains(parent)?parent:null;
+  }
   const page=visiblePage();if(!page||!src||!page.contains(src))return null;
   let zone=hovered?.closest?.(ZONES)||null;
   if(outer&&zone)zone=zone.parentElement?.closest(ZONES)||rootArea(page);
@@ -63,7 +86,7 @@
    }).sort((a,b)=>a.score-b.score)[0];
    near=closest.el;const r=closest.r;
    const center=y>r.top+r.height*.28&&y<r.bottom-r.height*.28;
-   const fits=zone.getBoundingClientRect().width>=430&&r.width>=185;
+   const fits=!src.closest('.site-header,.site-footer')&&zone.getBoundingClientRect().width>=430&&r.width>=185;
    if(fits&&center&&x<r.left+r.width*.3){position='left';side=true;}
    else if(fits&&center&&x>r.right-r.width*.3){position='right';side=true;}
    else position=y<r.top+r.height/2?'top':'bottom';
@@ -129,13 +152,18 @@
  function finishDrop(src,drop){
   if(!drop||!src?.isConnected)return false;
   const {zone,near,before,side}=drop;
-  if(!zone||src===zone||src.contains(zone)||src.closest('.site-page')!==zone.closest('.site-page'))return false;
+  const srcShared=src.closest('.site-header,.site-footer');
+  if(srcShared){
+   if(!srcShared.contains(zone)||zone!==src.parentElement)return false;
+  }else if(!zone||src===zone||src.contains(zone)||src.closest('.site-page')!==zone.closest('.site-page'))return false;
   if(src.parentElement===zone&&(before===src||before===src.nextSibling)&&!side)return false;
   bridge.snapshot();
   zone.insertBefore(src,before===src?src.nextSibling:before);
-  makeGrid(zone);
-  if(side&&near&&near!==src&&near.parentElement===zone){span(src,6);span(near,6);}
-  else if(!src.dataset.fresuniFlowSpan)span(src,zone.matches('.directory-links')?4:zone.matches('.card-grid')?6:12);
+  if(!srcShared){
+   makeGrid(zone);
+   if(side&&near&&near!==src&&near.parentElement===zone){span(src,6);span(near,6);}
+   else if(!src.dataset.fresuniFlowSpan)span(src,zone.matches('.directory-links')?4:zone.matches('.card-grid')?6:12);
+  }
   src.removeAttribute('draggable');src.removeAttribute('data-fresuni-drag');
   bridge.selected=null;bridge.clearSelection();bridge.selectElement(src);bridge.dirty();
   bridge.notify(side?'Encaixado lado a lado; as caixas se reorganizam sem sobreposição.':'Bloco encaixado na posição escolhida; os demais elementos se reorganizam.');
@@ -186,7 +214,9 @@
    if(!placeMode)return;
    const target=sourceFor(event.target);
    clearPlaceHover();
-   if(target&&target!==placeMode.source&&!target.contains(placeMode.source)&&!placeMode.source.contains(target)&&target.closest('.site-page')===placeMode.source.closest('.site-page')){
+   if(target&&target!==placeMode.source&&!target.contains(placeMode.source)&&!placeMode.source.contains(target)&&
+      target.closest('.site-page,.site-header,.site-footer')===placeMode.source.closest('.site-page,.site-header,.site-footer')&&
+      (!placeMode.source.closest('.site-header,.site-footer')||target.parentElement===placeMode.source.parentElement)){
     placeHover=target;target.classList.add('fresuni-place-target');
    }
   },true);
@@ -247,7 +277,9 @@
   event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
   const src=placeMode.source,target=sourceFor(event.target);
   if(!src.isConnected){endPlaceMode('O bloco original não está mais disponível.');return;}
-  if(!target||target===src||src.contains(target)||target.contains(src)||target.closest('.site-page')!==src.closest('.site-page')){
+  if(!target||target===src||src.contains(target)||target.contains(src)||
+     target.closest('.site-page,.site-header,.site-footer')!==src.closest('.site-page,.site-header,.site-footer')||
+     (src.closest('.site-header,.site-footer')&&target.parentElement!==src.parentElement)){
    bridge.notify('Escolha outro texto ou box da mesma página como referência.');return;
   }
   const preference=$('#fs-place-choice').value;
