@@ -2652,8 +2652,15 @@ function renderStructurePanel(){const header=sharedEl('header'),footer=sharedEl(
  sharedFooterLinks().forEach(link=>sharedRow(f,link,'footer'));
  fsLogoRead();
 }
-function selectSharedArea(type){const el=sharedEl(type);if(!el)return;const container=type==='header'?el:el.querySelector('.footer-inner')||el;
- setEditable(true);selectElement(container);container.scrollIntoView({block:type==='header'?'start':'end',behavior:'smooth'});
+function selectSharedArea(type){
+ const el=sharedEl(type);if(!el)return;
+ // Abrir já com um elemento editável, não com o contêiner institucional bloqueado.
+ const candidate=type==='footer'
+  ?el.querySelector('.footer-inner > p,.footer-inner > small,.footer-inner nav a[href],.footer-logo img')
+  :el.querySelector('.main-nav a.nav-root,.header-inner > .brand img,[data-fresuni-header-message]');
+ setEditable(true);selectElement(candidate||el);
+ (candidate||el).scrollIntoView({block:type==='header'?'start':'end',behavior:'smooth'});
+ fsKeyboardFeedback('Área aberta. Clique em qualquer texto, imagem, logo ou link para mover, editar ou excluir com segurança.');
 }
 $('#edit-site-header').addEventListener('click',()=>selectSharedArea('header'));
 $('#edit-site-footer').addEventListener('click',()=>selectSharedArea('footer'));
@@ -2714,6 +2721,10 @@ function fsLogoRead(){
   Math.round(image?.getBoundingClientRect().width||({menu:95,header:125,footer:110}[area]));
  $('#fs-brand-logo-width').value=Math.min(260,Math.max(40,Math.round(width)));
  $('#fs-brand-logo-alt').value=image?.getAttribute('alt')||'FRESUNI Social';
+ const bgMode=logo?.dataset.fresuniLogoBackground==='custom'?'custom':'transparent';
+ $('#fs-brand-logo-background').value=bgMode;
+ $('#fs-brand-logo-background-color-wrap').hidden=bgMode!=='custom';
+ $('#fs-brand-logo-background-color').value=toHex(logo?.style.backgroundColor||'#ffffff','#ffffff');
  preview.hidden=!image;
  if(image)preview.src=image.getAttribute('src')||FS_OFFICIAL_LOGO;
  else preview.removeAttribute('src');
@@ -2723,6 +2734,26 @@ function fsLogoRead(){
   'Não há logomarca no '+name+'. Você pode adicionar uma imagem ou usar a marca institucional.';
 }
 $('#fs-brand-logo-area')?.addEventListener('change',fsLogoRead);
+$('#fs-brand-logo-background')?.addEventListener('change',e=>{
+ const logo=fsLogoSlot(fsLogoArea()).logo;
+ if(!state.editable||!logo){notify('Adicione uma logomarca para configurar o fundo.');fsLogoRead();return;}
+ const custom=e.target.value==='custom';
+ snapshot();
+ logo.dataset.fresuniLogoBackground=custom?'custom':'transparent';
+ logo.style.setProperty('background-color',custom?$('#fs-brand-logo-background-color').value:'transparent','important');
+ logo.style.padding=custom?'9px':'0';
+ logo.style.boxShadow='none';
+ logo.style.border='0';
+ dirty();fsLogoRead();
+ notify(custom?'Fundo personalizado aplicado apenas à marca desta área.':'Fundo transparente aplicado à marca, sem caixa branca.');
+});
+$('#fs-brand-logo-background-color')?.addEventListener('change',e=>{
+ if($('#fs-brand-logo-background').value!=='custom'||!state.editable)return;
+ const logo=fsLogoSlot(fsLogoArea()).logo;if(!logo)return;
+ snapshot();logo.dataset.fresuniLogoBackground='custom';
+ logo.style.setProperty('background-color',e.target.value,'important');dirty();
+ notify('Cor do fundo atrás da marca alterada somente nesta área.');
+});
 $('#fs-brand-logo-position')?.addEventListener('change',e=>{
  if(!state.editable)return;
  const area=fsLogoArea(),logo=fsLogoSlot(area).logo;
