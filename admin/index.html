@@ -128,7 +128,22 @@
  <p><kbd>Alt</kbd> + <kbd>setas</kbd> também funciona sem ativar o modo, inclusive com o cursor em um texto. <kbd>Delete</kbd> ou <kbd>Backspace</kbd> exclui o bloco selecionado <b>apenas no modo teclado</b>, com confirmação. <kbd>Esc</kbd> sai da digitação para o modo de movimento, ou desmarca o elemento. <kbd>Ctrl</kbd> + <kbd>Z</kbd> desfaz, <kbd>Ctrl</kbd> + <kbd>Y</kbd> refaz e <kbd>Ctrl</kbd> + <kbd>S</kbd> salva o rascunho.</p>
  <p>Para editar letras, digite normalmente: as setas e Backspace continuam movendo o cursor e apagando caracteres. Blocos essenciais do site ficam protegidos contra exclusão acidental.</p>
  <p id="fs-keyboard-status" role="status" aria-live="polite">Modo teclado desligado. Clique em “Mover com teclado” para ativar.</p>
- </section><div class="sep"></div><h3>Elemento selecionado</h3><p id="selection-name" class="selection-empty">Selecione um texto, uma imagem ou um bloco na página.</p>
+ </section>
+        <section id="fs-element-actions" class="fs-element-actions" aria-labelledby="fs-element-actions-title">
+          <h3 id="fs-element-actions-title">Editar e organizar elementos</h3>
+          <p class="hint">Clique em um texto, imagem, link, logo ou caixa da prévia. Os botões movem ou alteram apenas o item selecionado; o conteúdo do site só muda depois de Publicar.</p>
+          <div class="fs-element-actions-grid">
+            <button type="button" id="fs-element-up" class="btn" title="Mover seleção uma posição acima" disabled>↑ Subir</button>
+            <button type="button" id="fs-element-down" class="btn" title="Mover seleção uma posição abaixo" disabled>↓ Descer</button>
+            <button type="button" id="fs-element-left" class="btn" title="Recuar ou mover para a esquerda" disabled>← Esquerda</button>
+            <button type="button" id="fs-element-right" class="btn" title="Avançar ou mover para a direita" disabled>→ Direita</button>
+            <button type="button" id="fs-element-parent" class="btn" title="Selecionar o bloco que contém este texto" disabled>▣ Selecionar caixa</button>
+            <button type="button" id="fs-element-duplicate" class="btn" title="Duplicar este elemento" disabled>⧉ Duplicar</button>
+            <button type="button" id="fs-element-delete" class="btn fs-element-delete" title="Excluir apenas o item selecionado, com confirmação" disabled>⌫ Excluir item</button>
+          </div>
+          <p class="hint" id="fs-element-actions-status" role="status" aria-live="polite">Selecione um item na prévia. As áreas essenciais do site ficam protegidas e Desfazer funciona antes da publicação.</p>
+        </section>
+        <div class="sep"></div><h3>Elemento selecionado</h3><p id="selection-name" class="selection-empty">Selecione um texto, uma imagem ou um bloco na página.</p>
         <p id="selection-instructions" class="hint">Clique em qualquer texto do site, inclusive em notícias, artigos, botões e rodapé. Depois use os controles de animação e disposição que aparecem aqui.</p><div id="selection-props" hidden><section id="fs-selected-media" class="fs-media-selected" hidden><h4 id="fs-selected-media-title">Galeria ou banner</h4><button type="button" id="fs-edit-selected-media" class="btn full">Editar imagens, legendas e opções</button></section><section id="selected-text-panel" class="selected-text-panel" hidden>
           <h4>Editar texto selecionado</h4>
           <p class="hint">Edite textos de qualquer página — início, notícias, artigos, ações, menus e rodapé. O rascunho é salvo automaticamente no navegador; para atualizar o site público, use Publicar alterações.</p>
@@ -354,5 +369,5 @@
  </form></dialog>
  <input id="upload-image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden><input id="upload-shared-logo" type="file" accept="image/png,image/jpeg,image/webp" hidden>
 </div>
-<script src="./config.js?v=20261103r21"></script><script src="./editor.js?v=20261104r1" defer></script><script src="./flow-editor.js?v=20261103r21" defer></script>
+<script src="./config.js?v=20261103r21"></script><script src="./editor.js?v=20261104r2" defer></script><script src="./flow-editor.js?v=20261104r2" defer></script>
 </body></html>
