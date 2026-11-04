@@ -468,6 +468,9 @@ function reloadFrame(html,route=state.route){
   d.head.append(style);
   for(const p of pageNodes())p.dataset.editorGroup=groupFor(p);
   d.addEventListener('click',clickSite,true);
+  // O iframe não encaminha teclas ao documento do painel: registrar também nele.
+  d.addEventListener('keydown',fsKeyboardHandler,true);
+  d.addEventListener('focusin',fsKeyboardFocus,true);
   d.addEventListener('focusin',e=>{if(e.target?.isContentEditable&&state.editable)remember();},true);
   bindDrag(d);setupResizeGrip(d);setupFloatingToolbar(d);setupGoogleFormsHandles(d);window.FRESUNI_FLOW_EDITOR?.bind?.(d);
   d.addEventListener('input',e=>{if(e.target?.isContentEditable){dirty();if(e.target===state.selected)updateTextInspector(e.target);requestAnimationFrame(positionResizeGrip);}});
@@ -525,8 +528,159 @@ function setEditable(on){
    el.setAttribute('contenteditable','true');el.dataset.fresuniEditable='true';el.setAttribute('spellcheck','true');
   });
  }
+ fsKeyboardUpdateTabStops(d,on);
  refreshHomeQuickButtons();window.FRESUNI_FLOW_EDITOR?.onMode?.();
 }
+
+/* FRESUNI | navegação e edição por teclado.
+   A digitação nativa prevalece. Mover usa o fluxo do documento para não sobrepor caixas.
+   Excluir exige ação explícita e confirmação; operações podem ser desfeitas. */
+let fsKeyboardMode=false;
+function fsKeyboardFeedback(message){
+ const target=$('#fs-keyboard-status');if(target)target.textContent=message;
+}
+function fsKeyboardTyping(target){
+ return !!target?.closest?.('input,textarea,select,[contenteditable="true"],[contenteditable=""],[role="textbox"],[role="combobox"]');
+}
+function fsKeyboardUpdateTabStops(d,on){
+ if(!d)return;
+ // O Editor pode habilitar/desabilitar digitação sem recarregar a prévia.
+ d.querySelectorAll('[data-fresuni-keynav]').forEach(el=>{
+  const old=el.getAttribute('data-fresuni-keynav');
+  if(old==='__absent__')el.removeAttribute('tabindex');
+  else el.setAttribute('tabindex',old);
+  el.removeAttribute('data-fresuni-keynav');
+ });
+ if(!on)return;
+ const selectors='main > .site-page:not([hidden]) [data-fresuni-editable],main > .site-page:not([hidden]) [data-fresuni-block],main > .site-page:not([hidden]) img,main > .site-page:not([hidden]) .fresuni-info-box';
+ for(const el of d.querySelectorAll(selectors)){
+  if(el.closest('.sr-only,[data-editor-internal]')||el.closest('a[href]')&&!el.matches('a')||el.closest('[hidden]'))continue;
+  if(el.hasAttribute('tabindex'))continue;
+  el.setAttribute('data-fresuni-keynav','__absent__');
+  el.setAttribute('tabindex','0');
+ }
+}
+function fsKeyboardFocus(event){
+ if(!state.editable)return;
+ const target=event.target;
+ if(!target?.closest||!target.closest('main > .site-page:not([hidden])'))return;
+ const candidate=target.closest('[data-fresuni-editable],[data-fresuni-block],.fresuni-info-box,img,a[href]');
+ if(candidate&&candidate!==state.selected)selectElement(candidate);
+}
+function fsKeyboardCandidate(){
+ const el=state.selected,page=selectedPage();
+ if(!el?.isConnected||!page?.contains(el))return null;
+ if(el.closest('.breadcrumbs,.return-links,.fresuni-home-highlights,#fresuni-home-highlights,[data-fresuni-page-meta],.accessibility,.fresuni-quick-add'))return null;
+ // Ao mover títulos de acordeões, o bloco completo acompanha o título.
+ if(el.closest('.home-values .value-summary'))return el.closest('.value-section');
+ if(el.closest('.home-directory .directory-row')&&el.closest('h1,h2,h3,h4,h5,h6')&&!el.closest('.directory-links'))
+  return el.closest('.directory-row');
+ if(el.closest('.directory-links')){
+  const zone=el.closest('.directory-links');let node=el;
+  while(node.parentElement&&node.parentElement!==zone)node=node.parentElement;
+  return node.parentElement===zone?node:null;
+ }
+ const block=el.closest('[data-fresuni-block],.fresuni-info-box,.fresuni-program-card,.content-card');
+ if(block&&page.contains(block))return block;
+ if(el.closest('.page-heading')&&el.matches('h1,h2,h3,h4,h5,h6'))return null;
+ if(el.matches('.site-page,.home-wrap,.page-shell,.container,main,.home-values,.home-directory'))return null;
+ return el;
+}
+function fsKeyboardMove(key,large=false){
+ const el=fsKeyboardCandidate();
+ if(!el||!el.parentElement){fsKeyboardFeedback('Selecione uma caixa ou texto da página. Os elementos institucionais protegidos não podem ser movidos por atalho.');return;}
+ const parent=el.parentElement;
+ if(parent.matches('.value-summary,.page-heading,.fresuni-highlight,.fresuni-highlights-track,.fresuni-highlight-content')){
+  fsKeyboardFeedback('Selecione a caixa completa ou use a ferramenta de organização para este elemento.');return;
+ }
+ const grid=parent.matches('.directory-links,.card-grid,.fresuni-gallery-grid,.fresuni-programs,[data-fresuni-grid],[data-fresuni-flow-grid],.fresuni-flow-grid');
+ if(key==='ArrowLeft'||key==='ArrowRight'){
+  if(!grid){
+   // Recuo em fluxo, sem position:absolute nem transform que encubram textos.
+   if(el.matches('img,iframe')){fsKeyboardFeedback('Para imagens, use a alça de organização ou o controle de alinhamento.');return;}
+   const current=Number.parseFloat(el.style.paddingInlineStart)||0;
+   const step=large?24:8,next=Math.max(0,Math.min(160,current+(key==='ArrowRight'?step:-step)));
+   if(next===current){fsKeyboardFeedback('Limite de recuo alcançado.');return;}
+   snapshot();el.style.boxSizing='border-box';
+   if(next)el.style.paddingInlineStart=next+'px';else el.style.removeProperty('padding-inline-start');
+   dirty();positionResizeGrip();
+   fsKeyboardFeedback('Recuo horizontal: '+next+' px. A disposição continua responsiva.');
+   return;
+  }
+ }
+ const parts=[...parent.children].filter(node=>!node.matches('[data-editor-internal],.fresuni-quick-add')&&!node.hasAttribute('hidden'));
+ const index=parts.indexOf(el),forward=key==='ArrowRight'||key==='ArrowDown';
+ const other=parts[index+(forward?1:-1)];
+ if(index<0||!other){fsKeyboardFeedback('Não há outro elemento nesta direção, dentro da mesma área.');return;}
+ snapshot();
+ if(forward)parent.insertBefore(other,el);else parent.insertBefore(el,other);
+ dirty();selectElement(el);positionResizeGrip();
+ fsKeyboardFeedback('Elemento movido '+(forward?'para frente':'para trás')+' na ordem da área; sem sobreposição.');
+}
+function fsKeyboardDelete(){
+ const block=fsKeyboardCandidate();
+ if(!block){fsKeyboardFeedback('Selecione um bloco de conteúdo antes de excluir.');return;}
+ const locked='.value-section,.directory-row,.page-heading,.home-opening,.home-values,.home-directory,.fresuni-program-card,.fresuni-programs,.site-page,.container,.page-shell,.fresuni-action-tile-grid,.fresuni-action-find';
+ if(block.matches(locked)||block.matches('h1')||block.hasAttribute('data-fresuni-action-directory')||block.id&&block.matches('section,div,nav')){
+  fsKeyboardFeedback('Este é um bloco estrutural protegido. Edite seu conteúdo ou use o controle específico da página.');
+  return;
+ }
+ const label=(block.textContent||block.getAttribute('alt')||block.tagName).trim().replace(/\s+/g,' ').slice(0,95);
+ if(!confirm('Excluir do RASCUNHO o elemento "'+label+'"?\n\nA alteração ainda poderá ser desfeita e não chegará ao site até a publicação.'))return;
+ snapshot();block.remove();clearSelection();dirty();
+ fsKeyboardFeedback('Elemento excluído do rascunho. Use Ctrl+Z para desfazer.');
+ notify('Elemento excluído somente do rascunho.');
+}
+function fsKeyboardHandler(event){
+ if(!state.editable||app.hidden||event.defaultPrevented)return;
+ const key=event.key,isArrow=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(key);
+ const target=event.target,typing=fsKeyboardTyping(target);
+ const fromFrame=event.currentTarget===siteDoc();
+ if(fromFrame&&(event.ctrlKey||event.metaKey)&&!typing&&!event.altKey){
+  const lower=key.toLowerCase();
+  if(lower==='s'){event.preventDefault();$('#draft-save').click();return;}
+  if(lower==='z'){event.preventDefault();event.shiftKey?doRedo():doUndo();return;}
+  if(lower==='y'){event.preventDefault();doRedo();return;}
+ }
+ if(key==='Escape'&&state.selected){
+  if(typing&&!event.altKey){
+   event.preventDefault();
+   if(typeof target.blur==='function')target.blur();
+   const toggle=$('#fs-keyboard-mode');
+   toggle?.focus();
+   fsKeyboardFeedback('Digitação encerrada. Use as setas no botão “Mover com teclado” ou Alt+setas para movimentar.');
+  }else{
+   event.preventDefault();clearSelection();
+   fsKeyboardFeedback('Seleção desfeita. Use Tab ou clique em um elemento para selecionar outro.');
+  }
+  return;
+ }
+ if(!isArrow&&key!=='Delete'&&key!=='Backspace')return;
+ if(event.ctrlKey||event.metaKey)return;
+ if(!fsKeyboardMode&&!event.altKey)return;
+ // Backspace e as setas nunca podem sequestrar a digitação normal.
+ if(typing&&!event.altKey)return;
+ if(target?.closest?.('input,textarea,select,[role="combobox"]'))return;
+ if(!state.selected?.isConnected)return;
+ if((key==='Delete'||key==='Backspace')&&(fsKeyboardMode||event.altKey)){
+  event.preventDefault();fsKeyboardDelete();return;
+ }
+ if(isArrow){
+  event.preventDefault();fsKeyboardMove(key,event.shiftKey);
+ }
+}
+$('#fs-keyboard-mode')?.addEventListener('click',()=>{
+ fsKeyboardMode=!fsKeyboardMode;
+ const button=$('#fs-keyboard-mode');
+ button.setAttribute('aria-pressed',String(fsKeyboardMode));
+ button.classList.toggle('active',fsKeyboardMode);
+ button.textContent=fsKeyboardMode?'⌨ Teclado ativo':'⌨ Mover com teclado';
+ fsKeyboardFeedback(fsKeyboardMode?
+  'Modo teclado ativo. Selecione um bloco e pressione as setas; Delete e Backspace pedem confirmação.':
+  'Modo teclado desligado. Alt+setas ainda permite mover um elemento selecionado.');
+});
+document.addEventListener('keydown',fsKeyboardHandler,true);
+
 function clickSite(e){
  if(!state.editable)return;
  const target=e.target?.nodeType===1?e.target:e.target?.parentElement;
@@ -667,7 +821,15 @@ $('#selected-text-clear').addEventListener('click',()=>{
  snapshot();el.textContent='';$('#selected-text-content').value='';dirty();notify('Texto apagado apenas no rascunho.');
 });
 function toHex(color,fallback){const m=color.match(/\d+/g);if(!m||m.length<3)return fallback;return '#'+m.slice(0,3).map(x=>Math.max(0,Math.min(255,+x)).toString(16).padStart(2,'0')).join('');}
-function stripTransient(root){root.querySelector('body')?.classList.remove('fresuni-editor-flow-on');root.querySelectorAll('[data-fresuni-drop-zone]').forEach(x=>x.removeAttribute('data-fresuni-drop-zone'));root.classList.remove('dark-mode','high-contrast','simple-mode','reduce-motion');
+function stripTransient(root){
+ // Nunca publicar os tabindex usados apenas pelo editor; preservar os originais.
+ root.querySelectorAll('[data-fresuni-keynav]').forEach(el=>{
+  const before=el.getAttribute('data-fresuni-keynav');
+  if(before==='__absent__')el.removeAttribute('tabindex');
+  else el.setAttribute('tabindex',before);
+  el.removeAttribute('data-fresuni-keynav');
+ });
+ root.querySelector('body')?.classList.remove('fresuni-editor-flow-on');root.querySelectorAll('[data-fresuni-drop-zone]').forEach(x=>x.removeAttribute('data-fresuni-drop-zone'));root.classList.remove('dark-mode','high-contrast','simple-mode','reduce-motion');
  $$('link[data-fresuni-async-font],link[data-fresuni-font-catalog]',root).forEach(link=>{link.removeAttribute('data-fresuni-async-font');link.removeAttribute('media');});$$('#fresuni-editor-overlay',root).forEach(x=>x.remove());$$('[data-fresuni-selected]',root).forEach(x=>x.removeAttribute('data-fresuni-selected'));
  $$('[data-fresuni-editable]',root).forEach(x=>{x.removeAttribute('data-fresuni-editable');x.removeAttribute('contenteditable');x.removeAttribute('spellcheck');x.removeAttribute('draggable')});
  $$('[data-fresuni-drag]',root).forEach(x=>{x.removeAttribute('data-fresuni-drag');x.removeAttribute('draggable');});
