@@ -529,6 +529,7 @@ function setEditable(on){
   });
  }
  fsKeyboardUpdateTabStops(d,on);
+ fsEditorActionsUpdate();
  refreshHomeQuickButtons();window.FRESUNI_FLOW_EDITOR?.onMode?.();
 }
 
@@ -538,6 +539,7 @@ function setEditable(on){
 let fsKeyboardMode=false;
 function fsKeyboardFeedback(message){
  const target=$('#fs-keyboard-status');if(target)target.textContent=message;
+ const actions=$('#fs-element-actions-status');if(actions)actions.textContent=message;
 }
 function fsKeyboardTyping(target){
  return !!target?.closest?.('input,textarea,select,[contenteditable="true"],[contenteditable=""],[role="textbox"],[role="combobox"]');
@@ -569,11 +571,41 @@ function fsKeyboardFocus(event){
 }
 function fsKeyboardCandidate(){
  const el=state.selected,page=selectedPage();
- if(!el?.isConnected||!page?.contains(el))return null;
- if(el.closest('.breadcrumbs,.return-links,.fresuni-home-highlights,#fresuni-home-highlights,[data-fresuni-page-meta],.accessibility,.fresuni-quick-add'))return null;
- // Ao mover títulos de acordeões, o bloco completo acompanha o título.
+ if(!el?.isConnected)return null;
+ const shared=el.closest('.site-header,.site-footer');
+ if(!shared&&!page?.contains(el))return null;
+ if(el.closest('[data-editor-internal],.breadcrumbs,.return-links,[data-fresuni-page-meta],.access-panel,.accessibility,.header-actions,.mobile-toggle,.fresuni-quick-add'))return null;
+ if(shared){
+  // No rodapé e no menu, permitir selecionar cada texto, imagem ou link
+  // sem desmontar os contêineres responsáveis pela navegação.
+  if(el.matches('.site-header,.site-footer,.header-inner,.footer-inner,.main-nav,.header-actions,nav,.subnav,.nav-group'))return null;
+  if(el.closest('.site-header .main-nav')){
+   const nav=el.closest('.main-nav');let item=el;
+   while(item.parentElement&&item.parentElement!==nav)item=item.parentElement;
+   return item.parentElement===nav&&!item.matches('.main-nav,.header-actions')?item:null;
+  }
+  if(el.closest('.site-footer nav')){
+   const nav=el.closest('.site-footer nav');let item=el;
+   while(item.parentElement&&item.parentElement!==nav)item=item.parentElement;
+   return item.parentElement===nav?item:null;
+  }
+  if(el.closest('.site-footer .footer-inner')){
+   const parent=el.closest('.footer-inner');let item=el;
+   while(item.parentElement&&item.parentElement!==parent)item=item.parentElement;
+   return item.parentElement===parent&&!item.matches('nav')?item:null;
+  }
+  if(el.closest('.site-header .header-inner')){
+   const parent=el.closest('.header-inner');let item=el;
+   while(item.parentElement&&item.parentElement!==parent)item=item.parentElement;
+   return item.parentElement===parent&&!item.matches('.main-nav,.header-actions')?item:null;
+  }
+  if(el.parentElement===shared&&!el.matches('nav,.header-inner,.footer-inner'))return el;
+  return null;
+ }
+ if(el.closest('#fresuni-home-highlights,.fresuni-highlights-track,.fresuni-home-highlights'))return null;
+ // Mover a linha expansível ou o grupo da grade preserva texto e acessibilidade.
  if(el.closest('.home-values .value-summary'))return el.closest('.value-section');
- if(el.closest('.home-directory .directory-row')&&el.closest('h1,h2,h3,h4,h5,h6')&&!el.closest('.directory-links'))
+ if(el.closest('.home-directory .directory-row')&&el.matches('h1,h2,h3,h4,h5,h6')&&!el.closest('.directory-links'))
   return el.closest('.directory-row');
  if(el.closest('.directory-links')){
   const zone=el.closest('.directory-links');let node=el;
@@ -583,7 +615,7 @@ function fsKeyboardCandidate(){
  const block=el.closest('[data-fresuni-block],.fresuni-info-box,.fresuni-program-card,.content-card');
  if(block&&page.contains(block))return block;
  if(el.closest('.page-heading')&&el.matches('h1,h2,h3,h4,h5,h6'))return null;
- if(el.matches('.site-page,.home-wrap,.page-shell,.container,main,.home-values,.home-directory'))return null;
+ if(el.matches('.site-page,.home-wrap,.page-shell,.container,main,.home-values,.home-directory,.value-disclosure,.value-summary'))return null;
  return el;
 }
 function fsKeyboardMove(key,large=false){
@@ -617,20 +649,77 @@ function fsKeyboardMove(key,large=false){
  dirty();selectElement(el);positionResizeGrip();
  fsKeyboardFeedback('Elemento movido '+(forward?'para frente':'para trás')+' na ordem da área; sem sobreposição.');
 }
+function fsCannotDelete(block){
+ if(!block?.isConnected)return 'Selecione um elemento antes de excluir.';
+ const locked='.value-section,.directory-row,.page-heading,.home-opening,.home-values,.home-directory,.fresuni-program-card,.fresuni-programs,.site-page,.container,.page-shell,.fresuni-action-tile-grid,.fresuni-action-find,.site-header,.site-footer,.header-inner,.footer-inner,.main-nav,nav,.nav-group,.fresuni-highlights-track';
+ if(block.matches(locked)||block.matches('h1')||block.closest('[data-fresuni-page-meta]'))
+  return 'Este contêiner mantém a estrutura ou a navegação do site. Edite seus elementos internos, sem apagar a estrutura.';
+ if(block.closest('.site-header .main-nav')&&block.matches('.nav-root,.nav-group'))
+  return 'Edite ou remova o link principal na aba Cabeçalho e Rodapé para preservar o menu.';
+ if(block.matches('section,nav,div')&&block.id)
+  return 'Este elemento tem uma identificação usada por recursos do site. Edite seu conteúdo interno.';
+ if(block.matches('h1,h2,h3,h4,h5,h6')&&block.id){
+  const id=block.id,d=siteDoc();
+  if(d?.querySelector('[aria-labelledby~="'+CSS.escape(id)+'"],[aria-describedby~="'+CSS.escape(id)+'"]'))
+   return 'Este título identifica uma seção para leitores de tela. Edite o texto ou remova o bloco pelo gerenciador.';
+ }
+ return '';
+}
 function fsKeyboardDelete(){
  const block=fsKeyboardCandidate();
- if(!block){fsKeyboardFeedback('Selecione um bloco de conteúdo antes de excluir.');return;}
- const locked='.value-section,.directory-row,.page-heading,.home-opening,.home-values,.home-directory,.fresuni-program-card,.fresuni-programs,.site-page,.container,.page-shell,.fresuni-action-tile-grid,.fresuni-action-find';
- if(block.matches(locked)||block.matches('h1')||block.hasAttribute('data-fresuni-action-directory')||block.id&&block.matches('section,div,nav')){
-  fsKeyboardFeedback('Este é um bloco estrutural protegido. Edite seu conteúdo ou use o controle específico da página.');
-  return;
- }
+ const reason=fsCannotDelete(block);
+ if(reason){fsKeyboardFeedback(reason);notify(reason);return;}
  const label=(block.textContent||block.getAttribute('alt')||block.tagName).trim().replace(/\s+/g,' ').slice(0,95);
- if(!confirm('Excluir do RASCUNHO o elemento "'+label+'"?\n\nA alteração ainda poderá ser desfeita e não chegará ao site até a publicação.'))return;
+ if(!confirm('Excluir do RASCUNHO o elemento "'+label+'"?\n\nO site publicado não será alterado até você clicar em Publicar. Use Ctrl+Z para recuperar.'))return;
  snapshot();block.remove();clearSelection();dirty();
- fsKeyboardFeedback('Elemento excluído do rascunho. Use Ctrl+Z para desfazer.');
- notify('Elemento excluído somente do rascunho.');
+ fsKeyboardFeedback('Elemento excluído do rascunho. Use Ctrl+Z para recuperar.');
+ notify('Item excluído apenas no rascunho.');
 }
+function fsKeyboardDuplicate(){
+ const block=fsKeyboardCandidate();
+ const reason=fsCannotDelete(block);
+ if(reason){fsKeyboardFeedback('Este elemento estrutural não pode ser duplicado. Selecione o texto ou imagem dentro dele.');return;}
+ if(!block?.parentElement)return;
+ if(block.closest('.site-header .main-nav')||block.matches('.footer-logo,.brand,.fresuni-menu-logo')){
+  fsKeyboardFeedback('Para duplicar logomarcas ou itens de menu, use os controles próprios dessas áreas.');return;
+ }
+ snapshot();
+ const clone=block.cloneNode(true);
+ clone.removeAttribute('id');clone.removeAttribute('data-fresuni-selected');
+ clone.querySelectorAll('[id],[data-fresuni-selected]').forEach(el=>{el.removeAttribute('id');el.removeAttribute('data-fresuni-selected');});
+ clone.removeAttribute('data-fresuni-home-banner');
+ if(clone.hasAttribute('data-fresuni-block')&&clone.dataset.fresuniBlock==='banner')clone.removeAttribute('data-fresuni-home-banner');
+ block.after(clone);dirty();selectElement(clone);
+ fsKeyboardFeedback('Elemento duplicado no rascunho. Publique somente após revisar a nova cópia.');
+ notify('Elemento duplicado. Use Desfazer se não gostar.');
+}
+function fsEditorActionsUpdate(){
+ const enabled=state.editable&&!!state.selected?.isConnected;
+ const candidate=enabled?fsKeyboardCandidate():null;
+ const movable=!!candidate;
+ const deletion=movable&&!fsCannotDelete(candidate);
+ for(const id of ['fs-element-up','fs-element-down','fs-element-left','fs-element-right','fs-element-parent']){
+  const el=$('#'+id);if(el)el.disabled=!movable;
+ }
+ for(const id of ['fs-element-duplicate','fs-element-delete']){
+  const el=$('#'+id);if(el)el.disabled=!deletion;
+ }
+ const msg=$('#fs-element-actions-status');
+ if(msg&&!movable)msg.textContent=state.selected?
+  'Esta área preserva estrutura ou navegação. Selecione um elemento interno, como texto, imagem ou link.':
+  'Selecione um item na prévia para editar, mover, duplicar ou excluir.';
+}
+for(const [id,key] of [['fs-element-up','ArrowUp'],['fs-element-down','ArrowDown'],['fs-element-left','ArrowLeft'],['fs-element-right','ArrowRight']]){
+ $('#'+id)?.addEventListener('click',()=>fsKeyboardMove(key));
+}
+$('#fs-element-delete')?.addEventListener('click',()=>fsKeyboardDelete());
+$('#fs-element-duplicate')?.addEventListener('click',()=>fsKeyboardDuplicate());
+$('#fs-element-parent')?.addEventListener('click',()=>{
+ const block=fsKeyboardCandidate();
+ if(block&&block!==state.selected){selectElement(block);fsKeyboardFeedback('Caixa completa selecionada; agora você pode organizá-la.');}
+ else if(block)fsKeyboardFeedback('O item já está selecionado por completo.');
+ else fsKeyboardFeedback('Selecione primeiro um texto, imagem ou botão da página.');
+});
 function fsKeyboardHandler(event){
  if(!state.editable||app.hidden||event.defaultPrevented)return;
  const key=event.key,isArrow=['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(key);
@@ -704,7 +793,7 @@ function clickSite(e){
  if(el.closest('[data-fresuni-block="shape"]')&&!el.isContentEditable)el=el.closest('[data-fresuni-block="shape"]');
  selectElement(el);
 }
-function clearSelection(){window.FRESUNI_FLOW_EDITOR?.onClear?.();$('#fs-info-box-controls')?.setAttribute('hidden','');savedTextRange=null;hideFloatingToolbar();const d=siteDoc();if(d)$$('[data-fresuni-selected]',d).forEach(x=>x.removeAttribute('data-fresuni-selected'));state.selected=null;hideResizeGrip();$('#selection-name').textContent='Selecione texto, imagem, cabeçalho ou rodapé na prévia.';$('#selection-props').hidden=true;const media=$('#fs-selected-media');if(media)media.hidden=true;const help=$('#selection-instructions');if(help)help.hidden=false;}
+function clearSelection(){window.FRESUNI_FLOW_EDITOR?.onClear?.();$('#fs-info-box-controls')?.setAttribute('hidden','');savedTextRange=null;hideFloatingToolbar();const d=siteDoc();if(d)$$('[data-fresuni-selected]',d).forEach(x=>x.removeAttribute('data-fresuni-selected'));state.selected=null;hideResizeGrip();$('#selection-name').textContent='Selecione texto, imagem, cabeçalho ou rodapé na prévia.';$('#selection-props').hidden=true;const media=$('#fs-selected-media');if(media)media.hidden=true;const help=$('#selection-instructions');if(help)help.hidden=false;fsEditorActionsUpdate();}
 function selectElement(el){if(state.selected===el)return;clearSelection();state.selected=el;el.dataset.fresuniSelected='';const blk=el.closest('[data-fresuni-block]');if(blk){blk.draggable=true;blk.dataset.fresuniDrag='';}
  $('#selection-name').textContent=(el.tagName.toLowerCase())+' · '+(el.textContent.trim().slice(0,48)||'elemento visual');$('#selection-props').hidden=false;
  updateTextInspector(el);
@@ -725,6 +814,7 @@ function selectElement(el){if(state.selected===el)return;clearSelection();state.
  const gridItem=fsWholeGridItem(el);
  if(gridItem&&state.editable){gridItem.draggable=true;gridItem.dataset.fresuniDrag='';}
  positionResizeGrip();positionFloatingToolbar();window.FRESUNI_FLOW_EDITOR?.onSelect?.(el);
+ fsEditorActionsUpdate();
 }
 let resizeGrip=null,resizeLabel=null,resizing=false,resizeRaf=0;
 function positionResizeGrip(){if(!resizeGrip||!state.selected||!state.selected.isConnected||!state.editable||!state.selected.closest('.site-page:not([hidden]),.site-header,.site-footer')){hideResizeGrip();return;}
