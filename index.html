@@ -1146,6 +1146,7 @@ html.simple-mode *,html.simple-mode *::before,html.simple-mode *::after{
   const $$=(s,ctx=document)=>Array.from(ctx.querySelectorAll(s));
   const storageKey='fresuni-acessibilidade-v1';
   const defaults={font:1,contrast:false,motion:false,theme:false,simple:false,carouselAuto:true,carouselMinDuration:0};
+  let carouselPausedByFocus=false;
   let settings={...defaults};
   try{settings={...settings,...JSON.parse(localStorage.getItem(storageKey)||'{}')};}catch(_){/* navegação privada ou armazenamento indisponível */}
   settings.font=Math.min(1.7,Math.max(.85,Number(settings.font)||1));
@@ -1161,7 +1162,12 @@ html.simple-mode *,html.simple-mode *::before,html.simple-mode *::after{
     if(m){m.setAttribute('aria-pressed',String(!!settings.motion));m.textContent=(settings.motion?'Restaurar':'Reduzir')+' animações';}
     if(t){t.setAttribute('aria-pressed',String(!!settings.theme));t.textContent=settings.theme?'Ativar modo claro':'Ativar modo escuro';}
     if(si){si.setAttribute('aria-pressed',String(!!settings.simple));si.textContent=settings.simple?'Desativar navegação simplificada e ampliada':'Ativar navegação simplificada e ampliada';}
-    if(ca){ca.setAttribute('aria-pressed',String(settings.carouselAuto===false));ca.textContent=settings.carouselAuto===false?'Ativar avanço automático dos destaques':'Desativar avanço automático dos destaques';}
+    if(ca){
+      ca.setAttribute('aria-pressed',String(settings.carouselAuto===false||carouselPausedByFocus));
+      ca.textContent=(settings.carouselAuto!==false&&carouselPausedByFocus)
+        ?'Retomar avanço automático dos destaques'
+        :settings.carouselAuto===false?'Ativar avanço automático dos destaques':'Desativar avanço automático dos destaques';
+    }
     const reading=$('[data-carousel-min-duration]');
     if(reading)reading.value=['0','20','30','45'].includes(String(settings.carouselMinDuration))?String(settings.carouselMinDuration):'0';
     document.dispatchEvent(new CustomEvent('fresuni:accessibility-updated'));
@@ -1173,7 +1179,18 @@ html.simple-mode *,html.simple-mode *::before,html.simple-mode *::after{
   $('[data-theme]')?.addEventListener('click',()=>{settings.theme=!settings.theme;save();});
   $('[data-simple]')?.addEventListener('click',()=>{settings.simple=!settings.simple;save();refreshReveal();});
   $('[data-motion]')?.addEventListener('click',()=>{settings.motion=!settings.motion;save();refreshReveal();});
-  $('[data-carousel-auto-off]')?.addEventListener('click',()=>{settings.carouselAuto=settings.carouselAuto===false;save();if(settings.carouselAuto)document.dispatchEvent(new CustomEvent('fresuni:carousel-restart'));});
+  $('[data-carousel-auto-off]')?.addEventListener('click',()=>{
+    if(carouselPausedByFocus&&settings.carouselAuto!==false){
+     carouselPausedByFocus=false;save();
+     document.dispatchEvent(new CustomEvent('fresuni:carousel-restart'));
+     return;
+    }
+    settings.carouselAuto=settings.carouselAuto===false;
+    carouselPausedByFocus=false;
+    save();
+    if(settings.carouselAuto)document.dispatchEvent(new CustomEvent('fresuni:carousel-restart'));
+  });
+  document.addEventListener('fresuni:carousel-paused-by-focus',()=>{carouselPausedByFocus=true;applySettings();});
   $('[data-carousel-min-duration]')?.addEventListener('change',event=>{settings.carouselMinDuration=Number(event.target.value)||0;save();});
   $('[data-reset]')?.addEventListener('click',()=>{settings={...defaults};save();refreshReveal();});
   applySettings();
@@ -1465,7 +1482,12 @@ html.simple-mode *,html.simple-mode *::before,html.simple-mode *::after{
   // Hover permite ler com calma; foco do teclado interrompe até reativação explícita.
   track?.addEventListener('mouseenter',()=>{hovered=true;updatePlayback();});
   track?.addEventListener('mouseleave',()=>{hovered=false;updatePlayback();});
-  carousel.addEventListener('focusin',()=>{keyboardStopped=true;sync();});
+  carousel.addEventListener('focusin',()=>{
+   if(!keyboardStopped){
+    keyboardStopped=true;sync();
+    document.dispatchEvent(new CustomEvent('fresuni:carousel-paused-by-focus'));
+   }
+  });
   document.addEventListener('fresuni:carousel-restart',()=>{keyboardStopped=false;sync(true);});
   document.addEventListener('fresuni:accessibility-updated',()=>{if(ready)sync(true);});
   reduced?.addEventListener?.('change',()=>sync(true));
