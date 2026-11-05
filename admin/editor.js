@@ -1448,6 +1448,15 @@ function fsValidateMediaPublish(html){
   if(!href||!fsMediaLinkAllowed(href)||(href.startsWith('#/')&&!doc.querySelector('.site-page[data-route="'+href.slice(1)+'"]')))
    throw Error('Banner do carrossel apontando para endereço interno ou externo inválido.');
  }
+ const carouselElement=doc.getElementById('fresuni-home-highlights');
+ const defaultSeconds=carouselElement?.dataset.fresuniDefaultDuration;
+ if(defaultSeconds&&fsCarouselDurationValid(defaultSeconds)===null)
+  throw Error('Tempo padrão inválido: escolha de 10 a 60 segundos.');
+ for(const slide of carouselElement?.querySelectorAll('.fresuni-highlight[data-fresuni-slide]')||[]){
+  const seconds=slide.dataset.fresuniSlideDuration;
+  if(seconds&&fsCarouselDurationValid(seconds)===null)
+   throw Error('Duração inválida no destaque '+(slide.dataset.fresuniSlide||'sem nome')+'.');
+ }
  const fullSlides=doc.querySelectorAll('#fresuni-home-highlights .fresuni-highlights-track > .fresuni-highlight');
  if(fullSlides.length>15)throw Error('O carrossel aceita até 15 slides para manter a navegação acessível.');
  
@@ -1601,7 +1610,7 @@ function fsCarouselSlideLabel(slide,index){
  const name=String(title||slide.dataset.fresuniSlide||'Destaque').slice(0,64);
  return (index+1)+' · '+name+(imageOnly?' (banner inteiro)':' (texto + imagem)');
 }
-function fsCarouselSyncSelectors(preferredShowcase='',preferredBanner=''){
+function fsCarouselSyncSelectors(preferredShowcase='',preferredBanner='',preferredTiming=''){
  const slides=fsCarouselSlides();
  const textSelect=$('#fs-home-showcase-select'),bannerSelect=$('#fs-carousel-banner-choice');
  if(textSelect){
@@ -1627,7 +1636,83 @@ function fsCarouselSyncSelectors(preferredShowcase='',preferredBanner=''){
   });
   bannerSelect.value=[...bannerSelect.options].some(op=>op.value===chosen)?chosen:'new';
  }
+ const timingSelect=$('#fs-carousel-timing-select');
+ if(timingSelect){
+  const chosen=preferredTiming||timingSelect.value||'acoes';
+  timingSelect.replaceChildren();
+  slides.forEach((slide,index)=>{
+   const option=document.createElement('option');
+   option.value=slide.dataset.fresuniSlide;
+   option.textContent=fsCarouselSlideLabel(slide,index);
+   timingSelect.append(option);
+  });
+  if([...timingSelect.options].some(op=>op.value===chosen))timingSelect.value=chosen;
+  else if(timingSelect.options.length)timingSelect.selectedIndex=0;
+ }
 }
+
+/* Tempo padrão e tempo específico por slide, sem reconstruir carrossel nem
+   transformar formatos já publicados. */
+function fsCarouselDurationValid(value){
+ const s=String(value??'').trim();
+ return /^\d{2}$/.test(s)&&Number(s)>=10&&Number(s)<=60?Number(s):null;
+}
+function fsCarouselTimingStatus(message){
+ const el=$('#fs-carousel-timing-status');
+ if(el)el.textContent=message;
+}
+function fsCarouselTimingRead(){
+ const carousel=pageFor('/')?.querySelector('#fresuni-home-highlights');
+ const slides=fsCarouselSlides(),select=$('#fs-carousel-timing-select');
+ if(!carousel||!select)return;
+ const siteSeconds=fsCarouselDurationValid(carousel.dataset.fresuniDefaultDuration)||15;
+ $('#fs-carousel-default-duration').value=String(siteSeconds);
+ const slide=slides.find(x=>x.dataset.fresuniSlide===select.value)||slides[0];
+ if(!slide){
+  fsCarouselTimingStatus('Não há destaques carregados. Abra a página inicial no editor.');return;
+ }
+ const own=fsCarouselDurationValid(slide.dataset.fresuniSlideDuration);
+ $('#fs-carousel-timing-duration').value=own?String(own):'';
+ fsCarouselTimingStatus(own
+  ?'Este destaque está configurado para '+own+' segundos. Publicar disponibilizará o tempo aos visitantes.'
+  :'Este destaque segue o tempo padrão de '+siteSeconds+' segundos. Você pode definir um tempo exclusivo.');
+}
+$('#fs-carousel-timing-select')?.addEventListener('change',fsCarouselTimingRead);
+frame.addEventListener('load',fsCarouselTimingRead);
+$('#fs-carousel-default-save')?.addEventListener('click',()=>{
+ if(!state.editable){fsCarouselTimingStatus('Ative o modo de edição antes de salvar.');return;}
+ const value=fsCarouselDurationValid($('#fs-carousel-default-duration').value);
+ if(!value){fsCarouselTimingStatus('Informe um número inteiro de 10 a 60 segundos.');return;}
+ const carousel=pageFor('/')?.querySelector('#fresuni-home-highlights');
+ if(!carousel){fsCarouselTimingStatus('Carregue a página inicial do site no editor.');return;}
+ snapshot();
+ if(value===15)delete carousel.dataset.fresuniDefaultDuration;
+ else carousel.dataset.fresuniDefaultDuration=String(value);
+ dirty();
+ fsCarouselTimingStatus('Tempo padrão salvo no rascunho: '+value+' segundos. Clique em Publicar para aplicar.');
+ notify('Tempo padrão dos destaques salvo no rascunho.');
+});
+$('#fs-carousel-timing-save')?.addEventListener('click',()=>{
+ if(!state.editable){fsCarouselTimingStatus('Ative o modo de edição antes de salvar.');return;}
+ const id=$('#fs-carousel-timing-select')?.value;
+ const slide=fsCarouselSlides().find(x=>x.dataset.fresuniSlide===id);
+ if(!slide){fsCarouselTimingStatus('Escolha um destaque existente.');return;}
+ const raw=$('#fs-carousel-timing-duration').value.trim();
+ const value=raw===''?null:fsCarouselDurationValid(raw);
+ if(raw!==''&&!value){fsCarouselTimingStatus('O tempo individual deve ser de 10 a 60 segundos.');return;}
+ snapshot();
+ if(value)slide.dataset.fresuniSlideDuration=String(value);
+ else delete slide.dataset.fresuniSlideDuration;
+ dirty();
+ fsCarouselTimingStatus(value
+  ?'Tempo deste destaque salvo: '+value+' segundos no rascunho. Publique quando quiser.'
+  :'Este destaque voltou a seguir o tempo padrão. Publique quando quiser.');
+ notify('Duração do destaque salva no rascunho.');
+});
+$('#fs-carousel-timing-reset')?.addEventListener('click',()=>{
+ $('#fs-carousel-timing-duration').value='';
+ $('#fs-carousel-timing-save').click();
+});
 
 /* Aparência independente por slide: valores seguros, persistidos no próprio HTML.
    O visual original continua disponível sem sobrescrever as regras gerais do site. */
