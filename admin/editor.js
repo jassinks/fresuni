@@ -1446,8 +1446,8 @@ async function fsCompressMedia(file,kind){
    im.src=url;
   });
   if(!image.naturalWidth||!image.naturalHeight||image.naturalWidth*image.naturalHeight>55000000)throw Error('Resolução inválida ou alta demais.');
-  const target=kind==='banner'?300*1024:200*1024;
-  const maxDimension=kind==='banner'?1920:1600;
+  const target=kind==='carousel-banner'?500*1024:kind==='banner'?300*1024:200*1024;
+  const maxDimension=kind==='carousel-banner'?2048:kind==='banner'?1920:1600;
   for(const scale of [1,.82,.68,.54,.42,.32]){
    const factor=Math.min(1,maxDimension/Math.max(image.naturalWidth,image.naturalHeight))*scale;
    const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.naturalWidth*factor));
@@ -1781,7 +1781,7 @@ $('#fs-carousel-banner-save')?.addEventListener('click',async()=>{
  fsCarouselBannerBusy=true;fsCarouselBannerStatus('Preparando o slide e verificando a imagem…');
  try{
   const existingSrc=current?.querySelector('.fresuni-highlight-full-link img')?.getAttribute('src')||'';
-  const uploaded=file?await fsCompressMedia(file,'banner'):null;
+  const uploaded=file?await fsCompressMedia(file,'carousel-banner'):null;
   const src=uploaded?.src||externalSrc||existingSrc;
   if(!fsMediaSrcAllowed(src)||(/^(?!data:)/i.test(src)&&!fsMediaLinkAllowed(src)))
    throw Error('Selecione uma imagem JPG, PNG, WebP ou endereço HTTPS válido.');
