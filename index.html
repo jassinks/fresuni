@@ -563,6 +563,39 @@ html.simple-mode *,html.simple-mode *::before,html.simple-mode *::after{
 }
 @media print{.site-footer{background:#FFF;color:#000}}
 
+</style><style id="fresuni-carousel-fullslide-style-2026">
+/* Um slide do carrossel pode ser banner integral, sem cobrir ou perder o conteúdo
+   do formato texto + imagem, que permanece restaurável pelo Editor. */
+#fresuni-home-highlights .fresuni-highlight[data-fresuni-carousel-mode="full-image"]{
+ display:block;min-height:0;background:transparent;overflow:hidden;
+}
+#fresuni-home-highlights .fresuni-highlight[data-fresuni-carousel-mode="full-image"]>.fresuni-highlight-content,
+#fresuni-home-highlights .fresuni-highlight[data-fresuni-carousel-mode="full-image"]>.fresuni-highlight-picture{
+ display:none!important;
+}
+#fresuni-home-highlights .fresuni-highlight-full-link{
+ display:block;width:100%;max-width:100%;overflow:hidden;
+ background:transparent;text-decoration:none;border-radius:10px;
+}
+#fresuni-home-highlights .fresuni-highlight-full-link img{
+ display:block;width:100%;height:auto;max-height:620px;
+ object-fit:contain;object-position:center;
+ border:0;border-radius:10px;box-shadow:none;
+}
+#fresuni-home-highlights .fresuni-highlight-full-link:focus-visible{
+ outline:3px solid #214ECF;outline-offset:4px;
+}
+@media(max-width:620px){
+ #fresuni-home-highlights .fresuni-highlight-full-link img{
+  max-height:70vh;height:auto;width:100%;object-fit:contain;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ #fresuni-home-highlights .fresuni-highlight-full-link,
+ #fresuni-home-highlights .fresuni-highlight-full-link img{
+  animation:none!important;transition:none!important;
+ }
+}
 </style><style id="fresuni-home-banner-style-2026">
 /* Banner completo em imagem: sem corte, sem sobreposição e sem textos visuais. */
 #fresuni-home-banner-list:empty{display:none}
