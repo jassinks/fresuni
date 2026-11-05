@@ -6,7 +6,7 @@
 <title>Editor de conteúdo — FRESUNI Social</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&amp;family=Merriweather:ital,wght@0,300..900;1,300..900&amp;display=swap" rel="stylesheet">
-<link rel="stylesheet" href="./editor.css?v=20261104r7">
+<link rel="stylesheet" href="./editor.css?v=20261105r1">
 </head>
 <body>
 <div id="login-screen" class="login-screen">
@@ -78,6 +78,33 @@
           <p class="hint">Você pode duplicar, redimensionar ou mover os itens existentes com as setas ← →. O site só muda para os visitantes depois de publicar.</p>
         </section>
 
+        <details id="fs-image-alt-manager" class="home-quick-tools fs-home-showcase-editor fs-alt-manager">
+          <summary>♿ Acessibilidade das imagens <span class="fs-alt-summary-note">Revisar os textos alternativos</span></summary>
+          <div class="fs-alt-panel-body">
+            <p class="hint">Gerencie as imagens de todas as páginas, do cabeçalho e do rodapé. O texto alternativo é lido por tecnologias assistivas e não aparece sobre a imagem. As mudanças só vão ao público quando você clicar em Publicar.</p>
+            <p class="hint" id="fs-alt-overview" role="status" aria-live="polite">Abra esta ferramenta para verificar as imagens existentes.</p>
+            <label for="fs-alt-image-select">Qual imagem deseja revisar?</label>
+            <select id="fs-alt-image-select" aria-describedby="fs-alt-overview"></select>
+            <div class="fs-alt-image-preview"><img id="fs-alt-preview" alt="" loading="lazy" decoding="async"></div>
+            <p class="hint" id="fs-alt-location">Selecione uma imagem para ver seu contexto.</p>
+            <label for="fs-alt-kind">Função da imagem</label>
+            <select id="fs-alt-kind">
+              <option value="informative">Informativa — fotografia ou informação visual</option>
+              <option value="text">Cartaz com texto — reproduzir a informação essencial</option>
+              <option value="functional">Funcional — imagem que leva a uma ação ou página</option>
+              <option value="decorative">Decorativa ou repetida — ignorar na leitura</option>
+            </select>
+            <label for="fs-alt-text">Texto alternativo</label>
+            <textarea id="fs-alt-text" rows="3" maxlength="1000" placeholder="Descreva o que a pessoa precisa saber ao não ver a imagem."></textarea>
+            <p class="hint" id="fs-alt-guidance">Evite começar por “Imagem de”. Diga o que importa no contexto, de forma objetiva.</p>
+            <div class="fs-home-showcase-buttons">
+              <button id="fs-alt-save" class="primary" type="button">Salvar descrição no rascunho</button>
+              <button id="fs-alt-refresh" class="btn" type="button">Rever lista de imagens</button>
+            </div>
+            <p id="fs-alt-status" class="hint" role="status" aria-live="polite">As descrições podem ser modificadas sem substituir ou reenviar os arquivos.</p>
+            <p class="hint">Orientação oficial: <a href="https://www.w3.org/WAI/tutorials/images/" target="_blank" rel="noopener noreferrer">Tutorial de imagens do W3C/WAI</a>. Gráficos complexos também precisam de uma explicação completa no conteúdo da página.</p>
+          </div>
+        </details>
         <section id="fs-carousel-timing-editor" class="home-quick-tools fs-home-showcase-editor fs-carousel-timing-editor" aria-labelledby="fs-carousel-timing-title">
           <h3 id="fs-carousel-timing-title">⏱ Tempo de leitura dos destaques</h3>
           <p class="hint">Defina quanto tempo cada banner fica visível. Para leitura acessível, recomendamos 15 a 20 segundos; textos longos podem precisar de 25 a 30 segundos. Os visitantes também podem solicitar mais tempo na Acessibilidade.</p>
@@ -468,5 +495,5 @@
  </form></dialog>
  <input id="upload-image" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden><input id="upload-shared-logo" type="file" accept="image/png,image/jpeg,image/webp" hidden>
 </div>
-<script src="./config.js?v=20261103r21"></script><script src="./editor.js?v=20261104r7" defer></script><script src="./flow-editor.js?v=20261104r2" defer></script>
+<script src="./config.js?v=20261103r21"></script><script src="./editor.js?v=20261105r1" defer></script><script src="./flow-editor.js?v=20261104r2" defer></script>
 </body></html>
