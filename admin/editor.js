@@ -1000,6 +1000,19 @@ function fsPrepareSafePublish(html){
   if(motionButton)motionButton.after(accessButton.cloneNode(true));
   else draftAccessPanel.append(accessButton.cloneNode(true));
  }
+ // O pictograma de acessibilidade da identidade FRESUNI deve permanecer
+ // intacto ao publicar rascunhos antigos, sem substituir texto, menu ou funções.
+ for(const selector of ['#accessibility-menu summary .fresuni-access-pictogram',
+                       '.floating-access .fresuni-access-pictogram']){
+  const canonical=published.querySelector(selector);
+  if(!canonical)continue;
+  const isHeader=selector.startsWith('#accessibility-menu');
+  const parent=next.querySelector(isHeader?'#accessibility-menu summary':'.floating-access');
+  if(!parent||parent.querySelector('.fresuni-access-pictogram'))continue;
+  const legacy=parent.querySelector('svg,img');
+  if(legacy)legacy.replaceWith(canonical.cloneNode(true));
+  else parent.prepend(canonical.cloneNode(true));
+ }
  // Preservar escolha de tempo de leitura mesmo em backups anteriores ao recurso.
  const publishedReading=published.querySelector('#accessibility-menu .fresuni-carousel-reading-speed');
  if(publishedReading&&draftAccessPanel&&!draftAccessPanel.querySelector('[data-carousel-min-duration]')){
