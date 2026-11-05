@@ -369,6 +369,6 @@
 .fs-showcase-bg-preview{height:66px;border-radius:9px;margin:12px 0 4px;border:1px solid #d3d9e7;background:linear-gradient(110deg,#214ECF,#642382)}
 .fs-showcase-position-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .fs-showcase-position-grid output{font-size:.8rem;color:#33476b}
-.fs-showcase-image-frame{width:100%;aspect-ratio:16/10;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:9px;background:#eaf0fc;border:1px solid #c8d4ed;margin:10px 0}
+.fs-showcase-image-frame{width:100%;aspect-ratio:16/10;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:9px;background-color:#fff;background-image:linear-gradient(45deg,#dbe1ec 25%,transparent 25%),linear-gradient(-45deg,#dbe1ec 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#dbe1ec 75%),linear-gradient(-45deg,transparent 75%,#dbe1ec 75%);background-size:20px 20px;background-position:0 0,0 10px,10px -10px,-10px 0;border:1px solid #c8d4ed;margin:10px 0}
 .fs-showcase-image-frame .fs-home-showcase-preview{display:block;width:100%;height:100%;max-width:none;max-height:none;margin:0;object-fit:contain;object-position:center;background:transparent;border-radius:0}
 @media(max-width:420px){.fs-showcase-color-grid,.fs-showcase-position-grid{grid-template-columns:1fr}}
