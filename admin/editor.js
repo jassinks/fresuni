@@ -1009,6 +1009,34 @@ function fsPrepareSafePublish(html){
   const button=next.querySelector('#accessibility-menu [data-font="'+key+'"]');
   if(button?.getAttribute('aria-label')===oldLabel)button.setAttribute('aria-label',newLabel);
  }
+ // Recuperar classificação de imagens de backups antigos sem sobrescrever
+ // descrições novas escolhidas pelo administrador. Só migra quando a imagem
+ // permanece exatamente a mesma e o alt do backup é reconhecidamente legado.
+ const fsImageScope=img=>{
+  if(img.closest('.site-header'))return 'cabecalho';
+  if(img.closest('.site-footer'))return 'rodape';
+  if(img.closest('.floating-access'))return 'flutuante';
+  const route=img.closest('.site-page[data-route]')?.dataset.route||'';
+  const slide=img.closest('[data-fresuni-slide]')?.dataset.fresuniSlide||'';
+  return route+'|'+slide;
+ };
+ const fsOriginalImages=[...published.querySelectorAll('.site-header img, main .site-page img, .site-footer img, .floating-access img')];
+ for(const draftImg of next.querySelectorAll('.site-header img, main .site-page img, .site-footer img, .floating-access img')){
+  if(draftImg.hasAttribute('data-fresuni-alt-kind'))continue;
+  const original=fsOriginalImages.find(img=>
+   fsImageScope(img)===fsImageScope(draftImg)&&
+   img.getAttribute('src')===draftImg.getAttribute('src'));
+  if(!original?.hasAttribute('data-fresuni-alt-kind'))continue;
+  const publishedAlt=original.getAttribute('alt');
+  const draftAlt=draftImg.getAttribute('alt');
+  if(draftAlt===publishedAlt){
+   draftImg.dataset.fresuniAltKind=original.dataset.fresuniAltKind;
+  }else if(publishedAlt===''&&draftAlt==='Marca institucional do FRESUNI Social'&&
+           original.dataset.fresuniAltKind==='decorative'){
+   draftImg.setAttribute('alt','');
+   draftImg.dataset.fresuniAltKind='decorative';
+  }
+ }
  // Rascunhos antigos tinham script de acessibilidade sem ID: substituí-lo em
  // vez de instalar uma segunda cópia que duplicaria os eventos dos botões.
  const freshAccessibility=published.getElementById('fresuni-accessibility-runtime-2026');
