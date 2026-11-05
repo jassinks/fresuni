@@ -973,11 +973,38 @@ function fsPrepareSafePublish(html){
  const missingSlides=originalSlides.filter(id=>!next.querySelector('#fresuni-home-highlights [data-fresuni-slide="'+id+'"]'));
  if(missingSlides.length)throw Error('Publicação bloqueada: slides originais foram removidos ('+missingSlides.join(', ')+'). Restaure-os antes de publicar.');
  // Recursos técnicos injetados por publicações anteriores não devem sumir ao editar textos.
+ // Rascunhos antigos tinham script de acessibilidade sem ID: substituí-lo em
+ // vez de instalar uma segunda cópia que duplicaria os eventos dos botões.
+ const freshAccessibility=published.getElementById('fresuni-accessibility-runtime-2026');
+ if(freshAccessibility){
+  const legacy=[...next.querySelectorAll('script')].filter(el=>
+   el.id!=='fresuni-accessibility-runtime-2026'&&
+   el.textContent.includes("const storageKey='fresuni-acessibilidade-v1'"));
+  const current=next.getElementById('fresuni-accessibility-runtime-2026');
+  if(!current&&legacy.length)legacy.shift().replaceWith(freshAccessibility.cloneNode(true));
+  legacy.forEach(el=>el.remove());
+ }
+ // Um rascunho de antes da barra mantém os slides e recebe apenas o indicador.
+ const publishedProgress=published.querySelector('#fresuni-home-highlights [data-fresuni-slide-timeline]');
+ const draftHighlights=next.getElementById('fresuni-home-highlights');
+ if(publishedProgress&&draftHighlights&&!draftHighlights.querySelector('[data-fresuni-slide-timeline]')){
+  const controls=draftHighlights.querySelector('.fresuni-highlights-controls');
+  if(controls)controls.before(publishedProgress.cloneNode(true));
+ }
+ // O antigo botão ao lado de Próximo foi substituído pelo menu de acessibilidade.
+ draftHighlights?.querySelectorAll('[data-fresuni-slide-autoplay]').forEach(el=>el.remove());
+ const accessButton=published.querySelector('#accessibility-menu [data-carousel-auto-off]');
+ const draftAccessPanel=next.querySelector('#accessibility-menu .access-panel');
+ if(accessButton&&draftAccessPanel&&!draftAccessPanel.querySelector('[data-carousel-auto-off]')){
+  const motionButton=draftAccessPanel.querySelector('[data-motion]');
+  if(motionButton)motionButton.after(accessButton.cloneNode(true));
+  else draftAccessPanel.append(accessButton.cloneNode(true));
+ }
  const requiredAssets=['fresuni-motion-2026','fresuni-motion-runtime-2026',
   'fresuni-interactive-effects-2026','fresuni-interactive-effects-runtime-2026',
   'fresuni-flow-grid-style','fresuni-page-meta-style','fresuni-archive-styles',
   'fresuni-layout-polish-v2','fresuni-custom-box-style',
-  'fresuni-mobile-pdf-and-navigation-2026','fresuni-media-styles','fresuni-media-runtime','fresuni-program-integration-style','fresuni-ux-navigation-2026','fresuni-ux-navigation-runtime','fresuni-blue-brand-2026','fresuni-home-banner-style-2026','fresuni-logo-layout-style-2026','fresuni-carousel-fullslide-style-2026'];
+  'fresuni-mobile-pdf-and-navigation-2026','fresuni-media-styles','fresuni-media-runtime','fresuni-program-integration-style','fresuni-ux-navigation-2026','fresuni-ux-navigation-runtime','fresuni-accessibility-runtime-2026','fresuni-blue-brand-2026','fresuni-home-banner-style-2026','fresuni-logo-layout-style-2026','fresuni-carousel-fullslide-style-2026'];
  for(const id of requiredAssets){
   const source=published.getElementById(id);
   if(!source)continue;
@@ -985,7 +1012,9 @@ function fsPrepareSafePublish(html){
   if(existing){
    // A identidade técnica azul de 03/11 é restaurada em rascunhos antigos.
    // Mudanças deliberadas nas cores do editor continuam no tema personalizado.
-   if(id==='fresuni-blue-brand-2026'&&existing.textContent!==source.textContent)
+   // Atualizar componentes funcionais já corrigidos, mesmo em rascunhos antigos.
+   // Não interfere no conteúdo dos slides nem nas cores escolhidas pelo usuário.
+   if(['fresuni-blue-brand-2026','fresuni-ux-navigation-2026','fresuni-ux-navigation-runtime','fresuni-accessibility-runtime-2026'].includes(id)&&existing.textContent!==source.textContent)
     existing.textContent=source.textContent;
    continue;
   }
