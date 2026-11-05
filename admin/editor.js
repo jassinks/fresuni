@@ -1021,6 +1021,11 @@ function fsPrepareSafePublish(html){
   return route+'|'+slide;
  };
  const fsOriginalImages=[...published.querySelectorAll('.site-header img, main .site-page img, .site-footer img, .floating-access img')];
+ // Imagens que são o único conteúdo do link usam o próprio alt como nome
+ // acessível. Rótulos antigos poderiam encobrir textos essenciais de banners.
+ for(const img of next.querySelectorAll('a.fresuni-highlight-full-link img,a.whatsapp-banner img,.fresuni-banner-image a img')){
+  if(img.getAttribute('alt')?.trim())img.closest('a')?.removeAttribute('aria-label');
+ }
  for(const draftImg of next.querySelectorAll('.site-header img, main .site-page img, .site-footer img, .floating-access img')){
   if(draftImg.hasAttribute('data-fresuni-alt-kind'))continue;
   const original=fsOriginalImages.find(img=>
@@ -1035,6 +1040,11 @@ function fsPrepareSafePublish(html){
            original.dataset.fresuniAltKind==='decorative'){
    draftImg.setAttribute('alt','');
    draftImg.dataset.fresuniAltKind='decorative';
+  }else if(draftAlt==='Projetos e Ações'&&
+           publishedAlt?.startsWith('Participar e incluir. Conheça os projetos')&&
+           original.dataset.fresuniAltKind==='text'){
+   draftImg.setAttribute('alt',publishedAlt);
+   draftImg.dataset.fresuniAltKind='text';
   }
  }
  // Rascunhos antigos tinham script de acessibilidade sem ID: substituí-lo em
@@ -1832,6 +1842,11 @@ $('#fs-alt-save')?.addEventListener('click',()=>{
  snapshot();
  image.setAttribute('alt',alt);
  image.dataset.fresuniAltKind=type;
+ // Um aria-label no link de uma imagem sozinha ocultaria o conteúdo do alt
+ // para leitores de tela. Conservar o nome por meio do próprio atributo alt.
+ if(alt&&image.closest('a.fresuni-highlight-full-link,a.whatsapp-banner,.fresuni-banner-image a')){
+  image.closest('a')?.removeAttribute('aria-label');
+ }
  if(type==='decorative')image.removeAttribute('title');
  fsAltRefresh(index);
  fsAltStatus(type==='decorative'
@@ -2314,7 +2329,7 @@ $('#fs-carousel-banner-save')?.addEventListener('click',async()=>{
   clone.querySelector('.fresuni-highlight-full-link')?.remove();
   const link=siteDoc().createElement('a');
   link.className='fresuni-highlight-full-link';link.href=href;
-  link.setAttribute('aria-label','Acessar: '+alt+(href.startsWith('https://')?' (abre em nova aba)':''));
+  // O próprio alt nomeia o link de imagem, sem aria-label sobrepondo as palavras do banner.
   if(href.startsWith('https://')){link.target='_blank';link.rel='noopener noreferrer';}
   const img=siteDoc().createElement('img');
   img.src=src;img.alt=alt;img.dataset.fresuniAltKind='functional';img.loading='lazy';img.decoding='async';
@@ -2473,7 +2488,7 @@ $('#fs-home-banner-save')?.addEventListener('click',async()=>{
   const dimensions=width&&height?' width="'+width+'" height="'+height+'"':'';
   const external=/^https:\/\//i.test(href);
   const img='<img src="'+escapeHTML(src)+'" alt="'+escapeHTML(alt)+'" data-fresuni-alt-kind="functional"'+dimensions+' decoding="async" loading="lazy">';
-  const anchor='<a href="'+escapeHTML(href)+'" aria-label="'+escapeHTML(alt+(external?' (abre em nova aba)':''))+'"'+
+  const anchor='<a href="'+escapeHTML(href)+'"'+
    (external?' target="_blank" rel="noopener noreferrer"':'')+'>'+img+'</a>';
   const markup='<section class="fresuni-site-banner fresuni-home-banner" data-fresuni-block="banner" data-fresuni-home-banner="'+
    escapeHTML(id)+'"><div class="fresuni-banner-image">'+anchor+'</div></section>';
@@ -2933,6 +2948,8 @@ $('#element-alt').addEventListener('change',e=>{
   return;
  }
  snapshot();im.setAttribute('alt',value);
+ if(value&&im.closest('a.fresuni-highlight-full-link,a.whatsapp-banner,.fresuni-banner-image a'))
+  im.closest('a')?.removeAttribute('aria-label');
  if(value&&im.dataset.fresuniAltKind==='decorative')im.dataset.fresuniAltKind='informative';
  if($('#fs-image-alt-manager')?.open)fsAltRefresh();
 });
