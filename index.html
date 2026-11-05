@@ -363,6 +363,11 @@ html.dark-mode .fresuni-info-box{background:#292033;color:#f8f4fc;border-color:#
 html.reduce-motion #fresuni-home-highlights .fresuni-highlights-timeline,
 html.simple-mode #fresuni-home-highlights .fresuni-highlights-timeline{display:none!important}
 @media(prefers-reduced-motion:reduce){#fresuni-home-highlights .fresuni-highlights-timeline{display:none!important}}
+
+/* Preferência de leitura do carrossel no menu Acessibilidade. */
+.fresuni-carousel-reading-speed{display:block;font-size:.88rem;font-weight:650;line-height:1.5;margin:13px 0 6px}
+.fresuni-carousel-reading-speed select{display:block;box-sizing:border-box;width:100%;min-height:44px;margin-top:6px;padding:8px 10px;color:#192c54;background:#fff;border:1px solid #9baac5;border-radius:6px;font:inherit}
+.fresuni-carousel-reading-speed select:focus-visible{outline:3px solid #214ECF;outline-offset:2px}
 </style><style id="fresuni-blue-brand-2026">
 
 /* FRESUNI — identidade institucional minimalista, 03/11/2026.
@@ -709,7 +714,7 @@ html.simple-mode *,html.simple-mode *::before,html.simple-mode *::after{
 <a class="nav-root solo" href="#/estatuto">Estatuto</a>
 </nav>
 <div class="header-actions"><button aria-label="Pesquisar no site" class="icon-button search-trigger" data-search-open="" title="Pesquisar" type="button"><svg aria-hidden="true" fill="none" height="25" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24" width="25"><circle cx="10.7" cy="10.7" r="7.1"></circle><path d="m16 16 5.2 5.2"></path></svg></button>
-<details class="accessibility" id="accessibility-menu"><summary aria-label="Abrir ferramentas de acessibilidade" title="Ferramentas de acessibilidade: tamanho, contraste, claro ou escuro e leitura simplificada"><svg aria-hidden="true" width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><circle cx="16" cy="16" r="14.1"></circle><circle cx="16" cy="8.4" r="2.45" fill="currentColor" stroke="none"></circle><path d="M7.8 14.1c2.7.9 5.3 1.4 8.2 1.4s5.5-.5 8.2-1.4M16 15.4v5.6m0 0-5.6 6m5.6-6 5.6 6"></path></svg><span class="access-label">Acessibilidade</span></summary><div class="access-panel"><p class="panel-title">Ferramentas de acessibilidade</p><p class="panel-description">Ajuste a leitura do site de acordo com suas necessidades. Suas escolhas ficam salvas neste navegador.</p><div class="access-row"><span>Tamanho do texto</span><div class="stepper"><button aria-label="Diminuir texto" data-font="decrease" type="button">A−</button><button aria-label="Aumentar texto" data-font="increase" type="button">A+</button></div></div><button aria-pressed="false" class="access-choice" data-contrast="" type="button">Ativar alto contraste</button><button aria-pressed="false" class="access-choice" data-theme="" type="button">Ativar modo escuro</button><button aria-pressed="false" class="access-choice access-simple" data-simple="" type="button">Ativar navegação simplificada e ampliada</button><button aria-pressed="false" class="access-choice" data-motion="" type="button">Reduzir animações</button><button aria-pressed="false" class="access-choice" data-carousel-auto-off="" type="button">Desativar avanço automático dos destaques</button><p class="panel-hint">O modo simplificado aumenta textos e botões, usa uma coluna e reduz os movimentos.</p><button class="access-reset" data-reset="" type="button">Restaurar preferências</button><a href="#/acessibilidade">Sobre a acessibilidade do site</a></div></details>
+<details class="accessibility" id="accessibility-menu"><summary aria-label="Abrir ferramentas de acessibilidade" title="Ferramentas de acessibilidade: tamanho, contraste, claro ou escuro e leitura simplificada"><svg aria-hidden="true" width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"><circle cx="16" cy="16" r="14.1"></circle><circle cx="16" cy="8.4" r="2.45" fill="currentColor" stroke="none"></circle><path d="M7.8 14.1c2.7.9 5.3 1.4 8.2 1.4s5.5-.5 8.2-1.4M16 15.4v5.6m0 0-5.6 6m5.6-6 5.6 6"></path></svg><span class="access-label">Acessibilidade</span></summary><div class="access-panel"><p class="panel-title">Ferramentas de acessibilidade</p><p class="panel-description">Ajuste a leitura do site de acordo com suas necessidades. Suas escolhas ficam salvas neste navegador.</p><div class="access-row"><span>Tamanho do texto</span><div class="stepper"><button aria-label="Diminuir texto" data-font="decrease" type="button">A−</button><button aria-label="Aumentar texto" data-font="increase" type="button">A+</button></div></div><button aria-pressed="false" class="access-choice" data-contrast="" type="button">Ativar alto contraste</button><button aria-pressed="false" class="access-choice" data-theme="" type="button">Ativar modo escuro</button><button aria-pressed="false" class="access-choice access-simple" data-simple="" type="button">Ativar navegação simplificada e ampliada</button><button aria-pressed="false" class="access-choice" data-motion="" type="button">Reduzir animações</button><button aria-pressed="false" class="access-choice" data-carousel-auto-off="" type="button">Desativar avanço automático dos destaques</button><label class="fresuni-carousel-reading-speed" for="fresuni-carousel-min-duration">Tempo para ler cada destaque<select id="fresuni-carousel-min-duration" data-carousel-min-duration><option value="0">Tempo definido pelo FRESUNI</option><option value="20">Pelo menos 20 segundos</option><option value="30">Pelo menos 30 segundos</option><option value="45">Pelo menos 45 segundos</option></select></label><p class="panel-hint">O modo simplificado aumenta textos e botões, usa uma coluna e reduz os movimentos.</p><button class="access-reset" data-reset="" type="button">Restaurar preferências</button><a href="#/acessibilidade">Sobre a acessibilidade do site</a></div></details>
 <button aria-controls="menu-principal" aria-expanded="false" aria-label="Abrir menu" class="icon-button mobile-toggle" data-menu-toggle="" type="button"><svg aria-hidden="true" fill="none" height="26" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" width="26"><path d="M4 6h16M4 12h16M4 18h16"></path></svg></button></div></div></header>
 <main id="conteudo" tabindex="-1">
 <div class="site-page" data-route="/" data-title="Início" data-editor-group="inicio" data-fresuni-dates="off"><div class="home-wrap">
@@ -1140,7 +1145,7 @@ html.simple-mode *,html.simple-mode *::before,html.simple-mode *::after{
   const $=(s,ctx=document)=>ctx.querySelector(s);
   const $$=(s,ctx=document)=>Array.from(ctx.querySelectorAll(s));
   const storageKey='fresuni-acessibilidade-v1';
-  const defaults={font:1,contrast:false,motion:false,theme:false,simple:false,carouselAuto:true};
+  const defaults={font:1,contrast:false,motion:false,theme:false,simple:false,carouselAuto:true,carouselMinDuration:0};
   let settings={...defaults};
   try{settings={...settings,...JSON.parse(localStorage.getItem(storageKey)||'{}')};}catch(_){/* navegação privada ou armazenamento indisponível */}
   settings.font=Math.min(1.7,Math.max(.85,Number(settings.font)||1));
@@ -1157,6 +1162,8 @@ html.simple-mode *,html.simple-mode *::before,html.simple-mode *::after{
     if(t){t.setAttribute('aria-pressed',String(!!settings.theme));t.textContent=settings.theme?'Ativar modo claro':'Ativar modo escuro';}
     if(si){si.setAttribute('aria-pressed',String(!!settings.simple));si.textContent=settings.simple?'Desativar navegação simplificada e ampliada':'Ativar navegação simplificada e ampliada';}
     if(ca){ca.setAttribute('aria-pressed',String(settings.carouselAuto===false));ca.textContent=settings.carouselAuto===false?'Ativar avanço automático dos destaques':'Desativar avanço automático dos destaques';}
+    const reading=$('[data-carousel-min-duration]');
+    if(reading)reading.value=['0','20','30','45'].includes(String(settings.carouselMinDuration))?String(settings.carouselMinDuration):'0';
     document.dispatchEvent(new CustomEvent('fresuni:accessibility-updated'));
     // Elementos que não estão no DOM por página nunca recebem estado obsoleto.
   }
@@ -1166,7 +1173,8 @@ html.simple-mode *,html.simple-mode *::before,html.simple-mode *::after{
   $('[data-theme]')?.addEventListener('click',()=>{settings.theme=!settings.theme;save();});
   $('[data-simple]')?.addEventListener('click',()=>{settings.simple=!settings.simple;save();refreshReveal();});
   $('[data-motion]')?.addEventListener('click',()=>{settings.motion=!settings.motion;save();refreshReveal();});
-  $('[data-carousel-auto-off]')?.addEventListener('click',()=>{settings.carouselAuto=settings.carouselAuto===false;save();});
+  $('[data-carousel-auto-off]')?.addEventListener('click',()=>{settings.carouselAuto=settings.carouselAuto===false;save();if(settings.carouselAuto)document.dispatchEvent(new CustomEvent('fresuni:carousel-restart'));});
+  $('[data-carousel-min-duration]')?.addEventListener('change',event=>{settings.carouselMinDuration=Number(event.target.value)||0;save();});
   $('[data-reset]')?.addEventListener('click',()=>{settings={...defaults};save();refreshReveal();});
   applySettings();
   const floating=$('[data-open-access]'),accessDetails=$('#accessibility-menu');
@@ -1361,53 +1369,56 @@ html.simple-mode *,html.simple-mode *::before,html.simple-mode *::after{
 
 </script><script id="fresuni-ux-navigation-runtime">
 
-/* FRESUNI — carrossel leve, progressão suave e acessibilidade.
-   A barra usa animação nativa (Web Animations), sem atualizar CSS a cada frame.
-   O mouse apenas passando sobre o banner não interrompe a apresentação. */
+/* FRESUNI — slides com leitura confortável e ritmo acessível.
+   A barra usa Web Animations; nenhum loop de JavaScript por frame. */
 (()=>{
  'use strict';
  const carousel=document.getElementById('fresuni-home-highlights');
  if(carousel){
   const slides=[...carousel.querySelectorAll('.fresuni-highlights-track > .fresuni-highlight')];
+  const track=carousel.querySelector('.fresuni-highlights-track');
   const count=carousel.querySelector('[data-fresuni-slide-count]');
   const timeline=carousel.querySelector('[data-fresuni-slide-timeline]');
   const fill=carousel.querySelector('[data-fresuni-slide-progress]');
   const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)');
   const storageKey='fresuni-acessibilidade-v1';
-  const DURATION=6200;
+  const DEFAULT_DURATION=15000;
   let active=0,animation=null,fallbackTimer=null,enabled=false,visible=true;
-  function preferencesAllow(){
-   try{
-    const prefs=JSON.parse(localStorage.getItem(storageKey)||'{}');
-    return prefs.carouselAuto!==false&&!prefs.motion&&!prefs.simple;
-   }catch(_){return true;}
+  let hovered=false,keyboardStopped=false,ready=false;
+  function preferences(){
+   try{return JSON.parse(localStorage.getItem(storageKey)||'{}')||{};}
+   catch(_){return {};}
+  }
+  function slideDuration(){
+   const selected=Number(slides[active]?.dataset.fresuniSlideDuration);
+   const configured=Number.isInteger(selected)&&selected>=10&&selected<=60?selected*1000:0;
+   const rootValue=Number(carousel.dataset.fresuniDefaultDuration);
+   const siteDefault=Number.isInteger(rootValue)&&rootValue>=10&&rootValue<=60?rootValue*1000:DEFAULT_DURATION;
+   const minimum=Number(preferences().carouselMinDuration);
+   const visitorMinimum=[20,30,45].includes(minimum)?minimum*1000:0;
+   return Math.max(configured||siteDefault,visitorMinimum);
   }
   function shouldPlay(){
-   return slides.length>1&&!reduced?.matches&&preferencesAllow();
+   const prefs=preferences();
+   return slides.length>1&&!reduced?.matches&&prefs.carouselAuto!==false&&!prefs.motion&&!prefs.simple&&!keyboardStopped;
   }
   function paused(){
-   const element=document.activeElement;
-   const readingSlide=element&&carousel.contains(element)&&
-    !element.closest?.('.fresuni-highlights-controls')&&element!==document.body;
-   return document.hidden||!!carousel.closest('.site-page')?.hidden||!visible||!!readingSlide;
+   return document.hidden||!!carousel.closest('.site-page')?.hidden||!visible||hovered||
+    carousel.contains(document.activeElement);
   }
   function stopProgress(){
-   if(animation){
-    animation.onfinish=null;
-    animation.cancel();
-    animation=null;
-   }
+   if(animation){animation.onfinish=null;animation.cancel();animation=null;}
    if(fallbackTimer){clearTimeout(fallbackTimer);fallbackTimer=null;}
   }
   function updatePlayback(){
    if(!enabled)return;
    if(animation){
-    if(paused()){if(animation.playState==='running')animation.pause();}
-    else if(animation.playState==='paused')animation.play();
-   }else if(!paused()&&!fallbackTimer){
-    fallbackTimer=setTimeout(()=>{fallbackTimer=null;show(active+1);},DURATION);
+    if(paused()&&animation.playState==='running')animation.pause();
+    else if(!paused()&&animation.playState==='paused')animation.play();
    }else if(paused()&&fallbackTimer){
     clearTimeout(fallbackTimer);fallbackTimer=null;
+   }else if(!paused()&&!fallbackTimer){
+    fallbackTimer=setTimeout(()=>{fallbackTimer=null;if(enabled)show(active+1);},slideDuration());
    }
   }
   function startProgress(){
@@ -1417,7 +1428,7 @@ html.simple-mode *,html.simple-mode *::before,html.simple-mode *::after{
    if(fill?.animate){
     animation=fill.animate(
      [{transform:'scaleX(0)'},{transform:'scaleX(1)'}],
-     {duration:DURATION,easing:'linear',fill:'forwards'}
+     {duration:slideDuration(),easing:'linear',fill:'forwards'}
     );
     animation.onfinish=()=>{
      const completed=animation;
@@ -1426,9 +1437,7 @@ html.simple-mode *,html.simple-mode *::before,html.simple-mode *::after{
      if(enabled)show(active+1);
     };
     if(paused())animation.pause();
-   }else{
-    updatePlayback();
-   }
+   }else updatePlayback();
   }
   function show(index){
    if(!slides.length)return;
@@ -1442,35 +1451,36 @@ html.simple-mode *,html.simple-mode *::before,html.simple-mode *::after{
    if(count)count.textContent=(active+1)+' de '+slides.length;
    startProgress();
   }
-  function sync(){
+  function sync(restart=false){
    const next=shouldPlay();
-   if(next!==enabled){
-    enabled=next;
-    if(timeline)timeline.hidden=!enabled;
-    if(count)count.setAttribute('aria-live',enabled?'off':'polite');
-    startProgress();
-   }else updatePlayback();
+   const changed=enabled!==next;
+   enabled=next;
+   if(timeline)timeline.hidden=!enabled;
+   if(count)count.setAttribute('aria-live',enabled?'off':'polite');
+   if(changed||restart)startProgress();
+   else updatePlayback();
   }
   carousel.querySelector('[data-fresuni-slide-previous]')?.addEventListener('click',()=>show(active-1));
   carousel.querySelector('[data-fresuni-slide-next]')?.addEventListener('click',()=>show(active+1));
-  carousel.addEventListener('focusin',updatePlayback);
-  carousel.addEventListener('focusout',()=>queueMicrotask(updatePlayback));
-  document.addEventListener('fresuni:accessibility-updated',sync);
-  reduced?.addEventListener?.('change',sync);
-  window.addEventListener('storage',event=>{if(event.key===storageKey)sync();});
+  // Hover permite ler com calma; foco do teclado interrompe até reativação explícita.
+  track?.addEventListener('mouseenter',()=>{hovered=true;updatePlayback();});
+  track?.addEventListener('mouseleave',()=>{hovered=false;updatePlayback();});
+  carousel.addEventListener('focusin',()=>{keyboardStopped=true;sync();});
+  document.addEventListener('fresuni:carousel-restart',()=>{keyboardStopped=false;sync(true);});
+  document.addEventListener('fresuni:accessibility-updated',()=>{if(ready)sync(true);});
+  reduced?.addEventListener?.('change',()=>sync(true));
+  window.addEventListener('storage',event=>{if(event.key===storageKey)sync(true);});
   document.addEventListener('visibilitychange',updatePlayback);
   window.addEventListener('fresuni:navegacao',updatePlayback);
   if('IntersectionObserver' in window){
    const observer=new IntersectionObserver(entries=>{
-    visible=entries[0]?.isIntersecting??true;
-    updatePlayback();
+    visible=entries[0]?.isIntersecting??true;updatePlayback();
    },{threshold:0.08});
    observer.observe(carousel);
   }
   window.addEventListener('pagehide',stopProgress);
   window.addEventListener('pageshow',()=>{if(enabled&&!animation&&!fallbackTimer)startProgress();});
-  show(0);
-  sync();
+  show(0);ready=true;sync();
  }
  const input=document.getElementById('fresuni-action-search');
  const root=document.getElementById('fresuni-initiative-framework');
