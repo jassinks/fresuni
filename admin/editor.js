@@ -968,12 +968,16 @@ function fsPrepareSafePublish(html){
  const nextRoutes=new Set([...next.querySelectorAll('main > .site-page[data-route]')].map(p=>p.dataset.route));
  const missingPages=oldPages.filter(p=>!nextRoutes.has(p.dataset.route)).map(p=>p.dataset.route);
  if(missingPages.length)throw Error('Publicação bloqueada: estas páginas desapareceram da prévia: '+missingPages.join(', ')+'. Recarregue a versão publicada, confira seu rascunho e tente novamente.');
+ // Os três destaques originais permanecem recuperáveis mesmo quando substituídos por banners.
+ const originalSlides=['acoes','frentes','escuta'];
+ const missingSlides=originalSlides.filter(id=>!next.querySelector('#fresuni-home-highlights [data-fresuni-slide="'+id+'"]'));
+ if(missingSlides.length)throw Error('Publicação bloqueada: slides originais foram removidos ('+missingSlides.join(', ')+'). Restaure-os antes de publicar.');
  // Recursos técnicos injetados por publicações anteriores não devem sumir ao editar textos.
  const requiredAssets=['fresuni-motion-2026','fresuni-motion-runtime-2026',
   'fresuni-interactive-effects-2026','fresuni-interactive-effects-runtime-2026',
   'fresuni-flow-grid-style','fresuni-page-meta-style','fresuni-archive-styles',
   'fresuni-layout-polish-v2','fresuni-custom-box-style',
-  'fresuni-mobile-pdf-and-navigation-2026','fresuni-media-styles','fresuni-media-runtime','fresuni-program-integration-style','fresuni-ux-navigation-2026','fresuni-ux-navigation-runtime','fresuni-blue-brand-2026','fresuni-home-banner-style-2026','fresuni-logo-layout-style-2026'];
+  'fresuni-mobile-pdf-and-navigation-2026','fresuni-media-styles','fresuni-media-runtime','fresuni-program-integration-style','fresuni-ux-navigation-2026','fresuni-ux-navigation-runtime','fresuni-blue-brand-2026','fresuni-home-banner-style-2026','fresuni-logo-layout-style-2026','fresuni-carousel-fullslide-style-2026'];
  for(const id of requiredAssets){
   const source=published.getElementById(id);
   if(!source)continue;
@@ -1406,6 +1410,18 @@ function fsValidateMediaPublish(html){
   if(!images.length||images.length>FS_MEDIA_MAX_GALLERY)throw Error('Galeria inválida: são permitidas de 1 a 12 fotografias por bloco.');
   for(const img of images)if(!fsMediaSrcAllowed(img.getAttribute('src')||''))throw Error('Imagem com formato ou endereço inválido na galeria.');
  }
+ for(const banner of doc.querySelectorAll('#fresuni-home-highlights .fresuni-highlight[data-fresuni-carousel-mode="full-image"]')){
+  const image=banner.querySelector(':scope > a.fresuni-highlight-full-link img');
+  const link=banner.querySelector(':scope > a.fresuni-highlight-full-link');
+  const src=image?.getAttribute('src')||'',href=link?.getAttribute('href')||'';
+  if(!fsMediaSrcAllowed(src))throw Error('Slide com banner sem uma imagem válida.');
+  if(!image?.getAttribute('alt')?.trim())throw Error('O banner do carrossel precisa de descrição acessível.');
+  if(!href||!fsMediaLinkAllowed(href)||(href.startsWith('#/')&&!doc.querySelector('.site-page[data-route="'+href.slice(1)+'"]')))
+   throw Error('Banner do carrossel apontando para endereço interno ou externo inválido.');
+ }
+ const fullSlides=doc.querySelectorAll('#fresuni-home-highlights .fresuni-highlights-track > .fresuni-highlight');
+ if(fullSlides.length>15)throw Error('O carrossel aceita até 15 slides para manter a navegação acessível.');
+ 
  for(const banner of doc.querySelectorAll('[data-fresuni-block="banner"]')){
   const img=banner.querySelector('.fresuni-banner-image img');
   if(!img||!fsMediaSrcAllowed(img.getAttribute('src')||''))throw Error('Banner sem imagem válida.');
@@ -1523,11 +1539,55 @@ function fsHomeLinkValue(prefix){
   ?$('#'+prefix+'-external').value.trim()
   :$('#'+prefix+'-internal').value.trim();
 }
-for(const prefix of ['fs-home-showcase','fs-home-banner']){
+for(const prefix of ['fs-home-showcase','fs-home-banner','fs-carousel-banner']){
  $('#'+prefix+'-link-mode')?.addEventListener('change',()=>fsHomeLinkToggle(prefix));
  $('#'+prefix+'-internal')?.addEventListener('focus',()=>{
   const input=$('#'+prefix+'-internal');fsInternalPageSelect(prefix+'-internal',input.value);
  });
+}
+
+
+/* Os dois painéis de destaques usam a mesma lista REAL de slides; os três
+   primeiros são sempre preservados, os demais surgem automaticamente. */
+const FS_CAROUSEL_MAX_SLIDES=15;
+function fsCarouselSlides(){
+ const track=pageFor('/')?.querySelector('#fresuni-home-highlights .fresuni-highlights-track');
+ return Array.from(track?.children||[]).filter(el=>el.matches('.fresuni-highlight[data-fresuni-slide]'));
+}
+function fsCarouselSlideLabel(slide,index){
+ const imageOnly=slide.dataset.fresuniCarouselMode==='full-image';
+ const title=imageOnly
+  ?slide.querySelector('.fresuni-highlight-full-link img')?.getAttribute('alt')
+  :slide.querySelector('.fresuni-highlight-content h3')?.textContent?.trim();
+ const name=String(title||slide.dataset.fresuniSlide||'Destaque').slice(0,64);
+ return (index+1)+' · '+name+(imageOnly?' (banner inteiro)':' (texto + imagem)');
+}
+function fsCarouselSyncSelectors(preferredShowcase='',preferredBanner=''){
+ const slides=fsCarouselSlides();
+ const textSelect=$('#fs-home-showcase-select'),bannerSelect=$('#fs-carousel-banner-choice');
+ if(textSelect){
+  const chosen=preferredShowcase||textSelect.value||'acoes';
+  textSelect.replaceChildren();
+  slides.forEach((slide,index)=>{
+   const option=document.createElement('option');
+   option.value=slide.dataset.fresuniSlide;option.textContent=fsCarouselSlideLabel(slide,index);
+   textSelect.append(option);
+  });
+  if([...textSelect.options].some(op=>op.value===chosen))textSelect.value=chosen;
+  else if(textSelect.options.length)textSelect.selectedIndex=0;
+ }
+ if(bannerSelect){
+  const chosen=preferredBanner||bannerSelect.value||'new';
+  bannerSelect.replaceChildren();
+  const empty=document.createElement('option');empty.value='new';
+  empty.textContent='＋ Adicionar novo slide com banner';bannerSelect.append(empty);
+  slides.forEach((slide,index)=>{
+   const option=document.createElement('option');
+   option.value=slide.dataset.fresuniSlide;option.textContent=fsCarouselSlideLabel(slide,index);
+   bannerSelect.append(option);
+  });
+  bannerSelect.value=[...bannerSelect.options].some(op=>op.value===chosen)?chosen:'new';
+ }
 }
 
 function fsHomeShowcaseRead(){
@@ -1546,10 +1606,15 @@ function fsHomeShowcaseRead(){
  $('#fs-home-showcase-image').src=picture?.getAttribute('src')||FS_HOME_SHOWCASE_LOGO;
  $('#fs-home-showcase-file').value='';
  fsHomeShowcaseReset=false;
- fsHomeShowcaseStatus('Destaque carregado. Altere os campos e clique em Aplicar; publique depois para atualizar o site.');
+ fsHomeShowcaseStatus(slide.dataset.fresuniCarouselMode==='full-image'
+  ?'Este slide está como banner inteiro. Se clicar em Aplicar aqui, ele voltará ao formato de texto + imagem, sem perder os textos originais.'
+  :'Destaque carregado. Altere os campos e clique em Aplicar; publique depois para atualizar o site.');
 }
 $('#fs-home-showcase-select')?.addEventListener('change',fsHomeShowcaseRead);
-frame.addEventListener('load',()=>{if($('#fs-home-showcase-select'))fsHomeShowcaseRead();});
+frame.addEventListener('load',()=>{
+ fsCarouselSyncSelectors();
+ if($('#fs-home-showcase-select'))fsHomeShowcaseRead();
+});
 $('#fs-home-showcase-file')?.addEventListener('change',e=>{
  const file=e.target.files?.[0];if(!file)return;
  if(!FS_MEDIA_TYPES.includes(file.type)||file.size>FS_MEDIA_INPUT_LIMIT){
@@ -1593,6 +1658,10 @@ $('#fs-home-showcase-save')?.addEventListener('click',async()=>{
   else if(file){const data=await fsCompressMedia(file,'banner');src=data.src;}
   if(!/^data:image\/(?:webp|png|jpeg);base64,/i.test(src)&&!/^https:\/\//i.test(src)&&!/^\.\/admin\/logo\.png$/.test(src))throw Error('Imagem inválida.');
   const clone=slide.cloneNode(true);
+  // Aplicar no painel original reativa o formato tradicional e preserva
+  // a edição de texto, sem apagar slides adicionados pelo terceiro painel.
+  clone.removeAttribute('data-fresuni-carousel-mode');
+  clone.querySelector('.fresuni-highlight-full-link')?.remove();
   clone.querySelector('.fresuni-highlight-kicker').textContent=kicker;
   clone.querySelector('.fresuni-highlight-content h3').textContent=title;
   clone.querySelector('.fresuni-highlight-content p').textContent=description;
