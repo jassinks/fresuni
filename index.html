@@ -1443,9 +1443,11 @@ html.simple-mode *,html.simple-mode *::before,html.simple-mode *::after{
   const dotButtons=[];
   for(const [i,slide] of slides.entries()){
    if(!picker)break;
-   const title=(slide.querySelector('.fresuni-highlight-content h3')?.textContent||
+   const full=slide.dataset.fresuniCarouselMode==='full-image';
+   const title=((full?slide.querySelector('.fresuni-highlight-full-link img')?.getAttribute('alt'):null)||
+    slide.querySelector('.fresuni-highlight-content h3')?.textContent||
     slide.querySelector('.fresuni-highlight-full-link img')?.getAttribute('alt')||
-    'Destaque '+(i+1)).trim().replace(/\\s+/g,' ').slice(0,85);
+    'Destaque '+(i+1)).trim().replace(/\s+/g,' ').slice(0,85);
    const dot=document.createElement('button');
    dot.type='button';dot.className='fresuni-slide-dot';
    dot.setAttribute('aria-label','Mostrar destaque '+(i+1)+' de '+slides.length+': '+title);
