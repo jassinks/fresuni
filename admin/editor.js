@@ -1452,14 +1452,24 @@ async function fsCompressMedia(file,kind){
    const factor=Math.min(1,maxDimension/Math.max(image.naturalWidth,image.naturalHeight))*scale;
    const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.naturalWidth*factor));
    canvas.height=Math.max(1,Math.round(image.naturalHeight*factor));
-   const ctx=canvas.getContext('2d',{alpha:false});if(!ctx)throw Error('O navegador não conseguiu preparar a compactação.');
-   ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+   // PNG e WebP podem ter pixels transparentes: nunca inserir branco por trás.
+   // JPEG, por definição, não tem transparência. Compatibilidade com PNG sem WebP:
+   // jamais converter uma imagem com alfa para JPEG.
+   const preserveAlpha=file.type==='image/png'||file.type==='image/webp';
+   const ctx=canvas.getContext('2d',{alpha:preserveAlpha});if(!ctx)throw Error('O navegador não conseguiu preparar a compactação.');
+   if(!preserveAlpha){
+    ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+   }else ctx.clearRect(0,0,canvas.width,canvas.height);
    ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(image,0,0,canvas.width,canvas.height);
    for(const quality of [.82,.70,.58,.46,.35]){
     let data=canvas.toDataURL('image/webp',quality);
-    if(!data.startsWith('data:image/webp;'))data=canvas.toDataURL('image/jpeg',quality);
+    if(!data.startsWith('data:image/webp;')){
+     // Se WebP não estiver disponível no navegador, manter alfa via PNG.
+     data=canvas.toDataURL(preserveAlpha?'image/png':'image/jpeg',quality);
+    }
     const bytes=Math.ceil((data.length-data.indexOf(',')-1)*.75);
     if(bytes<=target)return {src:data,bytes,width:canvas.width,height:canvas.height};
+    if(preserveAlpha&&data.startsWith('data:image/png;'))break;
    }
   }
   throw Error('Não foi possível comprimir esta imagem dentro do limite. Tente outro arquivo.');
@@ -1699,7 +1709,9 @@ $('#fs-home-showcase-file')?.addEventListener('change',e=>{
   $('#fs-home-showcase-image-fit').value='contain';
   fsShowcaseImagePreview();
  }
- fsHomeShowcaseStatus('Foto selecionada. A compressão acontecerá ao clicar em Aplicar.');
+ fsHomeShowcaseStatus(file.type==='image/png'
+  ?'PNG selecionado. A transparência será preservada na compactação ao clicar em Aplicar.'
+  :'Foto selecionada. A compactação acontecerá ao clicar em Aplicar.');
  const preview=$('#fs-home-showcase-image');
  if(preview.dataset.fsObjectUrl)URL.revokeObjectURL(preview.dataset.fsObjectUrl);
  const url=URL.createObjectURL(file);preview.dataset.fsObjectUrl=url;preview.src=url;
