@@ -1490,6 +1490,18 @@ function fsMediaCheckBudget(markup,existing=null){
 function fsValidateMediaPublish(html){
  if(fsBytes(html)>FS_MEDIA_SITE_LIMIT)throw Error('Publicação bloqueada: o site ultrapassou 6 MB. Reduza a quantidade de imagens ou seus tamanhos.');
  const doc=new DOMParser().parseFromString(html,'text/html');
+ // Verificação técnica do critério WCAG 1.1.1. A adequação do conteúdo ainda
+ // depende de análise humana, sobretudo cartazes, gráficos e fotografias.
+ for(const img of doc.querySelectorAll('img')){
+  if(!img.hasAttribute('alt'))throw Error('Publicação bloqueada: imagem sem atributo alt. Abra Acessibilidade das imagens no editor.');
+  const kind=img.dataset.fresuniAltKind;
+  const alt=img.getAttribute('alt')||'';
+  if(kind==='decorative'&&alt!=='')throw Error('Imagem decorativa com descrição conflitante. Revise-a no editor.');
+  if(['informative','functional','text'].includes(kind)&&!alt.trim())
+   throw Error('Imagem informativa ou funcional sem texto alternativo. Revise as imagens no editor.');
+  if(kind==='decorative'&&!fsAltLinkHasAccessibleName(img.closest('a,button'),img))
+   throw Error('Imagem decorativa é o único conteúdo de um link sem nome acessível. Revise o link.');
+ }
  for(const gallery of doc.querySelectorAll('[data-fresuni-block="gallery"]')){
   const images=gallery.querySelectorAll('.fresuni-gallery-grid img');
   if(!images.length||images.length>FS_MEDIA_MAX_GALLERY)throw Error('Galeria inválida: são permitidas de 1 a 12 fotografias por bloco.');
@@ -1650,6 +1662,155 @@ for(const prefix of ['fs-home-showcase','fs-home-banner','fs-carousel-banner']){
  });
 }
 
+
+
+/* Acessibilidade das imagens — W3C/WAI (WCAG 2.2, 1.1.1).
+   Uma única área recolhível para cabeçalho, rodapé e todas as rotas.
+   Classificação sem geração automática de conteúdo visual não verificado. */
+function fsAltImages(){
+ const d=siteDoc();
+ return d?[...d.querySelectorAll('.site-header img, main .site-page img, .site-footer img, .floating-access img')]
+  .filter(img=>!img.closest('[data-editor-internal],#fresuni-editor-overlay')):[];
+}
+function fsAltKind(img){
+ const defined=img?.dataset?.fresuniAltKind;
+ if(['informative','functional','decorative','text'].includes(defined))return defined;
+ if(img?.getAttribute('alt')==='')return 'decorative';
+ if(img?.closest('a,button'))return 'functional';
+ return 'informative';
+}
+function fsAltName(img,index){
+ const page=img.closest('.site-page[data-route]');
+ const place=page?(page.dataset.title||page.dataset.route):
+  img.closest('.site-header')?'Cabeçalho':
+  img.closest('.site-footer')?'Rodapé':'Botão flutuante';
+ const slide=img.closest('.fresuni-highlight');
+ const slideName=slide?.querySelector('.fresuni-highlight-content h3')?.textContent?.trim()||
+  slide?.querySelector('.fresuni-highlight-full-link img')?.getAttribute('alt')||'';
+ const section=slideName?' — Destaque: '+slideName.slice(0,44):'';
+ const alt=img.getAttribute('alt')||'';
+ const suffix=alt?' — '+alt.slice(0,48):' — elemento decorativo ou sem descrição';
+ return (index+1)+' · '+place+section+suffix;
+}
+function fsAltSelected(){
+ const index=Number($('#fs-alt-image-select')?.value);
+ const imgs=fsAltImages();
+ return Number.isInteger(index)&&index>=0?imgs[index]||null:null;
+}
+function fsAltStatus(message){
+ const el=$('#fs-alt-status');if(el)el.textContent=message;
+}
+function fsAltLinkHasAccessibleName(control,img){
+ if(!control)return true;
+ const named=control.getAttribute('aria-label')?.trim()||
+  control.getAttribute('aria-labelledby')?.trim();
+ if(named)return true;
+ // Considerar somente texto real dentro do link, não alt das imagens.
+ const copy=control.cloneNode(true);
+ copy.querySelectorAll('img,svg,[aria-hidden="true"]').forEach(el=>el.remove());
+ return !!copy.textContent.trim();
+}
+function fsAltRead(){
+ const img=fsAltSelected();
+ const preview=$('#fs-alt-preview'),kind=$('#fs-alt-kind'),input=$('#fs-alt-text');
+ if(!preview||!kind||!input)return;
+ if(!img){
+  preview.removeAttribute('src');kind.value='informative';input.value='';input.disabled=true;
+  $('#fs-alt-location').textContent='Não há imagem selecionada.';return;
+ }
+ const src=img.getAttribute('src')||'';
+ if(src)preview.setAttribute('src',src);else preview.removeAttribute('src');
+ const type=fsAltKind(img);
+ kind.value=type;input.value=img.getAttribute('alt')||'';
+ delete input.dataset.fsAltPrevious;
+ const place=img.closest('.site-page[data-route]')?.dataset.route||'estrutura compartilhada';
+ const ctrl=img.closest('a,button');
+ $('#fs-alt-location').textContent='Local: '+place+
+  (ctrl?' · Imagem associada a um link ou botão.':' · Imagem no conteúdo da página.')+
+  (img.hasAttribute('alt')?'':' · Falta o atributo alt.');
+ fsAltKindChanged(false);
+}
+function fsAltKindChanged(remember=true){
+ const input=$('#fs-alt-text');
+ if(!input)return;
+ const type=$('#fs-alt-kind')?.value;
+ if(type==='decorative'){
+  if(remember&&input.value.trim())input.dataset.fsAltPrevious=input.value;
+  input.value='';input.disabled=true;
+  $('#fs-alt-guidance').textContent='Decorativa: será gravada como alt="" e ignorada na leitura. Só escolha isso quando não houver informação exclusiva na imagem. Links precisam continuar com um nome acessível.';
+ }else{
+  input.disabled=false;
+  if(remember&&!input.value&&input.dataset.fsAltPrevious)input.value=input.dataset.fsAltPrevious;
+  $('#fs-alt-guidance').textContent=type==='text'
+   ?'Imagem com palavras: inclua a informação escrita que não aparece em texto acessível ao lado. Se for um cartaz complexo, acrescente uma transcrição no conteúdo da página.'
+   :type==='functional'
+    ?'Imagem clicável: descreva o destino ou a ação, por exemplo “Conhecer projetos e ações do FRESUNI”.'
+    :'Descreva o conteúdo visual essencial ao contexto, de modo específico e conciso. Evite “Imagem de” e suposições sobre pessoas.';
+ }
+}
+function fsAltRefresh(preferred=null){
+ const select=$('#fs-alt-image-select');
+ if(!select)return;
+ const old=preferred===null?select.value:String(preferred);
+ const imgs=fsAltImages();
+ select.replaceChildren();
+ for(const [index,img] of imgs.entries()){
+  const option=document.createElement('option');option.value=String(index);
+  option.textContent=fsAltName(img,index);
+  select.append(option);
+ }
+ if(imgs.length){
+  select.value=imgs[Number(old)]?String(old):'0';
+ }else select.selectedIndex=-1;
+ const missing=imgs.filter(img=>!img.hasAttribute('alt')).length;
+ const empty=imgs.filter(img=>img.getAttribute('alt')==='').length;
+ const descriptive=imgs.length-empty-missing;
+ const count=$('#fs-alt-overview');
+ if(count)count.textContent=imgs.length+' imagem(ns) encontradas em todas as páginas e áreas compartilhadas: '+
+  descriptive+' com descrição, '+empty+' com alt vazio e '+missing+' sem atributo alt. '+
+  'A qualidade das descrições precisa de revisão humana.';
+ fsAltRead();
+}
+$('#fs-image-alt-manager')?.addEventListener('toggle',event=>{
+ if(event.target.open)fsAltRefresh();
+});
+$('#fs-alt-image-select')?.addEventListener('change',fsAltRead);
+$('#fs-alt-kind')?.addEventListener('change',()=>fsAltKindChanged());
+$('#fs-alt-refresh')?.addEventListener('click',()=>{fsAltRefresh();fsAltStatus('Lista de imagens atualizada.');});
+frame.addEventListener('load',()=>{if($('#fs-image-alt-manager')?.open)fsAltRefresh();});
+$('#fs-alt-save')?.addEventListener('click',()=>{
+ if(!state.editable){fsAltStatus('Ative o modo de edição antes de salvar.');return;}
+ const image=fsAltSelected();
+ if(!image){fsAltStatus('Escolha uma imagem existente no site.');return;}
+ const type=$('#fs-alt-kind').value;
+ const alt=type==='decorative'?'':$('#fs-alt-text').value.trim();
+ if(type!=='decorative'&&!alt){
+  fsAltStatus('Informe o texto alternativo ou classifique como decorativa, se realmente não transmitir informação.');
+  return;
+ }
+ if(type==='functional'&&!image.closest('a,button')){
+  fsAltStatus('Imagem funcional precisa estar dentro de um link ou botão. Escolha Informativa para imagens sem ação.');
+  return;
+ }
+ if(type==='decorative'&&!fsAltLinkHasAccessibleName(image.closest('a,button'),image)){
+  fsAltStatus('Essa imagem é o único conteúdo de um link sem nome. Informe uma descrição funcional em vez de marcá-la como decorativa.');
+  return;
+ }
+ if(alt.length>1000){
+  fsAltStatus('Use até 1.000 caracteres. Informações complexas devem estar também no texto da página.');
+  return;
+ }
+ const index=$('#fs-alt-image-select').value;
+ snapshot();
+ image.setAttribute('alt',alt);
+ image.dataset.fresuniAltKind=type;
+ if(type==='decorative')image.removeAttribute('title');
+ fsAltRefresh(index);
+ fsAltStatus(type==='decorative'
+  ?'Imagem definida como decorativa (alt vazio) no rascunho. Publique quando revisar.'
+  :'Texto alternativo salvo no rascunho. Publique quando revisar.');
+ notify('Acessibilidade da imagem atualizada no rascunho.');
+});
 
 /* Os dois painéis de destaques usam a mesma lista REAL de slides; os três
    primeiros são sempre preservados, os demais surgem automaticamente. */
@@ -1933,7 +2094,10 @@ $('#fs-home-showcase-save')?.addEventListener('click',async()=>{
   anchor.replaceChildren(siteDoc().createTextNode(label+' '));
   const arrow=siteDoc().createElement('span');arrow.setAttribute('aria-hidden','true');arrow.textContent='↗';anchor.append(arrow);
   const img=clone.querySelector('.fresuni-highlight-picture img');
-  img.setAttribute('src',src);img.setAttribute('alt',alt||'Imagem do FRESUNI Social');
+  if(!alt&&img.dataset.fresuniAltKind!=='decorative')
+   throw Error('Informe a descrição acessível ou classifique esta imagem como decorativa na ferramenta Acessibilidade das imagens.');
+  img.setAttribute('src',src);img.setAttribute('alt',alt);
+  if(alt&&img.dataset.fresuniAltKind==='decorative')img.dataset.fresuniAltKind='informative';
   const fit=$('#fs-home-showcase-image-fit').value;
   const x=Number($('#fs-home-showcase-image-x').value),y=Number($('#fs-home-showcase-image-y').value);
   if(fit==='cover'||fit==='contain'){
@@ -2125,7 +2289,7 @@ $('#fs-carousel-banner-save')?.addEventListener('click',async()=>{
   link.setAttribute('aria-label','Acessar: '+alt+(href.startsWith('https://')?' (abre em nova aba)':''));
   if(href.startsWith('https://')){link.target='_blank';link.rel='noopener noreferrer';}
   const img=siteDoc().createElement('img');
-  img.src=src;img.alt=alt;img.loading='lazy';img.decoding='async';
+  img.src=src;img.alt=alt;img.dataset.fresuniAltKind='functional';img.loading='lazy';img.decoding='async';
   if(uploaded?.width&&uploaded?.height){img.width=uploaded.width;img.height=uploaded.height;}
   link.append(img);clone.append(link);
   clone.removeAttribute('data-fresuni-selected');
@@ -2280,7 +2444,7 @@ $('#fs-home-banner-save')?.addEventListener('click',async()=>{
   const height=source?.height||Number(original?.getAttribute('height'))||0;
   const dimensions=width&&height?' width="'+width+'" height="'+height+'"':'';
   const external=/^https:\/\//i.test(href);
-  const img='<img src="'+escapeHTML(src)+'" alt="'+escapeHTML(alt)+'"'+dimensions+' decoding="async" loading="lazy">';
+  const img='<img src="'+escapeHTML(src)+'" alt="'+escapeHTML(alt)+'" data-fresuni-alt-kind="functional"'+dimensions+' decoding="async" loading="lazy">';
   const anchor='<a href="'+escapeHTML(href)+'" aria-label="'+escapeHTML(alt+(external?' (abre em nova aba)':''))+'"'+
    (external?' target="_blank" rel="noopener noreferrer"':'')+'>'+img+'</a>';
   const markup='<section class="fresuni-site-banner fresuni-home-banner" data-fresuni-block="banner" data-fresuni-home-banner="'+
@@ -2563,9 +2727,11 @@ function setupGoogleFormsHandles(d){
 
 $$('[data-insert]').forEach(b=>b.addEventListener('click',()=>actionInsert(b.dataset.insert)));
 $('#upload-image').addEventListener('change',async e=>{const file=e.target.files[0];e.target.value='';if(!file)return;if(file.size>8*1024*1024){notify('A imagem deve ter no máximo 8 MB antes da compactação.');return;}
- try{const data=await resizeImage(file);const alt=prompt('Descreva a imagem para leitores de tela (texto alternativo):','')||'';
- if(!alt.trim())notify('Lembre-se de inserir uma descrição da imagem para acessibilidade.');
- insertHTML(`<figure data-fresuni-block="image" style="margin:25px 0;text-align:center"><img alt="${escapeHTML(alt)}" src="${data}" style="max-width:100%;height:auto;border-radius:8px" loading="lazy"></figure>`);
+ try{const data=await resizeImage(file);
+ const answer=prompt('Texto alternativo da imagem: descreva o essencial. Deixe vazio SOMENTE se ela for puramente decorativa. Cancelar não insere a imagem.','');
+ if(answer===null)return;
+ const alt=answer.trim(),kind=alt?'informative':'decorative';
+ insertHTML(`<figure data-fresuni-block="image" style="margin:25px 0;text-align:center"><img alt="${escapeHTML(alt)}" data-fresuni-alt-kind="${kind}" src="${data}" style="max-width:100%;height:auto;border-radius:8px" loading="lazy"></figure>`);
  }catch(err){notify('Não foi possível adicionar a imagem: '+err.message);}
 });
 function resizeImage(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onerror=()=>reject(Error('Falha ao ler arquivo.'));
@@ -2729,7 +2895,19 @@ $('#text-preset').addEventListener('change',e=>{const el=state.selected;if(!el||
 });
 $('#background-color').addEventListener('change',e=>{if(!state.selected)return;snapshot();state.selected.style.backgroundColor=e.target.value;});
 
-$('#element-alt').addEventListener('change',e=>{const im=state.selected?.matches('img')?state.selected:state.selected?.querySelector('img');if(im){snapshot();im.alt=e.target.value;}});
+$('#element-alt').addEventListener('change',e=>{
+ const im=state.selected?.matches('img')?state.selected:state.selected?.querySelector('img');
+ if(!im)return;
+ const value=e.target.value.trim();
+ if(!value&&im.dataset.fresuniAltKind!=='decorative'){
+  e.target.value=im.getAttribute('alt')||'';
+  notify('Para definir uma imagem como decorativa, use a ferramenta Acessibilidade das imagens.');
+  return;
+ }
+ snapshot();im.setAttribute('alt',value);
+ if(value&&im.dataset.fresuniAltKind==='decorative')im.dataset.fresuniAltKind='informative';
+ if($('#fs-image-alt-manager')?.open)fsAltRefresh();
+});
 // Alterações de dimensões e estilo utilizam fluxo normal, não posicionamento absoluto.
 $('#reset-dimensions').addEventListener('click',()=>{const el=state.selected;if(!el)return;snapshot();for(const prop of ['width','max-width','height','min-height','display','overflow-wrap'])el.style.removeProperty(prop);positionResizeGrip();dirty();});
 function useSelected(block=false){const el=state.selected;return block?(el?.closest('[data-fresuni-block]')||el):el;}
