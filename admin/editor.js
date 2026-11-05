@@ -1694,6 +1694,11 @@ $('#fs-home-showcase-file')?.addEventListener('change',e=>{
   e.target.value='';fsHomeShowcaseStatus('Arquivo recusado. Use JPG, PNG ou WebP de até 5 MB.');return;
  }
  fsHomeShowcaseReset=false;
+ // Para novos uploads, escolher automaticamente o enquadramento sem cortes.
+ if($('#fs-home-showcase-image-fit').value==='original'){
+  $('#fs-home-showcase-image-fit').value='contain';
+  fsShowcaseImagePreview();
+ }
  fsHomeShowcaseStatus('Foto selecionada. A compressão acontecerá ao clicar em Aplicar.');
  const preview=$('#fs-home-showcase-image');
  if(preview.dataset.fsObjectUrl)URL.revokeObjectURL(preview.dataset.fsObjectUrl);
@@ -1749,6 +1754,9 @@ $('#fs-home-showcase-save')?.addEventListener('click',async()=>{
   const fit=$('#fs-home-showcase-image-fit').value;
   const x=Number($('#fs-home-showcase-image-x').value),y=Number($('#fs-home-showcase-image-y').value);
   if(fit==='cover'||fit==='contain'){
+   if(!img.hasAttribute('data-fresuni-highlight-original-image-style')){
+    img.setAttribute('data-fresuni-highlight-original-image-style',img.getAttribute('style')||'');
+   }
    img.dataset.fresuniHighlightFit=fit;
    img.dataset.fresuniHighlightX=String(x);
    img.dataset.fresuniHighlightY=String(y);
@@ -1759,10 +1767,14 @@ $('#fs-home-showcase-save')?.addEventListener('click',async()=>{
    img.style.setProperty('object-position',x+'% '+y+'%','important');
    img.style.setProperty('max-width','100%','important');
   }else{
+   if(img.hasAttribute('data-fresuni-highlight-original-image-style')){
+    const original=img.getAttribute('data-fresuni-highlight-original-image-style');
+    if(original)img.setAttribute('style',original);else img.removeAttribute('style');
+    img.removeAttribute('data-fresuni-highlight-original-image-style');
+   }
    delete img.dataset.fresuniHighlightFit;
    delete img.dataset.fresuniHighlightX;
    delete img.dataset.fresuniHighlightY;
-   for(const prop of ['width','height','aspect-ratio','object-fit','object-position','max-width'])img.style.removeProperty(prop);
   }
   const bgMode=$('#fs-home-showcase-bg-mode').value;
   if(['solid','linear','radial'].includes(bgMode)){
@@ -1770,6 +1782,10 @@ $('#fs-home-showcase-save')?.addEventListener('click',async()=>{
    const two=fsShowcaseHex($('#fs-home-showcase-bg-hex-two').value,'');
    if(!one||(bgMode!=='solid'&&!two))throw Error('Confira as cores: use o formato hexadecimal #RRGGBB.');
    const angle=Math.min(360,Math.max(0,Number($('#fs-home-showcase-bg-angle').value)||0));
+   if(!clone.hasAttribute('data-fresuni-highlight-original-background')){
+    clone.setAttribute('data-fresuni-highlight-original-background',clone.style.getPropertyValue('background'));
+    clone.setAttribute('data-fresuni-highlight-original-bg-priority',clone.style.getPropertyPriority('background'));
+   }
    clone.dataset.fresuniHighlightBgMode=bgMode;
    clone.dataset.fresuniHighlightBgOne=one;
    clone.dataset.fresuniHighlightBgTwo=two||'#642382';
@@ -1780,7 +1796,14 @@ $('#fs-home-showcase-save')?.addEventListener('click',async()=>{
    delete clone.dataset.fresuniHighlightBgOne;
    delete clone.dataset.fresuniHighlightBgTwo;
    delete clone.dataset.fresuniHighlightBgAngle;
-   clone.style.removeProperty('background');
+   if(clone.hasAttribute('data-fresuni-highlight-original-background')){
+    const original=clone.getAttribute('data-fresuni-highlight-original-background');
+    const priority=clone.getAttribute('data-fresuni-highlight-original-bg-priority')||'';
+    if(original)clone.style.setProperty('background',original,priority);
+    else clone.style.removeProperty('background');
+    clone.removeAttribute('data-fresuni-highlight-original-background');
+    clone.removeAttribute('data-fresuni-highlight-original-bg-priority');
+   }
   }
   clone.dataset.fresuniPhoto=/^data:image\//.test(src)?'true':'false';
   fsMediaCheckBudget(clone.outerHTML,slide);
