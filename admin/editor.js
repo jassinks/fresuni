@@ -973,6 +973,42 @@ function fsPrepareSafePublish(html){
  const missingSlides=originalSlides.filter(id=>!next.querySelector('#fresuni-home-highlights [data-fresuni-slide="'+id+'"]'));
  if(missingSlides.length)throw Error('Publicação bloqueada: slides originais foram removidos ('+missingSlides.join(', ')+'). Restaure-os antes de publicar.');
  // Recursos técnicos injetados por publicações anteriores não devem sumir ao editar textos.
+ // Migração sem perda de conteúdo: restaurar somente a semântica acessível
+ // de backups anteriores. Todos os links e títulos editados permanecem intactos.
+ const homeDraft=next.querySelector('main > .site-page[data-route="/"]');
+ for(const section of homeDraft?.querySelectorAll('.home-directory .directory-row')||[]){
+  const group=section.querySelector(':scope > .directory-links');
+  const heading=section.querySelector(':scope > h2[id]');
+  if(!group||!heading)continue;
+  if(group.tagName!=='NAV'){
+   const nav=next.createElement('nav');
+   for(const attribute of group.attributes)nav.setAttribute(attribute.name,attribute.value);
+   nav.setAttribute('aria-labelledby',heading.id);
+   while(group.firstChild)nav.appendChild(group.firstChild);
+   group.replaceWith(nav);
+  }else group.setAttribute('aria-labelledby',heading.id);
+ }
+ for(const [route,label] of [['/noticias','Notícias recentes'],['/artigos','Artigos publicados']]){
+  const grid=next.querySelector('main > .site-page[data-route="'+route+'"] .container.page-shell > .card-grid');
+  if(grid&&!grid.previousElementSibling?.matches('h2')){
+   const heading=next.createElement('h2');heading.className='sr-only';heading.textContent=label;
+   grid.before(heading);
+  }
+ }
+ const slideControls=next.querySelector('#fresuni-home-highlights .fresuni-highlights-controls');
+ if(slideControls)slideControls.setAttribute('role','group');
+ const statuteText=next.querySelector('.site-page[data-route="/estatuto"] .statute-text');
+ if(statuteText)statuteText.setAttribute('role','region');
+ const statuteDownload=next.querySelector('.site-page[data-route="/estatuto"] a[download]');
+ if(statuteDownload?.getAttribute('aria-label')==='Baixar Estatuto em PDF')
+  statuteDownload.setAttribute('aria-label','Baixar Estatuto (PDF)');
+ for(const [key,oldLabel,newLabel] of [
+  ['decrease','Diminuir texto','A−, diminuir tamanho do texto'],
+  ['increase','Aumentar texto','A+, aumentar tamanho do texto']
+ ]){
+  const button=next.querySelector('#accessibility-menu [data-font="'+key+'"]');
+  if(button?.getAttribute('aria-label')===oldLabel)button.setAttribute('aria-label',newLabel);
+ }
  // Rascunhos antigos tinham script de acessibilidade sem ID: substituí-lo em
  // vez de instalar uma segunda cópia que duplicaria os eventos dos botões.
  const freshAccessibility=published.getElementById('fresuni-accessibility-runtime-2026');
