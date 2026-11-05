@@ -335,3 +335,24 @@
 .fs-element-actions-grid .fs-element-delete{grid-column:1/-1;color:#95293c;background:#fff;border-color:#cb9aa5}
 .fs-element-actions-grid .fs-element-delete:enabled:hover{background:#fff1f3}
 #fs-element-actions-status{font-weight:500;color:#193b86}
+
+/* Terceira opção: slide/banner da vitrine principal. */
+.fs-carousel-banner-editor{background:#F5F8FF;border-color:#BCD0F8;margin:13px 0}
+.fs-carousel-banner-editor>h3{color:#214ECF;font-weight:750}
+.fs-carousel-banner-editor label{display:grid;gap:7px}
+.fs-carousel-banner-editor input,
+.fs-carousel-banner-editor select{max-width:100%;min-width:0;border-color:#BCCAF0}
+.fs-carousel-banner-editor [hidden]{display:none!important}
+.fs-carousel-banner-preview{display:block;width:100%;height:auto;max-height:300px;
+ object-fit:contain;padding:6px;background:#fff;border:1px solid #c9d9f8;
+ border-radius:9px;box-sizing:border-box;margin:12px 0}
+.fs-carousel-banner-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.fs-carousel-banner-buttons button{min-height:44px;white-space:normal;line-height:1.4}
+.fs-carousel-banner-buttons button:focus-visible,
+.fs-carousel-banner-editor input:focus-visible,
+.fs-carousel-banner-editor select:focus-visible{outline:3px solid #214ECF;outline-offset:2px}
+.fs-carousel-banner-buttons #fs-carousel-banner-save{grid-column:1/-1}
+.fs-carousel-banner-buttons #fs-carousel-banner-remove{color:#8d2837}
+#fs-carousel-banner-status{overflow-wrap:anywhere;line-height:1.6}
+@media(max-width:460px){.fs-carousel-banner-buttons{grid-template-columns:1fr}
+.fs-carousel-banner-buttons #fs-carousel-banner-save{grid-column:auto}}
