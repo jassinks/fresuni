@@ -1000,6 +1000,13 @@ function fsPrepareSafePublish(html){
   if(motionButton)motionButton.after(accessButton.cloneNode(true));
   else draftAccessPanel.append(accessButton.cloneNode(true));
  }
+ // Preservar escolha de tempo de leitura mesmo em backups anteriores ao recurso.
+ const publishedReading=published.querySelector('#accessibility-menu .fresuni-carousel-reading-speed');
+ if(publishedReading&&draftAccessPanel&&!draftAccessPanel.querySelector('[data-carousel-min-duration]')){
+  const toggle=draftAccessPanel.querySelector('[data-carousel-auto-off]');
+  if(toggle)toggle.after(publishedReading.cloneNode(true));
+  else draftAccessPanel.append(publishedReading.cloneNode(true));
+ }
  const requiredAssets=['fresuni-motion-2026','fresuni-motion-runtime-2026',
   'fresuni-interactive-effects-2026','fresuni-interactive-effects-runtime-2026',
   'fresuni-flow-grid-style','fresuni-page-meta-style','fresuni-archive-styles',
