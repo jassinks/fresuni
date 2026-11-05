@@ -1419,7 +1419,12 @@ html.simple-mode *,html.simple-mode *::before,html.simple-mode *::after{
      [{transform:'scaleX(0)'},{transform:'scaleX(1)'}],
      {duration:DURATION,easing:'linear',fill:'forwards'}
     );
-    animation.onfinish=()=>{animation=null;if(enabled)show(active+1);};
+    animation.onfinish=()=>{
+     const completed=animation;
+     if(completed){completed.onfinish=null;completed.cancel();}
+     animation=null;
+     if(enabled)show(active+1);
+    };
     if(paused())animation.pause();
    }else{
     updatePlayback();
