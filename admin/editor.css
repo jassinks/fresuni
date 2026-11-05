@@ -356,3 +356,19 @@
 #fs-carousel-banner-status{overflow-wrap:anywhere;line-height:1.6}
 @media(max-width:460px){.fs-carousel-banner-buttons{grid-template-columns:1fr}
 .fs-carousel-banner-buttons #fs-carousel-banner-save{grid-column:auto}}
+
+/* Aparência e enquadramento dos slides — controles locais e acessíveis. */
+.fs-showcase-appearance{min-width:0;margin:14px 0 12px;padding:12px;border:1px solid #bdcaf1;border-radius:10px;background:#fff}
+.fs-showcase-appearance legend{font-size:.9rem;font-weight:750;color:#214ECF;padding:0 5px}
+.fs-showcase-appearance [hidden]{display:none!important}
+.fs-showcase-color-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.fs-showcase-appearance .fs-showcase-color-grid label{min-width:0;overflow-wrap:anywhere}
+.fs-showcase-appearance input[type=color]{min-height:42px;padding:3px;cursor:pointer}
+.fs-showcase-appearance input[type=range]{padding:0;border:0;accent-color:#214ECF}
+.fs-showcase-appearance input[type=number]{width:100%}
+.fs-showcase-bg-preview{height:66px;border-radius:9px;margin:12px 0 4px;border:1px solid #d3d9e7;background:linear-gradient(110deg,#214ECF,#642382)}
+.fs-showcase-position-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.fs-showcase-position-grid output{font-size:.8rem;color:#33476b}
+.fs-showcase-image-frame{width:100%;aspect-ratio:16/10;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:9px;background:#eaf0fc;border:1px solid #c8d4ed;margin:10px 0}
+.fs-showcase-image-frame .fs-home-showcase-preview{display:block;width:100%;height:100%;max-width:none;max-height:none;margin:0;object-fit:contain;object-position:center;background:transparent;border-radius:0}
+@media(max-width:420px){.fs-showcase-color-grid,.fs-showcase-position-grid{grid-template-columns:1fr}}
