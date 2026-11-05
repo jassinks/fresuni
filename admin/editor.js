@@ -1678,7 +1678,7 @@ function fsCarouselTimingRead(){
   :'Este destaque segue o tempo padrão de '+siteSeconds+' segundos. Você pode definir um tempo exclusivo.');
 }
 $('#fs-carousel-timing-select')?.addEventListener('change',fsCarouselTimingRead);
-frame.addEventListener('load',fsCarouselTimingRead);
+/* A lista será sincronizada na inicialização da prévia, antes da leitura do tempo. */
 $('#fs-carousel-default-save')?.addEventListener('click',()=>{
  if(!state.editable){fsCarouselTimingStatus('Ative o modo de edição antes de salvar.');return;}
  const value=fsCarouselDurationValid($('#fs-carousel-default-duration').value);
@@ -1810,6 +1810,7 @@ function fsHomeShowcaseRead(){
 $('#fs-home-showcase-select')?.addEventListener('change',fsHomeShowcaseRead);
 frame.addEventListener('load',()=>{
  fsCarouselSyncSelectors();
+ fsCarouselTimingRead();
  if($('#fs-home-showcase-select'))fsHomeShowcaseRead();
 });
 $('#fs-home-showcase-file')?.addEventListener('change',e=>{
