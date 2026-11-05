@@ -368,6 +368,36 @@ html.simple-mode #fresuni-home-highlights .fresuni-highlights-timeline{display:n
 .fresuni-carousel-reading-speed{display:block;font-size:.88rem;font-weight:650;line-height:1.5;margin:13px 0 6px}
 .fresuni-carousel-reading-speed select{display:block;box-sizing:border-box;width:100%;min-height:44px;margin-top:6px;padding:8px 10px;color:#192c54;background:#fff;border:1px solid #9baac5;border-radius:6px;font:inherit}
 .fresuni-carousel-reading-speed select:focus-visible{outline:3px solid #214ECF;outline-offset:2px}
+
+/* Seletores acessíveis dos destaques: bolinhas visuais com área de toque de 44px.
+   CSS independente das regras de foto, cor e fundo de cada banner. */
+#fresuni-home-highlights .fresuni-slide-picker{
+ display:flex;flex-wrap:wrap;align-items:center;justify-content:center;
+ gap:2px;max-width:100%;padding:9px 6px;margin:0 auto;
+}
+#fresuni-home-highlights .fresuni-slide-picker [hidden]{display:none!important}
+#fresuni-home-highlights .fresuni-slide-dot{
+ -webkit-appearance:none;appearance:none;border:0;border-radius:50%;
+ background:transparent;color:#214ECF;box-sizing:border-box;
+ width:44px;height:44px;min-width:44px;min-height:44px;padding:0;
+ display:grid;place-items:center;cursor:pointer;touch-action:manipulation;
+}
+#fresuni-home-highlights .fresuni-slide-dot::before{
+ content:"";width:13px;height:13px;border:2px solid currentColor;
+ border-radius:50%;background:transparent;box-sizing:border-box;
+ transition:background-color .15s ease,transform .15s ease;
+}
+#fresuni-home-highlights .fresuni-slide-dot[aria-current="true"]::before{
+ background:currentColor;transform:scale(1.16);
+}
+#fresuni-home-highlights .fresuni-slide-dot:hover::before{transform:scale(1.25)}
+#fresuni-home-highlights .fresuni-slide-dot:focus-visible{
+ outline:3px solid #214ECF;outline-offset:-3px;border-radius:9px;
+}
+html.high-contrast #fresuni-home-highlights .fresuni-slide-dot{color:#000}
+@media(prefers-reduced-motion:reduce){
+ #fresuni-home-highlights .fresuni-slide-dot::before{transition:none}
+}
 </style><style id="fresuni-blue-brand-2026">
 
 /* FRESUNI — identidade institucional minimalista, 03/11/2026.
@@ -1397,6 +1427,49 @@ html.simple-mode *,html.simple-mode *::before,html.simple-mode *::after{
   const count=carousel.querySelector('[data-fresuni-slide-count]');
   const timeline=carousel.querySelector('[data-fresuni-slide-timeline]');
   const fill=carousel.querySelector('[data-fresuni-slide-progress]');
+  const controls=carousel.querySelector('.fresuni-highlights-controls');
+  // A lista é gerada a partir dos slides reais e acompanha novas inclusões no editor.
+  // data-editor-internal impede que a interface temporária seja salva em publicações.
+  let picker=carousel.querySelector('[data-fresuni-slide-picker]');
+  if(!picker&&controls){
+   picker=document.createElement('div');
+   picker.className='fresuni-slide-picker';
+   picker.dataset.fresuniSlidePicker='';
+   picker.dataset.editorInternal='';
+   picker.setAttribute('role','group');
+   picker.setAttribute('aria-label','Escolher destaque. Use as setas para mudar a seleção.');
+   controls.before(picker);
+  }
+  const dotButtons=[];
+  for(const [i,slide] of slides.entries()){
+   if(!picker)break;
+   const title=(slide.querySelector('.fresuni-highlight-content h3')?.textContent||
+    slide.querySelector('.fresuni-highlight-full-link img')?.getAttribute('alt')||
+    'Destaque '+(i+1)).trim().replace(/\\s+/g,' ').slice(0,85);
+   const dot=document.createElement('button');
+   dot.type='button';dot.className='fresuni-slide-dot';
+   dot.setAttribute('aria-label','Mostrar destaque '+(i+1)+' de '+slides.length+': '+title);
+   dot.setAttribute('aria-current',i===0?'true':'false');
+   dot.tabIndex=i===0?0:-1;
+   dot.addEventListener('click',()=>show(i));
+   dotButtons.push(dot);
+  }
+  picker?.replaceChildren(...dotButtons);
+  if(picker)picker.hidden=dotButtons.length<2;
+  picker?.addEventListener('keydown',event=>{
+   const at=dotButtons.indexOf(event.target);
+   if(at<0)return;
+   let to=at;
+   if(event.key==='ArrowRight'||event.key==='ArrowDown')to=(at+1)%dotButtons.length;
+   else if(event.key==='ArrowLeft'||event.key==='ArrowUp')to=(at+dotButtons.length-1)%dotButtons.length;
+   else if(event.key==='Home')to=0;
+   else if(event.key==='End')to=dotButtons.length-1;
+   else return;
+   event.preventDefault();
+   show(to);
+   dotButtons[to]?.focus();
+  });
+
   const reduced=window.matchMedia?.('(prefers-reduced-motion: reduce)');
   const storageKey='fresuni-acessibilidade-v1';
   const DEFAULT_DURATION=15000;
@@ -1466,6 +1539,11 @@ html.simple-mode *,html.simple-mode *::before,html.simple-mode *::after{
     slide.setAttribute('aria-label','Destaque '+(i+1)+' de '+slides.length);
    });
    if(count)count.textContent=(active+1)+' de '+slides.length;
+   dotButtons.forEach((dot,i)=>{
+    const isCurrent=i===active;
+    dot.setAttribute('aria-current',isCurrent?'true':'false');
+    dot.tabIndex=isCurrent?0:-1;
+   });
    startProgress();
   }
   function sync(restart=false){
