@@ -1321,7 +1321,39 @@ function fsPrepareSafePublish(html){
    }
   }
  }
- // Proteção ao publicar: textos e links são editáveis; a estrutura de navegação precisa continuar íntegra.
+ // Backups anteriores aos novos recursos de leitura recebem controles acessíveis sem perder textos.
+ const originalPanel=published.querySelector('#accessibility-menu .access-panel');
+ const draftPanel=next.querySelector('#accessibility-menu .access-panel');
+ if(originalPanel&&draftPanel){
+  const originalSpacing=originalPanel.querySelector('[data-spacing]');
+  if(originalSpacing&&!draftPanel.querySelector('[data-spacing]')){
+   const before=draftPanel.querySelector('[data-contrast]');
+   if(before)before.before(originalSpacing.cloneNode(true));
+   else draftPanel.append(originalSpacing.cloneNode(true));
+  }
+  const origPercent=originalPanel.querySelector('#fresuni-font-size-percent');
+  const draftStepper=draftPanel.querySelector('.stepper');
+  if(origPercent&&draftStepper&&!draftStepper.querySelector('#fresuni-font-size-percent')){
+   const decrease=draftStepper.querySelector('[data-font="decrease"]');
+   if(decrease)decrease.after(origPercent.cloneNode(true));
+   else draftStepper.prepend(origPercent.cloneNode(true));
+  }
+ }
+ // Apenas rótulos antigos exatos são atualizados; textos personalizados são preservados.
+ const labels=[
+  ['#menu-principal a[href="#/manifesto/frentes"]','Frentes','Conselhos'],
+  ['[data-fresuni-slide="frentes"] .fresuni-highlight-content h3','As Frentes do FRESUNI','Os 13 Conselhos da FRESUNI'],
+  ['[data-fresuni-slide="frentes"] .fresuni-highlight-link','Conhecer as Frentes','Conhecer os Conselhos']
+ ];
+ for(const [selector,oldLabel,newLabel] of labels){
+  const el=next.querySelector(selector);
+  if(!el)continue;
+  if(selector.includes('highlight-link')){
+   const inner=el.firstChild;
+   if(inner?.nodeType===3&&inner.textContent.trim()===oldLabel)inner.textContent=newLabel+' ';
+  }else if(el.textContent.trim()===oldLabel)el.textContent=newLabel;
+ }
+  // Proteção ao publicar: textos e links são editáveis; a estrutura de navegação precisa continuar íntegra.
  const nav=next.getElementById('menu-principal');
  if(!nav||!nav.querySelector('.nav-root[href]'))
   throw Error('Publicação interrompida: menu principal removido ou vazio. Verifique o cabeçalho.');
@@ -1351,6 +1383,7 @@ function fsPrepareSafePublish(html){
   if(eye&&heading&&norm(eye.textContent)===norm(heading.textContent))
    eye.textContent=distinctEyebrow[page.dataset.route]||'CONHEÇA MAIS SOBRE O FRESUNI';
  }
+ refreshSearch(next.documentElement);
  return '<!doctype html>\n'+next.documentElement.outerHTML;
 }
 function fsPublicationWarnings(html){
@@ -1415,6 +1448,7 @@ function serialize(){const d=siteDoc();if(!d)return state.html;
    }else if(saved.textContent!==canonical.textContent)saved.textContent=canonical.textContent;
   }
  }catch(e){/* Preservamos o restante do rascunho se não for possível analisar a base. */}
+ refreshSearch(root);
  return '<!doctype html>\n'+root.outerHTML;
 }
 function snapshot(){remember();dirty();}
