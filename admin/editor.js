@@ -1343,10 +1343,23 @@ function fsPublicationWarnings(html){
 }
 
 function serialize(){const d=siteDoc();if(!d)return state.html;
- const root=d.documentElement.cloneNode(true);stripTransient(root);root.querySelectorAll('[data-fresuni-children]').forEach(el=>el.remove());fsCleanupRepeats(root);fsRefreshNewsArchives(root);refreshSearch(root);
+ const root=d.documentElement.cloneNode(true);stripTransient(root);root.classList.remove('reading-spaced');root.style.removeProperty('--text-scale');root.style.removeProperty('font-size');root.removeAttribute('data-lt-installed');root.querySelectorAll('[data-fresuni-children]').forEach(el=>el.remove());fsCleanupRepeats(root);fsRefreshNewsArchives(root);refreshSearch(root);
  upgradeLegacyBodyFont(root);
- const head=root.querySelector('head');if(head){for(const el of Array.from(head.querySelectorAll('link[rel=stylesheet]'))){if((el.getAttribute('href')||'').includes('fonts.googleapis.com/css2'))el.remove();}const fontLink=root.ownerDocument.createElement('link');fontLink.rel='stylesheet';fontLink.href=COMPLETE_FONTS;head.append(fontLink);}
- for(const id of ['fresuni-layout-polish-v2','fresuni-custom-box-style']){
+ // Proteção contra backups que ainda contenham as oito frentes antigas.
+ try {
+  const base=new DOMParser().parseFromString(state.html,'text/html').querySelector('[data-route="/manifesto/frentes"]');
+  const old=root.querySelector('[data-route="/manifesto/frentes"]');
+  if(base?.querySelector('.fresuni-council-list')&&old?.querySelector('.front-list')&&!old.querySelector('.fresuni-council-list')){
+   const modern=base.querySelector('.page-article'),legacy=old.querySelector('.page-article');
+   if(modern&&legacy)legacy.replaceWith(modern.cloneNode(true));
+   old.dataset.title=base.dataset.title;
+   const h=old.querySelector('.page-heading h1'),crumb=old.querySelector('.breadcrumbs [aria-current="page"]');
+   if(h)h.textContent='Conselhos da FRESUNI';
+   if(crumb)crumb.textContent='Conselhos da FRESUNI';
+  }
+ }catch(_){/* Falha de análise não descarta a edição. */}
+  const head=root.querySelector('head');if(head){for(const el of Array.from(head.querySelectorAll('link[rel=stylesheet]'))){if((el.getAttribute('href')||'').includes('fonts.googleapis.com/css2'))el.remove();}const fontLink=root.ownerDocument.createElement('link');fontLink.rel='stylesheet';fontLink.href=COMPLETE_FONTS;head.append(fontLink);}
+ for(const id of ['fresuni-layout-polish-v2','fresuni-custom-box-style','fresuni-councils-typography-accessibility-2026']){
   if(!root.querySelector('#'+id)){
    const fromPublished=new DOMParser().parseFromString(state.html,'text/html').getElementById(id);
    if(fromPublished)root.querySelector('head')?.append(fromPublished.cloneNode(true));
