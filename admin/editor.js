@@ -7,12 +7,13 @@ const state={token:sessionStorage.getItem('fresuni:session')||'',html:'',sha:'',
 let tempPage='',toastTimer,historyTimer,draftTimer,dragged=null;
 const DRAFT_KEY='jassinks/fresuni/index.html';
 
-const COMPLETE_FONTS='https://fonts.googleapis.com/css2?family=Prompt:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Merriweather:ital,wght@0,300..900;1,300..900&display=swap';
+const COMPLETE_FONTS='https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,200;1,300;1,400;1,500;1,600;1,700;1,800&family=Merriweather:ital,wght@0,300..900;1,300..900&display=swap';
 function ensureCompleteFonts(d){
  const links=Array.from(d.querySelectorAll('link[rel="stylesheet"]'));
  for(const el of links){if((el.getAttribute('href')||'').includes('fonts.googleapis.com/css2')){el.remove();}}
  let l=d.createElement('link');l.rel='stylesheet';l.href=COMPLETE_FONTS;l.dataset.fresuniFontCatalog='';l.media='print';l.addEventListener('load',()=>l.media='all');d.head.append(l);
 }
+function upgradeLegacyBodyFont(d){if(!d)return;for(const style of d.querySelectorAll('style')){if(style.textContent.includes('Prompt'))style.textContent=style.textContent.replace(/\bPrompt\b/g,'Atkinson Hyperlegible Next');}for(const el of d.querySelectorAll('[style]')){const old=el.getAttribute('style');if(old?.includes('Prompt'))el.setAttribute('style',old.replace(/\bPrompt\b/g,'Atkinson Hyperlegible Next'));}}
 const motionCss=`.directory-links > [data-fresuni-block="quick-item"],.directory-links > [data-fresuni-block="text"]{min-width:0;max-width:100%;overflow-wrap:anywhere} @media(prefers-reduced-motion:no-preference){.js-motion [data-fresuni-motion]:not([data-fresuni-motion="none"]):not(.is-visible){opacity:0}.js-motion [data-fresuni-motion="slide"]:not(.is-visible){transform:translateY(24px)}.js-motion [data-fresuni-motion="zoom"]:not(.is-visible){transform:scale(.96)}.js-motion [data-fresuni-motion="left"]:not(.is-visible){transform:translateX(-24px)}.js-motion [data-fresuni-motion="right"]:not(.is-visible){transform:translateX(24px)}.js-motion [data-fresuni-motion]:not([data-fresuni-motion="none"]){transition:opacity var(--fresuni-motion-duration,650ms) ease,transform var(--fresuni-motion-duration,650ms) ease}.js-motion [data-fresuni-motion].is-visible{opacity:1;transform:none}}@media(prefers-reduced-motion:reduce){[data-fresuni-motion]{opacity:1!important;transform:none!important;transition:none!important}}`;
 
 const notify=(s)=>{const t=$('#toast');t.textContent=s;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3600);};
@@ -449,6 +450,7 @@ function reloadFrame(html,route=state.route){
   initialized=true;clearInterval(poll);
 
   const d=siteDoc();if(!d)return;
+  upgradeLegacyBodyFont(d);
   fonts.forEach(href=>{const link=d.createElement('link');link.rel='stylesheet';link.media='print';link.href=href;link.dataset.fresuniAsyncFont='';link.addEventListener('load',()=>{link.media='all';});d.head.append(link);});
   ensureCompleteFonts(d);
   let effects=d.getElementById('fresuni-extra-effects');if(!effects){effects=d.createElement('style');effects.id='fresuni-extra-effects';d.head.append(effects);}effects.textContent=motionCss;
@@ -459,12 +461,12 @@ function reloadFrame(html,route=state.route){
    [data-fresuni-selected]::selection{background:#e2bbff}
    .fresuni-resize-grip{position:absolute;z-index:99999;width:19px;height:19px;border-radius:6px;background:#214ECF;border:3px solid white;box-shadow:0 0 0 2px #214ECF,0 2px 9px #3335;cursor:nwse-resize;touch-action:none}
    .fresuni-resize-grip:focus-visible{outline:3px solid #333;outline-offset:4px}
-   .fresuni-resize-label{position:absolute;z-index:99998;background:#2d0c4f;color:white;font:12px Prompt,Arial,sans-serif;padding:3px 8px;border-radius:5px;pointer-events:none}
+   .fresuni-resize-label{position:absolute;z-index:99998;background:#2d0c4f;color:white;font:12px Atkinson Hyperlegible Next,Arial,sans-serif;padding:3px 8px;border-radius:5px;pointer-events:none}
    body{scroll-behavior:auto!important}
    [data-reveal]:not(.fresuni-previewing){opacity:1!important;transform:none!important;visibility:visible!important}
    @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}`;
   style.textContent+=`
-.fresuni-quick-add{font:600 13px Prompt,Arial,sans-serif!important;color:#214ECF!important;background:#fbf7ff!important;border:1px dashed #9c3bdf!important;padding:12px!important;border-radius:8px!important;cursor:pointer!important;min-height:44px!important;text-align:left!important;max-width:100%!important;min-width:0!important}.fresuni-quick-add:hover,.fresuni-quick-add:focus-visible{background:#f0ddff!important;outline:2px solid #214ECF!important}`;
+.fresuni-quick-add{font:600 13px Atkinson Hyperlegible Next,Arial,sans-serif!important;color:#214ECF!important;background:#fbf7ff!important;border:1px dashed #9c3bdf!important;padding:12px!important;border-radius:8px!important;cursor:pointer!important;min-height:44px!important;text-align:left!important;max-width:100%!important;min-width:0!important}.fresuni-quick-add:hover,.fresuni-quick-add:focus-visible{background:#f0ddff!important;outline:2px solid #214ECF!important}`;
   d.head.append(style);
   for(const p of pageNodes())p.dataset.editorGroup=groupFor(p);
   d.addEventListener('click',clickSite,true);
@@ -805,7 +807,7 @@ function selectElement(el){if(state.selected===el)return;clearSelection();state.
  $('#font-size').value=Math.round(parseFloat(frame.contentWindow.getComputedStyle(el).fontSize))||16;
  $('#background-color').value=toHex(frame.contentWindow.getComputedStyle(el).backgroundColor,'#ffffff');
  $('#text-color').value=toHex(frame.contentWindow.getComputedStyle(el).color,'#000000');
- const cs=frame.contentWindow.getComputedStyle(el);$('#font-family').value=cs.fontFamily.toLowerCase().includes('merriweather')?'Merriweather':'Prompt';setWeightOptions($('#font-family').value,Math.round(parseInt(cs.fontWeight)||400));$('#text-preset').value='custom';
+ const cs=frame.contentWindow.getComputedStyle(el);$('#font-family').value=cs.fontFamily.toLowerCase().includes('merriweather')?'Merriweather':'Atkinson Hyperlegible Next';setWeightOptions($('#font-family').value,Math.round(parseInt(cs.fontWeight)||400));$('#text-preset').value='custom';
  $('#element-width').value=Math.max(10,Math.min(100,Math.round(100*el.getBoundingClientRect().width/(el.parentElement?.getBoundingClientRect().width||el.getBoundingClientRect().width))));
  $('#element-height').value=parseInt(el.style.minHeight)||0;$('#corner-radius').value=parseInt(el.style.borderRadius)||0;$('#border-size').value=parseInt(el.style.borderWidth)||0;
  $('#border-color').value=toHex(cs.borderTopColor,'#214ECF');$('#block-motion').value=el.dataset.fresuniMotion||'none';$('#motion-time').value=parseInt(el.style.getPropertyValue('--fresuni-motion-duration'))||650;
@@ -1342,6 +1344,7 @@ function fsPublicationWarnings(html){
 
 function serialize(){const d=siteDoc();if(!d)return state.html;
  const root=d.documentElement.cloneNode(true);stripTransient(root);root.querySelectorAll('[data-fresuni-children]').forEach(el=>el.remove());fsCleanupRepeats(root);fsRefreshNewsArchives(root);refreshSearch(root);
+ upgradeLegacyBodyFont(root);
  const head=root.querySelector('head');if(head){for(const el of Array.from(head.querySelectorAll('link[rel=stylesheet]'))){if((el.getAttribute('href')||'').includes('fonts.googleapis.com/css2'))el.remove();}const fontLink=root.ownerDocument.createElement('link');fontLink.rel='stylesheet';fontLink.href=COMPLETE_FONTS;head.append(fontLink);}
  for(const id of ['fresuni-layout-polish-v2','fresuni-custom-box-style']){
   if(!root.querySelector('#'+id)){
@@ -2670,7 +2673,7 @@ function fsGoogleFormBlock({url,title,height,mode}){
  const name=String(title||'Formulário do FRESUNI').trim().slice(0,120)||'Formulário do FRESUNI';
  const safeTitle=escapeHTML(name),safeUrlText=escapeHTML(url);
  const label='<h2 class="fresuni-google-forms-title" style="font-family:Merriweather,Georgia,serif;font-size:1.4rem;line-height:1.4;color:var(--purple,#214ECF);margin:0 0 14px">'+safeTitle+'</h2>';
- const link='<a href="'+safeUrlText+'" target="_blank" rel="noopener noreferrer" class="fresuni-google-form-link" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:11px 18px;border:1px solid var(--purple,#214ECF);border-radius:8px;color:var(--purple,#214ECF);font-family:Prompt,Arial,sans-serif;font-weight:600;text-decoration:none;overflow-wrap:anywhere">Abrir formulário em outra aba ↗</a>';
+ const link='<a href="'+safeUrlText+'" target="_blank" rel="noopener noreferrer" class="fresuni-google-form-link" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:11px 18px;border:1px solid var(--purple,#214ECF);border-radius:8px;color:var(--purple,#214ECF);font-family:Atkinson Hyperlegible Next,Arial,sans-serif;font-weight:600;text-decoration:none;overflow-wrap:anywhere">Abrir formulário em outra aba ↗</a>';
  const iframe=mode==='embed'?'<iframe title="'+safeTitle+'" src="'+safeUrlText+'" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" sandbox="allow-forms allow-scripts allow-same-origin allow-popups" style="display:block;width:100%;height:'+height+'px;border:1px solid #e4d7eb;border-radius:10px;background:#fff;max-width:100%" allow="clipboard-write"></iframe>':'';
  const content=label+iframe+'<div style="margin-top:12px">'+link+'</div>';
  return '<section data-fresuni-block="google-forms" data-fresuni-google-forms-mode="'+mode+'" class="fresuni-google-forms" style="box-sizing:border-box;grid-column:1 / -1;width:100%;max-width:960px;min-width:0;margin:28px auto;padding:0;overflow-wrap:anywhere">'+content+'</section>';
@@ -2760,7 +2763,7 @@ function fsEnsureGoogleFormHandle(section){
  if(!section||section.querySelector('[data-fresuni-google-edit]'))return;
  const d=section.ownerDocument;
  const button=d.createElement('button');button.type='button';button.className='fresuni-google-edit';button.textContent='✎ Editar Google Formulários';button.dataset.editorInternal='';button.dataset.fresuniGoogleEdit='';
- button.style.cssText='display:block;margin:0 0 12px;padding:9px 14px;border:1px dashed #214ECF;border-radius:8px;color:#6500a8;background:#faf5ff;font:600 13px Prompt,Arial,sans-serif;cursor:pointer';
+ button.style.cssText='display:block;margin:0 0 12px;padding:9px 14px;border:1px dashed #214ECF;border-radius:8px;color:#6500a8;background:#faf5ff;font:600 13px Atkinson Hyperlegible Next,Arial,sans-serif;cursor:pointer';
  button.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();state.selected=null;selectElement(section);fsOpenGoogleForms(section);});
  section.insertBefore(button,section.firstChild);
 }
@@ -2783,10 +2786,10 @@ function resizeImage(file){return new Promise((resolve,reject)=>{const reader=ne
  };reader.readAsDataURL(file);});}
 // Formatação contextual na prévia: texto selecionado recebe estilo apenas no trecho.
 let savedTextRange=null,floatBar=null;
-const FONT_WEIGHTS={Prompt:[100,200,300,400,500,600,700,800,900],Merriweather:[300,400,500,600,700,800,900]};
+const FONT_WEIGHTS={'Atkinson Hyperlegible Next':[200,300,400,500,600,700,800],Merriweather:[300,400,500,600,700,800,900]};
 const weightLabels={100:'Thin',200:'ExtraLight',300:'Light',400:'Regular',500:'Medium',600:'SemiBold',700:'Bold',800:'ExtraBold',900:'Black'};
 function setWeightOptions(font,value){
- const sel=$('#font-weight');const weights=FONT_WEIGHTS[font]||FONT_WEIGHTS.Prompt;
+ const sel=$('#font-weight');const weights=FONT_WEIGHTS[font]||FONT_WEIGHTS['Atkinson Hyperlegible Next'];
  sel.replaceChildren();for(const w of weights){const opt=document.createElement('option');opt.value=String(w);opt.textContent=weightLabels[w]+' · '+w;sel.append(opt);}
  sel.value=String(weights.includes(+value)?+value:weights.includes(400)?400:weights[0]);
 }
@@ -2907,7 +2910,7 @@ function positionFloatingToolbar(){if(!floatBar||!state.editable||!state.selecte
 }
 function setupFloatingToolbar(d){
  floatBar=d.createElement('div');floatBar.className='fresuni-float-toolbar';floatBar.hidden=true;floatBar.dataset.editorInternal='';floatBar.setAttribute('role','toolbar');floatBar.setAttribute('aria-label','Barra de formatação flutuante');
- floatBar.innerHTML='<select aria-label="Estilo do texto" data-float="style"><option value="custom">Texto normal</option><option value="heading-xl">Título grande</option><option value="heading-md">Título médio</option><option value="heading-sm">Título pequeno</option><option value="body-xl">Texto grande</option><option value="body-md">Texto médio</option><option value="body-sm">Texto pequeno</option></select><select aria-label="Fonte" data-float="family"><option>Prompt</option><option>Merriweather</option></select><select aria-label="Peso" data-float="weight"></select><input type="number" min="10" max="180" value="16" data-float="size" aria-label="Tamanho em pixels"><button type="button" data-float-format="bold" title="Negrito"><b>B</b></button><button type="button" data-float-format="italic" title="Itálico"><i>I</i></button><button type="button" data-float-format="underline" title="Sublinhado"><u>U</u></button><input type="color" data-float="color" value="#214ECF" aria-label="Cor do texto"><input type="color" data-float="mark" value="#fff59d" aria-label="Marca-texto"><button type="button" data-float-format="insertOrderedList" title="Lista numerada">1.</button><button type="button" data-float-format="insertUnorderedList" title="Lista com marcadores">☷</button><button type="button" data-float-action="link" title="Inserir link">🔗</button><button type="button" data-float-action="clone" title="Duplicar bloco">▣</button><button type="button" data-float-action="delete" title="Excluir bloco">⌫</button>';
+ floatBar.innerHTML='<select aria-label="Estilo do texto" data-float="style"><option value="custom">Texto normal</option><option value="heading-xl">Título grande</option><option value="heading-md">Título médio</option><option value="heading-sm">Título pequeno</option><option value="body-xl">Texto grande</option><option value="body-md">Texto médio</option><option value="body-sm">Texto pequeno</option></select><select aria-label="Fonte" data-float="family"><option>Atkinson Hyperlegible Next</option><option>Merriweather</option></select><select aria-label="Peso" data-float="weight"></select><input type="number" min="10" max="180" value="16" data-float="size" aria-label="Tamanho em pixels"><button type="button" data-float-format="bold" title="Negrito"><b>B</b></button><button type="button" data-float-format="italic" title="Itálico"><i>I</i></button><button type="button" data-float-format="underline" title="Sublinhado"><u>U</u></button><input type="color" data-float="color" value="#214ECF" aria-label="Cor do texto"><input type="color" data-float="mark" value="#fff59d" aria-label="Marca-texto"><button type="button" data-float-format="insertOrderedList" title="Lista numerada">1.</button><button type="button" data-float-format="insertUnorderedList" title="Lista com marcadores">☷</button><button type="button" data-float-action="link" title="Inserir link">🔗</button><button type="button" data-float-action="clone" title="Duplicar bloco">▣</button><button type="button" data-float-action="delete" title="Excluir bloco">⌫</button>';
  d.body.append(floatBar);
  const fw=floatBar.querySelector('[data-float="weight"]');const fillWeights=()=>{const f=floatBar.querySelector('[data-float="family"]').value;fw.replaceChildren();for(const w of FONT_WEIGHTS[f]){const opt=d.createElement('option');opt.value=w;opt.textContent=weightLabels[w]+' · '+w;fw.append(opt);}};
  fillWeights();
@@ -2927,11 +2930,11 @@ function setupFloatingToolbar(d){
   else if(key==='mark')applyInlineStyle('background-color',e.target.value);
   else if(key==='style'){$('#text-preset').value=e.target.value;$('#text-preset').dispatchEvent(new Event('change'));}
  });
- const refresh=()=>{if(floatBar.hidden||!state.selected?.isConnected)return;const cs=frame.contentWindow.getComputedStyle(state.selected);const ff=cs.fontFamily.toLowerCase().includes('merriweather')?'Merriweather':'Prompt';floatBar.querySelector('[data-float="family"]').value=ff;fillWeights();fw.value=String(Math.round(parseInt(cs.fontWeight)||400));floatBar.querySelector('[data-float="size"]').value=parseInt(cs.fontSize)||16;};
+ const refresh=()=>{if(floatBar.hidden||!state.selected?.isConnected)return;const cs=frame.contentWindow.getComputedStyle(state.selected);const ff=cs.fontFamily.toLowerCase().includes('merriweather')?'Merriweather':'Atkinson Hyperlegible Next';floatBar.querySelector('[data-float="family"]').value=ff;fillWeights();fw.value=String(Math.round(parseInt(cs.fontWeight)||400));floatBar.querySelector('[data-float="size"]').value=parseInt(cs.fontSize)||16;};
  d.addEventListener('click',()=>{requestAnimationFrame(()=>{positionFloatingToolbar();refresh();});});
  frame.contentWindow.addEventListener('scroll',positionFloatingToolbar,{passive:true});
 }
-const presets={'heading-xl':{tag:'H1',size:44,font:'Merriweather'},'heading-md':{tag:'H2',size:30,font:'Merriweather'},'heading-sm':{tag:'H3',size:23,font:'Merriweather'},'body-xl':{tag:'P',size:22,font:'Prompt'},'body-md':{tag:'P',size:16,font:'Prompt'},'body-sm':{tag:'P',size:14,font:'Prompt'}};
+const presets={'heading-xl':{tag:'H1',size:44,font:'Merriweather'},'heading-md':{tag:'H2',size:30,font:'Merriweather'},'heading-sm':{tag:'H3',size:23,font:'Merriweather'},'body-xl':{tag:'P',size:22,font:'Atkinson Hyperlegible Next'},'body-md':{tag:'P',size:16,font:'Atkinson Hyperlegible Next'},'body-sm':{tag:'P',size:14,font:'Atkinson Hyperlegible Next'}};
 $('#text-preset').addEventListener('change',e=>{const el=state.selected;if(!el||!presets[e.target.value])return;const spec=presets[e.target.value];if(activeTextRange()){applyInlineStyle('font-size',spec.size+'px');applyInlineStyle('font-family',spec.font+(spec.font==='Merriweather'?',serif':',sans-serif'));return;}snapshot();let target=el;
  if(el.matches('h1,h2,h3,h4,h5,h6,p')&&el.tagName!==spec.tag){const repl=siteDoc().createElement(spec.tag.toLowerCase());for(const a of [...el.attributes])repl.setAttribute(a.name,a.value);repl.innerHTML=el.innerHTML;el.replaceWith(repl);target=repl;state.selected=repl;}
  target.style.fontSize=spec.size+'px';target.style.fontFamily=spec.font+(spec.font==='Merriweather'?',serif':',sans-serif');$('#font-size').value=spec.size;$('#font-family').value=spec.font;dirty();state.selected=null;selectElement(target);
@@ -3624,7 +3627,7 @@ $('#structure-footer-add').addEventListener('click',()=>{const label=$('#structu
 });
 $('#structure-header-text-add').addEventListener('click',()=>{
  const el=sharedEl('header');if(!el)return;snapshot();const line=siteDoc().createElement('p');line.dataset.fresuniHeaderMessage='';line.textContent='Novo texto no cabeçalho. Clique para editar.';
- line.style.cssText='max-width:1100px;margin:0 auto;padding:8px 18px;text-align:center;overflow-wrap:anywhere;font:400 16px Prompt,Arial,sans-serif';el.append(line);
+ line.style.cssText='max-width:1100px;margin:0 auto;padding:8px 18px;text-align:center;overflow-wrap:anywhere;font:400 16px Atkinson Hyperlegible Next,Arial,sans-serif';el.append(line);
  dirty();setEditable(true);selectElement(line);notify('Texto inserido no cabeçalho.');
 });
 $('#structure-footer-text-add').addEventListener('click',()=>{
@@ -3793,11 +3796,11 @@ $('#fs-motion-preview').addEventListener('click',()=>{
 
 // Tema: usa variáveis CSS do site sem remover as regras existentes.
 function themeEl(doc){let el=$('#fresuni-custom-theme',doc);if(!el){el=doc.createElement('style');el.id='fresuni-custom-theme';doc.head.append(el);}return el;}
-const theme={primary:'#214ECF',text:'#000000',background:'#ffffff',font:'Prompt'};
+const theme={primary:'#214ECF',text:'#000000',background:'#ffffff',font:'Atkinson Hyperlegible Next'};
 function applyTheme(){const d=siteDoc();if(!d)return;themeEl(d).textContent=`:root{--primary:${theme.primary};--purple:${theme.primary};--accent:${theme.primary};--ink:${theme.text};--background:${theme.background};--bg:${theme.background}} body{background:${theme.background};color:${theme.text};font-family:${theme.font},Arial,sans-serif} .page-heading h1,.prose h2,.value-section summary{color:${theme.primary}} .brand:focus-visible{outline-color:${theme.primary}}`;
  dirty();}
 for(const [id,key] of [['#theme-primary','primary'],['#theme-text','text'],['#theme-bg','background'],['#theme-font','font']])$(id).addEventListener('change',e=>{snapshot();theme[key]=e.target.value;applyTheme();});
-$('#reset-theme').addEventListener('click',()=>{snapshot();Object.assign(theme,{primary:'#214ECF',text:'#000000',background:'#ffffff',font:'Prompt'});$$('[id^="theme-"]').forEach(e=>{const key={'theme-primary':'primary','theme-text':'text','theme-bg':'background','theme-font':'font'}[e.id];if(key)e.value=theme[key];});themeEl(siteDoc()).remove();dirty();});
+$('#reset-theme').addEventListener('click',()=>{snapshot();Object.assign(theme,{primary:'#214ECF',text:'#000000',background:'#ffffff',font:'Atkinson Hyperlegible Next'});$$('[id^="theme-"]').forEach(e=>{const key={'theme-primary':'primary','theme-text':'text','theme-bg':'background','theme-font':'font'}[e.id];if(key)e.value=theme[key];});themeEl(siteDoc()).remove();dirty();});
 $$('[data-tab]').forEach(b=>b.addEventListener('click',()=>{$$('[data-tab]').forEach(x=>{x.classList.toggle('active',x===b);x.setAttribute('aria-selected',String(x===b));});$$('[data-panel]').forEach(x=>x.hidden=x.dataset.panel!==b.dataset.tab);updatePageSidebar();if(b.dataset.tab==='structure')renderStructurePanel();}));
 $('#view-desktop').addEventListener('click',()=>{ $('#canvas').classList.remove('mobile');$('#view-desktop').classList.add('active');$('#view-mobile').classList.remove('active');$('#view-desktop').setAttribute('aria-pressed','true');$('#view-mobile').setAttribute('aria-pressed','false');});
 $('#view-mobile').addEventListener('click',()=>{ $('#canvas').classList.add('mobile');$('#view-mobile').classList.add('active');$('#view-desktop').classList.remove('active');$('#view-desktop').setAttribute('aria-pressed','false');$('#view-mobile').setAttribute('aria-pressed','true');});

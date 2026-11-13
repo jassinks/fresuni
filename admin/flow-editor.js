@@ -208,10 +208,10 @@
   doc=newDoc;handle=null;marker=null;ghost=null;drag=null;
   const style=doc.createElement('style');style.dataset.editorInternal='';
   style.textContent=
-   '.fresuni-flow-handle{position:absolute;z-index:2147483000;background:#8300ea;color:white;border:2px solid #fff;border-radius:7px;padding:5px 12px;font:700 12px Prompt,Arial,sans-serif;box-shadow:0 3px 14px #35005666;cursor:grab;touch-action:none;user-select:none}' +
+   '.fresuni-flow-handle{position:absolute;z-index:2147483000;background:#8300ea;color:white;border:2px solid #fff;border-radius:7px;padding:5px 12px;font:700 12px Atkinson Hyperlegible Next,Arial,sans-serif;box-shadow:0 3px 14px #35005666;cursor:grab;touch-action:none;user-select:none}' +
    '.fresuni-flow-handle.is-dragging{cursor:grabbing;opacity:.8}' +
    '.fresuni-flow-drop-line{position:fixed;z-index:2147483001;background:#8300ea;box-shadow:0 0 0 2px #fff,0 0 0 4px #8300ea;pointer-events:none;border-radius:5px}' +
-   '.fresuni-flow-drag-ghost{position:fixed;z-index:2147483002;width:190px;max-width:50vw;padding:9px 12px;border:1px solid #8300ea;border-radius:8px;background:#fff;color:#340050;font:600 12px/1.35 Prompt,Arial,sans-serif;box-shadow:0 7px 25px #23003935;pointer-events:none;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}' +
+   '.fresuni-flow-drag-ghost{position:fixed;z-index:2147483002;width:190px;max-width:50vw;padding:9px 12px;border:1px solid #8300ea;border-radius:8px;background:#fff;color:#340050;font:600 12px/1.35 Atkinson Hyperlegible Next,Arial,sans-serif;box-shadow:0 7px 25px #23003935;pointer-events:none;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}' +
    '.fresuni-editor-flow-on [data-fresuni-drop-zone]{outline:3px dashed #8300ea!important;outline-offset:2px;background-image:repeating-linear-gradient(90deg,rgba(131,0,234,.07) 0,rgba(131,0,234,.07) 1px,transparent 1px,transparent 8.333%)!important}' +
    '.fresuni-editor-flow-on .fresuni-flow-grid{background-image:repeating-linear-gradient(90deg,rgba(131,0,234,.04) 0,rgba(131,0,234,.04) 1px,transparent 1px,transparent 8.333%)}' +
    '.fresuni-place-picking{cursor:crosshair!important}.fresuni-place-picking *{cursor:crosshair!important}.fresuni-place-picking .fresuni-place-target{outline:3px dashed #8300ea!important;outline-offset:4px;background-color:rgba(131,0,234,.035)!important}';
