@@ -914,6 +914,20 @@ $('#selected-text-clear').addEventListener('click',()=>{
 });
 function toHex(color,fallback){const m=color.match(/\d+/g);if(!m||m.length<3)return fallback;return '#'+m.slice(0,3).map(x=>Math.max(0,Math.min(255,+x)).toString(16).padStart(2,'0')).join('');}
 function stripTransient(root){
+ // Limpeza preventiva de artefatos produzidos por extensões do navegador.
+ root.querySelectorAll('lt-toolbar,lt-div,lt-span,lt-comp-icon,grammarly-extension').forEach(el=>el.remove());
+ root.querySelectorAll('*').forEach(el=>{
+  for(const attr of [...el.attributes])if(/^data-(?:lt-|gramm)/i.test(attr.name))el.removeAttribute(attr.name);
+ });
+ root.querySelectorAll('#menu-principal .nav-group').forEach(group=>{
+  group.classList.remove('is-open');
+  const b=group.querySelector(':scope > .nav-drop');
+  if(b){
+   b.setAttribute('aria-expanded','false');
+   const label=group.querySelector(':scope > .nav-root')?.textContent.trim();
+   if(label)b.setAttribute('aria-label','Abrir submenu '+label);
+  }
+ });
  // Nunca publicar os tabindex usados apenas pelo editor; preservar os originais.
  root.querySelectorAll('[data-fresuni-keynav]').forEach(el=>{
   const before=el.getAttribute('data-fresuni-keynav');
@@ -1100,7 +1114,7 @@ function fsPrepareSafePublish(html){
   'fresuni-interactive-effects-2026','fresuni-interactive-effects-runtime-2026',
   'fresuni-flow-grid-style','fresuni-page-meta-style','fresuni-archive-styles',
   'fresuni-layout-polish-v2','fresuni-custom-box-style',
-  'fresuni-mobile-pdf-and-navigation-2026','fresuni-media-styles','fresuni-media-runtime','fresuni-program-integration-style','fresuni-ux-navigation-2026','fresuni-ux-navigation-runtime','fresuni-accessibility-runtime-2026','fresuni-blue-brand-2026','fresuni-home-banner-style-2026','fresuni-logo-layout-style-2026','fresuni-carousel-fullslide-style-2026'];
+  'fresuni-mobile-pdf-and-navigation-2026','fresuni-media-styles','fresuni-media-runtime','fresuni-program-integration-style','fresuni-ux-navigation-2026','fresuni-ux-navigation-runtime','fresuni-accessibility-runtime-2026','fresuni-navigation-dropdown-runtime-2026','fresuni-blue-brand-2026','fresuni-home-banner-style-2026','fresuni-logo-layout-style-2026','fresuni-carousel-fullslide-style-2026'];
  for(const id of requiredAssets){
   const source=published.getElementById(id);
   if(!source)continue;
@@ -1110,7 +1124,7 @@ function fsPrepareSafePublish(html){
    // Mudanças deliberadas nas cores do editor continuam no tema personalizado.
    // Atualizar componentes funcionais já corrigidos, mesmo em rascunhos antigos.
    // Não interfere no conteúdo dos slides nem nas cores escolhidas pelo usuário.
-   if(['fresuni-blue-brand-2026','fresuni-ux-navigation-2026','fresuni-ux-navigation-runtime','fresuni-accessibility-runtime-2026'].includes(id)&&existing.textContent!==source.textContent)
+   if(['fresuni-blue-brand-2026','fresuni-ux-navigation-2026','fresuni-ux-navigation-runtime','fresuni-accessibility-runtime-2026','fresuni-navigation-dropdown-runtime-2026'].includes(id)&&existing.textContent!==source.textContent)
     existing.textContent=source.textContent;
    continue;
   }
@@ -1306,6 +1320,24 @@ function fsPrepareSafePublish(html){
     }
    }
   }
+ }
+ // Proteção ao publicar: textos e links são editáveis; a estrutura de navegação precisa continuar íntegra.
+ const nav=next.getElementById('menu-principal');
+ if(!nav||!nav.querySelector('.nav-root[href]'))
+  throw Error('Publicação interrompida: menu principal removido ou vazio. Verifique o cabeçalho.');
+ const damaged=[];
+ for(const g of nav.querySelectorAll('.nav-group')){
+  const btn=g.querySelector(':scope > .nav-drop'),panel=g.querySelector(':scope > .subnav');
+  if(!btn&&!panel)continue;
+  if(!btn||!panel||!panel.id||btn.getAttribute('aria-controls')!==panel.id||!btn.hasAttribute('aria-expanded'))
+   damaged.push(g.querySelector('.nav-root')?.textContent.trim()||'submenu');
+ }
+ if(damaged.length)throw Error('Publicação interrompida: setas e submenus inconsistentes em '+damaged.join(', ')+'. Verifique os menus.');
+ const access=next.getElementById('accessibility-menu');
+ if(!access||!access.querySelector('[data-font="increase"]')||!access.querySelector('[data-font="decrease"]')||!access.querySelector('[data-spacing]'))
+  throw Error('Publicação interrompida: controles de acessibilidade ausentes. Recarregue a versão publicada.');
+ for(const id of ['fresuni-accessibility-runtime-2026','fresuni-navigation-dropdown-runtime-2026','fresuni-ux-navigation-runtime']){
+  if(!next.getElementById(id)?.textContent.trim())throw Error('Publicação interrompida: script essencial ausente ('+id+').');
  }
  const distinctEyebrow={
   '/acoes':'PROJETOS E INICIATIVAS','/noticias':'INFORMAÇÃO E MOBILIZAÇÃO',
